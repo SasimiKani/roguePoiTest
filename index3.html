@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ローグっぽい何か（拡張性改善版）</title>
+  <title>ローグっぽい何か（内部処理分離・generateEnemyCycle更新版）</title>
   <style>
     /* スタイルは元のコードと同等 */
     body { font-family: monospace; position: relative; }
@@ -101,8 +101,6 @@
         this.kind = kind; // "small" or "big"
       }
     }
-
-    // ※ 他のエンティティ（アイテム、宝石など）も必要に応じてクラス化可能
 
     // ---------------- DungeonMap Class ----------------
     class DungeonMap {
@@ -275,6 +273,8 @@
         this.render();
         new InputManager(this);
       }
+
+      // タイムアウトのキュー管理
       queueTimeout(callback, delay) {
         this.acceptingInput = false;
         const id = setTimeout(() => {
@@ -285,6 +285,154 @@
         }, delay);
         this.timeoutQueue.push(id);
       }
+
+      // ---------------- 内部処理：演算処理 ----------------
+      // 入力イベントから「移動先」や「攻撃対象」などを計算する
+      computeInput(event) {
+        let dx = 0, dy = 0;
+        if (event.key === 'ArrowUp') dy = -1;
+        else if (event.key === 'ArrowDown') dy = 1;
+        else if (event.key === 'ArrowLeft') dx = -1;
+        else if (event.key === 'ArrowRight') dx = 1;
+        else if (event.key === '.') {
+          // 休憩時は体力回復の計算のみ行う
+          this.restCycle[0] = (this.restCycle[0] + 1) % this.restCycle[1];
+          if (this.restCycle[0] === 0 && this.player.hp < this.player.maxHp) {
+            // 休憩による体力回復（演算処理）
+            this.player.hp++;
+          }
+          return null; // 移動処理なし
+        } else return null;
+        // 次のプレイヤー位置を計算
+        return { tx: this.player.x + dx, ty: this.player.y + dy };
+      }
+
+      // ---------------- 内部処理：データ更新処理 ----------------
+      // 計算結果に基づいてゲーム内データを更新する
+      updateData(inputResult) {
+        if (!inputResult) return;
+        const { tx, ty } = inputResult;
+        let attacked = false;
+        // 攻撃判定（演算済みの座標に敵がいるか）
+        for (let i = 0; i < this.enemies.length; i++) {
+          if (this.enemies[i].x === tx && this.enemies[i].y === ty) {
+            attacked = true;
+            // ダメージ計算・更新処理
+            this.queueTimeout(() => {
+              this.damageEnemy(this.enemies[i], i);
+            }, 50);
+            break;
+          }
+        }
+        // 移動処理：敵がいなければプレイヤーの位置更新
+        if (!attacked && this.map.grid[ty]?.[tx] !== '🌳' &&
+            !this.enemies.some(e => e.x === tx && e.y === ty)) {
+          this.player.x = tx;
+          this.player.y = ty;
+          this.map.visible[ty][tx] = true;
+          this.map.revealRoom(tx, ty);
+          this.map.revealAround(tx, ty);
+        }
+        // 階段判定
+        if (this.player.x === this.stairs.x && this.player.y === this.stairs.y) {
+          this.generateDungeon(true);
+          return;
+        }
+        // その他の更新処理
+        this.checkHunger();
+        this.moveEnemies(tx, ty);
+        this.checkCollisions();
+        if (this.generateEnemyCycle[0] === 0) {
+          this.placeEntities(this.enemies, randomInt(1, 3), "enemy");
+        }
+      }
+
+      // ---------------- 内部処理：レンダリング処理 ----------------
+      // 現在のゲーム状態を画面に反映する
+      render() {
+        let html = '';
+        for (let y = 0; y < this.height; y++) {
+          for (let x = 0; x < this.width; x++) {
+            if (!this.map.visible[y][x]) {
+              html += `<span class="wall">🌳</span>`;
+              continue;
+            }
+            let tile = this.map.grid[y][x];
+            if (this.player.x === x && this.player.y === y) {
+              tile = '😊';
+            } else {
+              let drawn = false;
+              // 食料表示
+              for (let food of this.foods) {
+                if (food.x === x && food.y === y) {
+                  tile = food.kind === "big" ? "🍞" : "🥖";
+                  drawn = true;
+                  break;
+                }
+              }
+              // 敵表示
+              if (!drawn) {
+                for (let enemy of this.enemies) {
+                  if (enemy.x === x && enemy.y === y) {
+                    tile = '👾';
+                    drawn = true;
+                    break;
+                  }
+                }
+              }
+              // アイテム・宝石表示
+              if (!drawn) {
+                for (let item of this.items) {
+                  if (item.x === x && item.y === y) {
+                    tile = '🍣';
+                    drawn = true;
+                    break;
+                  }
+                }
+                for (let gem of this.gems) {
+                  if (gem.x === x && gem.y === y) {
+                    tile = '💎';
+                    drawn = true;
+                    break;
+                  }
+                }
+                if (this.stairs.x === x && this.stairs.y === y) tile = '🔼';
+              }
+            }
+            html += `<span>${tile}</span>`;
+          }
+          html += '<br>';
+        }
+        this.gameContainer.innerHTML = html;
+        // UI情報更新
+        document.getElementById('hp').innerText = this.player.hp;
+        document.getElementById('maxhp').innerText = this.player.maxHp;
+        document.getElementById('atk').innerText = this.player.attack;
+        document.getElementById('lv').innerText = this.player.level;
+        document.getElementById('exp').innerText = this.player.exp;
+        document.getElementById('floor').innerText = this.floor;
+        document.getElementById('score').innerText = this.score;
+        document.getElementById('hunger').innerText = this.player.hunger;
+        document.getElementById('maxhunger').innerText = this.player.maxHunger;
+        this.uiManager.update(this.player);
+      }
+
+      // processInput() は以下の3段階に分ける
+      processInput(event) {
+        // ※ 入力受付中でなければ何もしない
+        if (this.isGameOver || !this.acceptingInput) return;
+        // ここで generateEnemyCycle の更新処理を追加
+        this.generateEnemyCycle[0] = (this.generateEnemyCycle[0] + 1) % this.generateEnemyCycle[1];
+        // ① 演算処理
+        const inputResult = this.computeInput(event);
+        // ② データ更新処理
+        this.updateData(inputResult);
+        // ③ レンダリング処理
+        this.render();
+      }
+
+      // 以下、従来の各種処理（内容は元の機能を維持）
+
       generateDungeon(keepHP = false) {
         const prevHP = this.player.hp;
         const prevScore = this.score;
@@ -319,6 +467,7 @@
         this.placeEntities(this.gems, randomInt(1, 3), "entity");
         this.placeEntities(this.foods, randomInt(1, 2), "food");
       }
+
       placeEntities(arr, count, type) {
         for (let i = 0; i < count; i++) {
           let x, y, hp;
@@ -327,8 +476,10 @@
             x = randomInt(room.x + 1, room.x + room.w - 2);
             y = randomInt(room.y + 1, room.y + room.h - 2);
             if (type === "enemy") {
-              hp = randomInt(Math.round(Math.pow(this.floor, this.minMagnification)),
-                             Math.round(Math.pow(this.floor, this.maxMagnification)));
+              hp = randomInt(
+                Math.round(Math.pow(this.floor, this.minMagnification)),
+                Math.round(Math.pow(this.floor, this.maxMagnification))
+              );
             }
           } while (this.map.grid[y][x] !== ' ' || (x === this.player.x && y === this.player.y));
           if (type === "entity") {
@@ -341,9 +492,7 @@
           }
         }
       }
-      updateBars() {
-        this.uiManager.update(this.player);
-      }
+
       gainExp(amount) {
         this.player.exp += amount;
         const expToNext = this.player.level * 10;
@@ -357,11 +506,13 @@
           EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, "LEVEL UP!", "heal");
         }
       }
+
       playerEat(amount) {
         this.player.hunger += amount;
         if (this.player.hunger > this.player.maxHunger) this.player.hunger = this.player.maxHunger;
         EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, `+${amount}`, "food");
       }
+
       checkHunger() {
         this.hungerCycle[0] = (this.hungerCycle[0] + 1) % this.hungerCycle[1];
         if (this.hungerCycle[0] === 0) {
@@ -373,6 +524,7 @@
           EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, "餓死", "damage");
         }
       }
+
       moveEnemies(nextPlayerX, nextPlayerY) {
         this.enemies.forEach((enemy, idx) => {
           if (enemy.hp <= 0) return;
@@ -405,6 +557,7 @@
           }
         });
       }
+
       damageEnemy(enemy, index) {
         enemy.takeDamage(this.player.attack);
         EffectsManager.showEffect(this.gameContainer, enemy.x, enemy.y, `-${this.player.attack}`, "damage");
@@ -415,6 +568,7 @@
           this.gainExp(5);
         }
       }
+
       checkCollisions() {
         this.items = this.items.filter(item => {
           if (item.x === this.player.x && item.y === this.player.y) {
@@ -454,123 +608,11 @@
           }
         }, 100);
       }
+
       onHeal() {
         this.player.hp += this.player.healAmount;
         if (this.player.hp > this.player.maxHp) this.player.hp = this.player.maxHp;
         EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, `+${this.player.healAmount}`, "heal");
-      }
-      processInput(event) {
-        if (this.isGameOver || !this.acceptingInput) return;
-        let dx = 0, dy = 0;
-        if (event.key === 'ArrowUp') dy = -1;
-        else if (event.key === 'ArrowDown') dy = 1;
-        else if (event.key === 'ArrowLeft') dx = -1;
-        else if (event.key === 'ArrowRight') dx = 1;
-        else if (event.key === '.') {
-          this.restCycle[0] = (this.restCycle[0] + 1) % this.restCycle[1];
-          if (this.restCycle[0] === 0 && this.player.hp < this.player.maxHp) {
-            this.player.hp++;
-          }
-          this.render();
-          return;
-        } else return;
-        this.generateEnemyCycle[0] = (this.generateEnemyCycle[0] + 1) % this.generateEnemyCycle[1];
-        const tx = this.player.x + dx;
-        const ty = this.player.y + dy;
-        let attacked = false;
-        for (let i = 0; i < this.enemies.length; i++) {
-          if (this.enemies[i].x === tx && this.enemies[i].y === ty) {
-            attacked = true;
-            this.queueTimeout(() => {
-              this.damageEnemy(this.enemies[i], i);
-            }, 50);
-            break;
-          }
-        }
-        if (!attacked && this.map.grid[ty]?.[tx] !== '🌳' &&
-            !this.enemies.some(e => e.x === tx && e.y === ty)) {
-          this.player.x = tx;
-          this.player.y = ty;
-          this.map.visible[ty][tx] = true;
-          this.map.revealRoom(tx, ty);
-          this.map.revealAround(tx, ty);
-        }
-        if (this.player.x === this.stairs.x && this.player.y === this.stairs.y) {
-          this.generateDungeon(true);
-          this.render();
-          return;
-        }
-        this.checkHunger();
-        this.moveEnemies(tx, ty);
-        this.checkCollisions();
-        if (this.generateEnemyCycle[0] === 0) {
-          this.placeEntities(this.enemies, randomInt(1, 3), "enemy");
-        }
-        this.render();
-      }
-      render() {
-        let html = '';
-        for (let y = 0; y < this.height; y++) {
-          for (let x = 0; x < this.width; x++) {
-            if (!this.map.visible[y][x]) {
-              html += `<span class="wall">🌳</span>`;
-              continue;
-            }
-            let classList = '';
-            let tile = this.map.grid[y][x];
-            if (this.player.x === x && this.player.y === y) {
-              tile = '😊';
-            } else {
-              let drawn = false;
-              for (let food of this.foods) {
-                if (food.x === x && food.y === y) {
-                  tile = food.kind === "big" ? "🍞" : "🥖";
-                  drawn = true;
-                  break;
-                }
-              }
-              if (!drawn) {
-                for (let enemy of this.enemies) {
-                  if (enemy.x === x && enemy.y === y) {
-                    tile = '👾';
-                    drawn = true;
-                    break;
-                  }
-                }
-              }
-              if (!drawn) {
-                for (let item of this.items) {
-                  if (item.x === x && item.y === y) {
-                    tile = '🍣';
-                    drawn = true;
-                    break;
-                  }
-                }
-                for (let gem of this.gems) {
-                  if (gem.x === x && gem.y === y) {
-                    tile = '💎';
-                    drawn = true;
-                    break;
-                  }
-                }
-                if (this.stairs.x === x && this.stairs.y === y) tile = '🔼';
-              }
-            }
-            html += `<span class="${classList}">${tile}</span>`;
-          }
-          html += '<br>';
-        }
-        this.gameContainer.innerHTML = html;
-        document.getElementById('hp').innerText = this.player.hp;
-        document.getElementById('maxhp').innerText = this.player.maxHp;
-        document.getElementById('atk').innerText = this.player.attack;
-        document.getElementById('lv').innerText = this.player.level;
-        document.getElementById('exp').innerText = this.player.exp;
-        document.getElementById('floor').innerText = this.floor;
-        document.getElementById('score').innerText = this.score;
-        document.getElementById('hunger').innerText = this.player.hunger;
-        document.getElementById('maxhunger').innerText = this.player.maxHunger;
-        this.updateBars();
       }
     }
     // ゲーム開始
