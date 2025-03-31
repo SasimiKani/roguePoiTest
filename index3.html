@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ローグっぽい何か（インベントリ追加版）</title>
+  <title>ローグっぽい何か（インベントリ統合版）</title>
   <style>
     * { user-select: none; }
     /* 元のスタイル */
@@ -58,8 +58,9 @@
   <p>⛰️ フロア: <span id="floor">1</span>　💎 スコア: <span id="score">0</span></p>
   <p>－－－－－－－－－</p>
   <p>矢印キーで移動／敵と隣接してたら攻撃！／.で休憩（<span id="restCycle"></span>ターンごとに回復）　🔼:次のフロアへ</p>
-  <p>※ Shift＋方向キー複数押しで斜め移動。eキーでインベントリ表示</p>
-  <p>😊プレイヤー　👾敵　🍣体力回復　💎お宝！　🍞大きなパン（+50）　🥖パン（+20）</p>
+  <p>※ Shift＋方向キーで斜め移動、eキーでインベントリ表示</p>
+  <p>※ インベントリ内のアイテムは「パン」「大きなパン」など日本語表記</p>
+  <p>😊プレイヤー　👾敵　🍣体力回復　💎お宝！</p>
   
   <script>
     // ---------------- Configuration ----------------
@@ -100,7 +101,7 @@
         this.exp = 0;
         this.hunger = 100;
         this.maxHunger = 100;
-        this.inventory = []; // インベントリ追加（最大10個）
+        this.inventory = []; // インベントリ（最大10個）
       }
     }
 
@@ -115,20 +116,12 @@
       }
     }
 
-    // ---------------- Food Class ----------------
-    class Food extends BaseEntity {
-      constructor(x, y, kind) {
-        super(x, y);
-        this.kind = kind; // "small" or "big"
-      }
-    }
-
     // ---------------- InventoryItem Class ----------------
     class InventoryItem extends BaseEntity {
       constructor(x, y, name, useFunction) {
         super(x, y);
         this.name = name;
-        this.use = useFunction; // アイテム使用時の処理
+        this.use = useFunction; // 使用時の処理
       }
     }
 
@@ -268,7 +261,6 @@
         this.init();
       }
       init() {
-        // 現在押下中のキーを管理するため、keydown/upイベントで keysDown を更新
         document.addEventListener('keydown', (e) => {
           this.game.keysDown[e.key] = true;
           this.game.processInput(e);
@@ -293,25 +285,25 @@
         this.hungerCycle = [0, CONFIG.HUNGER_CYCLE];
         this.timeoutQueue = [];
         this.acceptingInput = true;
-        this.keysDown = {};  // 現在押されているキー管理
-        this.enemies = [];
-        this.items = [];    // マップ上の「entity」アイテム（ピックアップ可能）
+        this.keysDown = {};
+        this.items = [];  // マップ上の「entity」アイテム（インベントリに拾える）
         this.gems = [];
-        this.foods = [];
+        // foods配列は統合済みのため削除
+        this.enemies = [];
         this.stairs = { x: 0, y: 0 };
         this.player = new Player(0, 0, this.initialHP);
-        this.map = new DungeonMap(this.width, this.height);
         this.uiManager = new UIManager();
+        this.map = new DungeonMap(this.width, this.height);
         this.gameContainer = document.getElementById("game");
-        this.inventoryOpen = false; // インベントリ画面表示状態
-        this.inventorySelection = 0; // インベントリ選択インデックス
+        this.inventoryOpen = false;
+        this.inventorySelection = 0;
         document.getElementById("restCycle").innerText = CONFIG.REST_CYCLE;
         this.generateDungeon(false);
         this.render();
         new InputManager(this);
       }
 
-      // タイムアウトのキュー管理
+      // タイムアウト管理
       queueTimeout(callback, delay) {
         this.acceptingInput = false;
         const id = setTimeout(() => {
@@ -323,15 +315,15 @@
         this.timeoutQueue.push(id);
       }
 
-      // ---------------- 内部処理：ターン進行 ----------------
+      // ターン進行処理
       advanceTurn() {
         this.generateEnemyCycle[0] = (this.generateEnemyCycle[0] + 1) % this.generateEnemyCycle[1];
         this.hungerCycle[0] = (this.hungerCycle[0] + 1) % this.hungerCycle[1];
       }
 
-      // ---------------- 内部処理：演算処理 ----------------
+      // ---------------- 演算処理 ----------------
+      // Shift押下で斜め移動、休憩時は同位置返す
       computeInput(event) {
-        // Shiftが押されている場合：斜め移動
         if (this.keysDown['Shift']) {
           let hor = 0, ver = 0;
           if (this.keysDown['ArrowLeft'] && !this.keysDown['ArrowRight']) { hor = -1; }
@@ -347,7 +339,6 @@
           }
           return null;
         }
-        // 休憩（'.'キー）の場合：同じ位置を返してターン進行
         if (event.key === '.') {
           this.restCycle[0] = (this.restCycle[0] + 1) % this.restCycle[1];
           if (this.restCycle[0] === 0 && this.player.hp < this.player.maxHp) {
@@ -355,7 +346,6 @@
           }
           return { tx: this.player.x, ty: this.player.y };
         }
-        // 通常移動：単体矢印キーのみ有効
         let dx = 0, dy = 0, count = 0;
         if (this.keysDown['ArrowLeft']) { dx = -1; count++; }
         if (this.keysDown['ArrowRight']) { dx = 1; count++; }
@@ -367,12 +357,11 @@
         return null;
       }
 
-      // ---------------- 内部処理：データ更新処理 ----------------
+      // ---------------- データ更新処理 ----------------
       updateData(inputResult) {
         if (!inputResult) return;
         const { tx, ty } = inputResult;
         let attacked = false;
-        // 攻撃判定：敵がいる場合は攻撃
         for (let i = 0; i < this.enemies.length; i++) {
           if (this.enemies[i].x === tx && this.enemies[i].y === ty) {
             attacked = true;
@@ -380,7 +369,6 @@
             break;
           }
         }
-        // 敵がいなければ移動
         if (!attacked && this.map.grid[ty]?.[tx] !== '🌳' &&
             !this.enemies.some(e => e.x === tx && e.y === ty)) {
           this.player.x = tx;
@@ -389,12 +377,11 @@
           this.map.revealRoom(tx, ty);
           this.map.revealAround(tx, ty);
         }
-        // 階段到達ならダンジョン再生成
         if (this.player.x === this.stairs.x && this.player.y === this.stairs.y) {
           this.generateDungeon(true);
           return;
         }
-        // マップ上のアイテム（entityタイプ）をピックアップ（所持数が10未満の場合）
+        // アイテム（entity）をピックアップ（所持数10未満なら）
         this.items = this.items.filter(item => {
           if (item.x === this.player.x && item.y === this.player.y) {
             if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
@@ -404,7 +391,6 @@
           }
           return true;
         });
-        // その他更新処理
         this.checkHunger();
         this.moveEnemies(tx, ty);
         this.checkCollisions();
@@ -413,7 +399,7 @@
         }
       }
 
-      // ---------------- 内部処理：レンダリング処理 ----------------
+      // ---------------- レンダリング処理 ----------------
       render() {
         let html = '';
         for (let y = 0; y < this.height; y++) {
@@ -427,55 +413,46 @@
               tile = '😊';
             } else {
               let drawn = false;
-              for (let food of this.foods) {
-                if (food.x === x && food.y === y) {
-                  tile = food.kind === "big" ? "🍞" : "🥖";
+              for (let enemy of this.enemies) {
+                if (enemy.x === x && enemy.y === y) {
+                  tile = '👾';
                   drawn = true;
                   break;
                 }
               }
               if (!drawn) {
-                for (let enemy of this.enemies) {
-                  if (enemy.x === x && enemy.y === y) {
-                    tile = '👾';
-                    drawn = true;
-                    break;
-                  }
-                }
-              }
-              if (!drawn) {
                 for (let item of this.items) {
                   if (item.x === x && item.y === y) {
-                    tile = '🍣';
+                    // アイテムの場合、ここでは「🍣」の代わりに設定済みのタイル表示を行わない
+                    switch (item.name) {
+                    case "すし": tile = '🍣'; break;
+                    case "パン": tile = '🥖'; break;
+                    case "大きなパン": tile = '🍞'; break;
+                    }
                     drawn = true;
                     break;
                   }
                 }
-                for (let gem of this.gems) {
-                  if (gem.x === x && gem.y === y) {
-                    tile = '💎';
-                    drawn = true;
-                    break;
-                  }
+                if (!drawn && this.stairs.x === x && this.stairs.y === y) {
+                  tile = '🔼';
                 }
-                if (this.stairs.x === x && this.stairs.y === y) tile = '🔼';
               }
             }
             html += `<span>${tile}</span>`;
           }
           html += '<br>';
         }
-        // インベントリ表示（インベントリが開いている場合）
+        // インベントリ表示（開いている場合）
         if (this.inventoryOpen) {
           html += `<div class="inventory-modal">`;
-          html += `<h3>アイテム (${this.player.inventory.length}/${CONFIG.INVENTORY_MAX})</h3>`;
+          html += `<h3>所持品 (${this.player.inventory.length}/${CONFIG.INVENTORY_MAX})</h3>`;
           if (this.player.inventory.length === 0) {
-            html += `<p>(Empty)</p>`;
+            html += `<p>(なし)</p>`;
           } else {
             html += `<ul>`;
             for (let i = 0; i < this.player.inventory.length; i++) {
               let selected = (i === this.inventorySelection) ? ">> " : "";
-              let itemName = this.player.inventory[i].name || "Item";
+              let itemName = this.player.inventory[i].name || "アイテム";
               html += `<li class="${(i===this.inventorySelection) ? 'selected' : ''}">${selected}${itemName}</li>`;
             }
             html += `</ul>`;
@@ -484,7 +461,6 @@
           html += `</div>`;
         }
         this.gameContainer.innerHTML = html;
-        // UI情報更新
         document.getElementById('hp').innerText = this.player.hp;
         document.getElementById('maxhp').innerText = this.player.maxHp;
         document.getElementById('atk').innerText = this.player.attack;
@@ -514,7 +490,6 @@
           return;
         }
         if (event.key === 'u') {
-          // アイテム使用
           let item = this.player.inventory[this.inventorySelection];
           if (item && item.use) {
             item.use(this);
@@ -528,7 +503,6 @@
           return;
         }
         if (event.key === 'd') {
-          // アイテムドロップ：現在のタイルに配置
           let item = this.player.inventory[this.inventorySelection];
           if (item) {
             item.x = this.player.x;
@@ -544,42 +518,32 @@
           return;
         }
         if (event.key === 'Escape' || event.key === 'e') {
-          // インベントリ閉じる
           this.inventoryOpen = false;
           this.render();
           return;
         }
       }
 
-      // ---------------- 内部処理：通常入力処理 ----------------
+      // ---------------- 通常入力処理 ----------------
       processInput(event) {
         if (this.isGameOver || !this.acceptingInput) return;
-        // eキーでインベントリの開閉
         if (event.key === 'e') {
-          // インベントリをトグル
           this.inventoryOpen = !this.inventoryOpen;
-          // 初回オープン時、選択インデックス初期化
           if (this.inventoryOpen) this.inventorySelection = 0;
           this.render();
           return;
         }
-        // インベントリが開いている場合は専用処理
         if (this.inventoryOpen) {
           this.processInventoryInput(event);
           return;
         }
-        // 通常のターン進行
         this.advanceTurn();
-        // ① 演算処理
         const inputResult = this.computeInput(event);
-        // ② データ更新処理
         this.updateData(inputResult);
-        // ③ レンダリング処理
         this.render();
       }
 
-      // ---------------- 以下は従来の機能 ----------------
-
+      // ---------------- 以下従来機能 ----------------
       generateDungeon(keepHP = false) {
         const prevHP = this.player.hp;
         const prevScore = this.score;
@@ -587,7 +551,7 @@
         this.enemies = [];
         this.items = [];
         this.gems = [];
-        this.foods = [];
+        // foods配列は統合のため削除
         const firstRoom = this.map.rooms[0];
         this.player.x = firstRoom.x + 1;
         this.player.y = firstRoom.y + 1;
@@ -609,11 +573,12 @@
         this.map.grid[this.stairs.y][this.stairs.x] = '🔼';
         this.minMagnification = CONFIG.MIN_ENEMY_MULTIPLIER;
         this.maxMagnification = CONFIG.MAX_ENEMY_MULTIPLIER;
-        // inventory用アイテム（entityタイプ）の配置例：ヒールポーション
-        this.placeEntities(this.items, randomInt(0, 2), "entity");
+        // 例として、ヒールポーションなどの inventory 用アイテムを配置
+        this.placeEntities(this.items, randomInt(0, 2), "sushi");
         this.placeEntities(this.enemies, randomInt(2, 4), "enemy");
         this.placeEntities(this.gems, randomInt(1, 3), "entity");
-        this.placeEntities(this.foods, randomInt(1, 2), "food");
+        // パン類（foodタイプ）は items に統合
+        this.placeEntities(this.items, randomInt(1, 2), "food");
       }
 
       placeEntities(arr, count, type) {
@@ -630,8 +595,8 @@
               );
             }
           } while (this.map.grid[y][x] !== ' ' || (x === this.player.x && y === this.player.y));
-          if (type === "entity") {
-            // inventory用アイテム：ここでは例としてヒールポーションを配置
+          if (type === "sushi") {
+            // 例：ヒールポーション（体力回復）
             arr.push(new InventoryItem(x, y, "すし", function(game) {
               game.player.hp += 3;
               if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
@@ -640,8 +605,20 @@
           } else if (type === "enemy") {
             arr.push(new Enemy(x, y, hp));
           } else if (type === "food") {
-            const kind = Math.random() < 0.7 ? "small" : "big";
-            arr.push(new Food(x, y, kind));
+            // 統合：パン類として生成。小さいなら「パン」、大きいなら「大きなパン」
+            if (Math.random() < 0.7) {
+              arr.push(new InventoryItem(x, y, "パン", function(game) {
+                game.player.hunger += 20;
+                if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger;
+                EffectsManager.showEffect(game.gameContainer, game.player.x, game.player.y, "+20", "food");
+              }));
+            } else {
+              arr.push(new InventoryItem(x, y, "大きなパン", function(game) {
+                game.player.hunger += 50;
+                if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger;
+                EffectsManager.showEffect(game.gameContainer, game.player.x, game.player.y, "+50", "food");
+              }));
+            }
           }
         }
       }
@@ -693,7 +670,6 @@
           }, 100);
           const dirX = Math.sign(this.player.x - enemy.x);
           const dirY = Math.sign(this.player.y - enemy.y);
-          // 斜め移動の場合、隣接セルチェック（プレイヤーと同じルール）
           if (dirX !== 0 && dirY !== 0) {
             if (this.map.grid[enemy.y][enemy.x + dirX] === '🌳' ||
                 this.map.grid[enemy.y + dirY][enemy.x] === '🌳') {
@@ -745,14 +721,6 @@
           }
           return true;
         });
-        this.foods = this.foods.filter(food => {
-          if (food.x === this.player.x && food.y === this.player.y) {
-            const amount = food.kind === "big" ? 50 : 20;
-            this.playerEat(amount);
-            return false;
-          }
-          return true;
-        });
         setTimeout(() => {
           if (this.player.hp <= 0) {
             this.isGameOver = true;
@@ -777,7 +745,6 @@
       }
     }
 
-    // ゲーム開始
     new Game();
   </script>
 </body>
