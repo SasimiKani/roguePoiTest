@@ -467,7 +467,7 @@
         // インベントリ表示（インベントリが開いている場合）
         if (this.inventoryOpen) {
           html += `<div class="inventory-modal">`;
-          html += `<h3>Inventory (${this.player.inventory.length}/${CONFIG.INVENTORY_MAX})</h3>`;
+          html += `<h3>アイテム (${this.player.inventory.length}/${CONFIG.INVENTORY_MAX})</h3>`;
           if (this.player.inventory.length === 0) {
             html += `<p>(Empty)</p>`;
           } else {
@@ -478,7 +478,7 @@
               html += `<li class="${(i===this.inventorySelection) ? 'selected' : ''}">${selected}${itemName}</li>`;
             }
             html += `</ul>`;
-            html += `<p>u: Use, d: Drop, Esc/e: Close</p>`;
+            html += `<p>u: 使用, d: 置く, Esc/e: 閉じる</p>`;
           }
           html += `</div>`;
         }
@@ -631,7 +631,7 @@
           } while (this.map.grid[y][x] !== ' ' || (x === this.player.x && y === this.player.y));
           if (type === "entity") {
             // inventory用アイテム：ここでは例としてヒールポーションを配置
-            arr.push(new InventoryItem(x, y, "Healing Potion", function(game) {
+            arr.push(new InventoryItem(x, y, "すし", function(game) {
               game.player.hp += 3;
               if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
               EffectsManager.showEffect(game.gameContainer, game.player.x, game.player.y, "+3", "heal");
