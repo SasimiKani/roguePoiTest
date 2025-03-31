@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ローグっぽい何か（内部処理分離・改善版）</title>
+  <title>ローグっぽい何か（休憩ターン進行追加版）</title>
   <style>
     /* スタイルは元のコードと同等 */
     body { font-family: monospace; position: relative; }
@@ -40,6 +40,7 @@
   <p>⛰️ フロア: <span id="floor">1</span>　💎 スコア: <span id="score">0</span></p>
   <p>－－－－－－－－－</p>
   <p>矢印キーで移動／敵と隣接してたら攻撃！／.で休憩（<span id="restCycle"></span>ターンごとに回復）　🔼:次のフロアへ</p>
+  <p>※ Shiftを押しながら左右・上下を同時押しで斜め移動（ただし隣接セルが塞がれている場合は不可）</p>
   <p>😊プレイヤー　👾敵　🍣体力回復　💎お宝！　🍞大きなパン（+50）　🥖パン（+20）</p>
   
   <script>
@@ -238,10 +239,14 @@
         this.init();
       }
       init() {
-        document.addEventListener('keydown', (e) => this.handleKeyDown(e));
-      }
-      handleKeyDown(event) {
-        this.game.processInput(event);
+        // 現在押下中のキーを管理するため、keydown/upイベントで keysDown を更新
+        document.addEventListener('keydown', (e) => {
+          this.game.keysDown[e.key] = true;
+          this.game.processInput(e);
+        });
+        document.addEventListener('keyup', (e) => {
+          this.game.keysDown[e.key] = false;
+        });
       }
     }
 
@@ -259,6 +264,7 @@
         this.hungerCycle = [0, CONFIG.HUNGER_CYCLE];
         this.timeoutQueue = [];
         this.acceptingInput = true;
+        this.keysDown = {};  // 現在押されているキーを管理
         this.enemies = [];
         this.items = [];
         this.gems = [];
@@ -286,39 +292,65 @@
         this.timeoutQueue.push(id);
       }
 
+      // ---------------- 内部処理：ターン進行 ----------------
+      // 各種ターンカウンタ（敵生成、ハンガー更新など）を更新する
+      advanceTurn() {
+        this.generateEnemyCycle[0] = (this.generateEnemyCycle[0] + 1) % this.generateEnemyCycle[1];
+        this.hungerCycle[0] = (this.hungerCycle[0] + 1) % this.hungerCycle[1];
+      }
+
       // ---------------- 内部処理：演算処理 ----------------
-      // 入力イベントから「移動先」や「攻撃対象」などを計算する
+      // キー入力から移動先を算出する（Shift押下なら斜め移動のみ有効）
       computeInput(event) {
-        let dx = 0, dy = 0;
-        if (event.key === 'ArrowUp') dy = -1;
-        else if (event.key === 'ArrowDown') dy = 1;
-        else if (event.key === 'ArrowLeft') dx = -1;
-        else if (event.key === 'ArrowRight') dx = 1;
-        else if (event.key === '.') {
-          // 休憩時は体力回復の計算のみ行い、ターンを進めるため同じ位置を返す
+        // Shiftが押されている場合
+        if (this.keysDown['Shift']) {
+          let hor = 0, ver = 0;
+          if (this.keysDown['ArrowLeft'] && !this.keysDown['ArrowRight']) { hor = -1; }
+          else if (this.keysDown['ArrowRight'] && !this.keysDown['ArrowLeft']) { hor = 1; }
+          if (this.keysDown['ArrowUp'] && !this.keysDown['ArrowDown']) { ver = -1; }
+          else if (this.keysDown['ArrowDown'] && !this.keysDown['ArrowUp']) { ver = 1; }
+          // 斜め移動は水平・垂直双方の入力が必要
+          if (hor !== 0 && ver !== 0) {
+            // 斜め移動の際、隣接する水平・垂直セルが塞がれていないかチェック
+            if (this.map.grid[this.player.y][this.player.x + hor] === '🌳' ||
+                this.map.grid[this.player.y + ver][this.player.x] === '🌳') {
+              return null;
+            }
+            return { tx: this.player.x + hor, ty: this.player.y + ver };
+          }
+          // Shift中で片方のみの場合は無視
+          return null;
+        }
+        // 休憩（'.'キー）の場合、体力回復とともに同じ位置を返す
+        if (event.key === '.') {
           this.restCycle[0] = (this.restCycle[0] + 1) % this.restCycle[1];
           if (this.restCycle[0] === 0 && this.player.hp < this.player.maxHp) {
             this.player.hp++;
           }
-          // 休憩でもターン進行と各処理が行われるように同じ位置を返す
           return { tx: this.player.x, ty: this.player.y };
-        } else return null;
-        return { tx: this.player.x + dx, ty: this.player.y + dy };
+        }
+        // Shift未使用の場合は単体の矢印キーのみ有効
+        let dx = 0, dy = 0, count = 0;
+        if (this.keysDown['ArrowLeft']) { dx = -1; count++; }
+        if (this.keysDown['ArrowRight']) { dx = 1; count++; }
+        if (this.keysDown['ArrowUp']) { dy = -1; count++; }
+        if (this.keysDown['ArrowDown']) { dy = 1; count++; }
+        if (count === 1) {
+          return { tx: this.player.x + dx, ty: this.player.y + dy };
+        }
+        return null;
       }
 
       // ---------------- 内部処理：データ更新処理 ----------------
-      // 計算結果に基づいてゲーム内データを更新する
       updateData(inputResult) {
         if (!inputResult) return;
         const { tx, ty } = inputResult;
         let attacked = false;
-        // 攻撃判定：指定座標に敵が存在するかチェック
+        // 敵がいる場合は攻撃
         for (let i = 0; i < this.enemies.length; i++) {
           if (this.enemies[i].x === tx && this.enemies[i].y === ty) {
             attacked = true;
-            this.queueTimeout(() => {
-              this.damageEnemy(this.enemies[i], i);
-            }, 50);
+            this.queueTimeout(() => { this.damageEnemy(this.enemies[i], i); }, 50);
             break;
           }
         }
@@ -331,7 +363,7 @@
           this.map.revealRoom(tx, ty);
           this.map.revealAround(tx, ty);
         }
-        // 階段に到達した場合はダンジョン生成
+        // 階段到達なら新ダンジョン生成
         if (this.player.x === this.stairs.x && this.player.y === this.stairs.y) {
           this.generateDungeon(true);
           return;
@@ -346,7 +378,6 @@
       }
 
       // ---------------- 内部処理：レンダリング処理 ----------------
-      // 現在のゲーム状態を画面に反映する
       render() {
         let html = '';
         for (let y = 0; y < this.height; y++) {
@@ -360,7 +391,6 @@
               tile = '😊';
             } else {
               let drawn = false;
-              // 食料表示
               for (let food of this.foods) {
                 if (food.x === x && food.y === y) {
                   tile = food.kind === "big" ? "🍞" : "🥖";
@@ -368,7 +398,6 @@
                   break;
                 }
               }
-              // 敵表示
               if (!drawn) {
                 for (let enemy of this.enemies) {
                   if (enemy.x === x && enemy.y === y) {
@@ -378,7 +407,6 @@
                   }
                 }
               }
-              // アイテム・宝石表示
               if (!drawn) {
                 for (let item of this.items) {
                   if (item.x === x && item.y === y) {
@@ -415,11 +443,11 @@
         this.uiManager.update(this.player);
       }
 
-      // processInput() は、以下の3段階で処理する
+      // processInput() は以下の3段階で処理する
       processInput(event) {
         if (this.isGameOver || !this.acceptingInput) return;
-        // まず generateEnemyCycle の更新
-        this.generateEnemyCycle[0] = (this.generateEnemyCycle[0] + 1) % this.generateEnemyCycle[1];
+        // まず、全ターン進行処理を実施
+        this.advanceTurn();
         // ① 演算処理
         const inputResult = this.computeInput(event);
         // ② データ更新処理
@@ -428,7 +456,7 @@
         this.render();
       }
 
-      // 以降は元の機能を維持する処理群
+      // ---------------- 以下は従来の機能 ----------------
 
       generateDungeon(keepHP = false) {
         const prevHP = this.player.hp;
@@ -527,7 +555,6 @@
           if (enemy.hp <= 0) return;
           const dx = Math.abs(enemy.x - this.player.x);
           const dy = Math.abs(enemy.y - this.player.y);
-          // キューに入るコールバックでも、敵が倒れていないか確認する
           this.queueTimeout(() => {
             if (enemy.hp <= 0) return;
             if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
@@ -538,6 +565,20 @@
           }, 100);
           const dirX = Math.sign(this.player.x - enemy.x);
           const dirY = Math.sign(this.player.y - enemy.y);
+          // 斜め移動の場合、隣接セルのチェックを実施
+          if (dirX !== 0 && dirY !== 0) {
+            if (this.map.grid[enemy.y][enemy.x + dirX] === '🌳' ||
+                this.map.grid[enemy.y + dirY][enemy.x] === '🌳') {
+              if (this.map.grid[enemy.y][enemy.x + dirX] !== '🌳' &&
+                  !this.enemies.some(e => e.x === enemy.x + dirX && e.y === enemy.y)) {
+                enemy.x += dirX;
+              } else if (this.map.grid[enemy.y + dirY][enemy.x] !== '🌳' &&
+                         !this.enemies.some(e => e.x === enemy.x && e.y === enemy.y + dirY)) {
+                enemy.y += dirY;
+              }
+              return;
+            }
+          }
           const nx = enemy.x + dirX, ny = enemy.y + dirY;
           const canMoveX = this.map.grid[enemy.y][nx] !== '🌳' &&
                            !this.enemies.some(e => e.x === nx && e.y === enemy.y) &&
@@ -614,8 +655,9 @@
         EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, `+${this.player.healAmount}`, "heal");
       }
     }
+
     // ゲーム開始
-    new Game();
+    const game = new Game();
   </script>
 </body>
 </html>
