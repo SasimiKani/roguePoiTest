@@ -361,6 +361,10 @@
         if (this.keysDown['ArrowUp']) { dy = -1; count++; }
         if (this.keysDown['ArrowDown']) { dy = 1; count++; }
         if (count === 1) {
+          // 移動先が壁の場合は null を返す
+          if (this.map.grid[this.player.y + dy]?.[this.player.x + dx] === MAP_TILE.WALL) {
+            return null;
+          }
           return { tx: this.player.x + dx, ty: this.player.y + dy };
         }
         return null;
@@ -553,8 +557,10 @@
           this.processInventoryInput(event);
           return;
         }
-        this.advanceTurn();
+        // computeInput により、移動先が壁なら null が返るので、ターン進行せず何もせずリターン
         const inputResult = this.computeInput(event);
+        if (!inputResult) return;
+        this.advanceTurn();
         this.updateData(inputResult);
         this.render();
       }
