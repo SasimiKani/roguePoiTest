@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ローグっぽい何か（オブジェクト指向版）</title>
+<style> body { font-family: monospace; position: relative; } .game-container { font-size: 16px; line-height: 1.2; white-space: pre; position: relative; } .game-container span { display: inline-block; width: 2.2ch; text-align: center; transition: all 0.1s; } .wall { background-color: #C4DD87; display: inline-block; height: 20px; } .hit { background-color: red !important; color: white; } .shake { transform: translateY(-2px); } .damage, .damage-me, .heal, .explosion, .food { position: absolute; font-weight: bold; font-size: 18px; border-radius: 4px; pointer-events: none; transform: translate(-50%, -100%); animation: floatUp 1.0s ease-out forwards; } .damage-me { color: white; background-color: red; padding: 2px 4px; box-shadow: 1px 1px 2px black; } .damage { color: white; background-color: orange; padding: 2px 4px; box-shadow: 1px 1px 2px black; } .heal { color: white; background-color: green; padding: 2px 4px; box-shadow: 1px 1px 2px black; } .food { color: white; background-color: green; padding: 2px 4px; box-shadow: 1px 1px 2px black; } .explosion { color: orange; font-size: 22px; animation: explodeUp 0.4s ease-out forwards; } @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, -100%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -160%) scale(1.3); } } @keyframes explodeUp { 0% { opacity: 1; transform: translate(-50%, -100%) scale(0.8); } 100% { opacity: 0; transform: translate(-50%, -180%) scale(1.6); } } .bar-container { width: 200px; height: 16px; background-color: #ccc; border: 1px solid #999; border-radius: 20px; margin-bottom: 2px; position: relative; } .bar { height: 100%; border-radius: 20px; text-align: center; color: white; font-size: 12px; line-height: 16px; } .bar.hp { background-color: green; } .bar.hunger { background-color: skyblue; } p { font-size: 16px; line-height: 0.6; } </style>
+</head>
+<body>
+<div class="game-container" id="game"></div> ❤️ 体力: <div class="bar-container"><div id="hp-bar" class="bar hp"></div></div> 🍗 満腹度: <div class="bar-container"><div id="hunger-bar" class="bar hunger"></div></div>
+<p style="display:none;">❤️ 体力: <span id="hp">*</span> / <span id="maxhp">*</span>　🍗 満腹度: <span id="hunger">*</span> / <span id="maxhunger">*</span></p>
+<p>🔪 攻撃力: <span id="atk">*</span>　🎓 Lv: <span id="lv">1</span>　✨ EXP: <span id="exp">0</span></p>
+<p>⛰️ フロア: <span id="floor">1</span>　💎 スコア: <span id="score">0</span></p>
+<p>－－－－－－－－－</p>
+<p>矢印キーで移動／敵と隣接してたら攻撃！／.で休憩（<span id="restCycle"></span>ターンごとに回復）　🔼:次のフロアへ</p>
+<p>😊プレイヤー　👾敵　🍣体力回復　💎お宝！　🍞大きなパン（+50）　🥖パン（+20）</p>
+<script>
+
+// ヘルパー関数
+function randomInt(min, max) {
+	return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+// プレイヤークラス 
+class Player {
+	constructor(x, y, initialHP) {
+		this.x = x;
+		this.y = y;
+		this.hp = initialHP;
+		this.maxHp = initialHP;
+		this.attack = 2;
+		this.healAmount = 3;
+		this.level = 1;
+		this.exp = 0;
+		this.hunger = 100;
+		this.maxHunger = 100;
+	}
+}
+// 敵クラス 
+class Enemy {
+	constructor(x, y, hp) {
+		this.x = x;
+		this.y = y;
+		this.hp = hp;
+	}
+	takeDamage(damage) {
+		this.hp -= damage;
+	}
+}
+// マップ（ダンジョン）クラス 
+class DungeonMap {
+	constructor(width, height) {
+			this.width = width;
+			this.height = height;
+			this.grid = [];
+			this.visible = [];
+			this.rooms = [];
+			this.reset();
+		}
+		// マップデータの初期化 
+	reset() {
+			this.grid = Array.from({
+				length: this.height
+			}, () => Array(this.width).fill('🌳'));
+			this.visible = Array.from({
+				length: this.height
+			}, () => Array(this.width).fill(false));
+			this.rooms = [];
+		}
+		// 部屋を作成する 
+	createRoom() {
+			let w = randomInt(5, 10);
+			let h = randomInt(4, 8);
+			let x = randomInt(1, this.width - w - 1);
+			let y = randomInt(1, this.height - h - 1);
+			for (let i = y; i < y + h; i++) {
+				for (let j = x; j < x + w; j++) {
+					this.grid[i][j] = ' ';
+					// 空白タイル 
+				}
+			}
+			this.rooms.push({
+				x, y, w, h
+			});
+		}
+		// 2つの部屋を通路でつなぐ 
+	connectRooms(r1, r2) {
+			let x1 = r1.x + Math.floor(r1.w / 2);
+			let y1 = r1.y + Math.floor(r1.h / 2);
+			let x2 = r2.x + Math.floor(r2.w / 2);
+			let y2 = r2.y + Math.floor(r2.h / 2);
+			while (x1 !== x2) {
+				if (this.grid[y1][x1] === '🌳') this.grid[y1][x1] = ' ';
+				x1 += (x2 > x1) ? 1 : -1;
+			}
+			while (y1 !== y2) {
+				if (this.grid[y1][x1] === '🌳') this.grid[y1][x1] = ' ';
+				y1 += (y2 > y1) ? 1 : -1;
+			}
+		}
+		// ダンジョン全体を生成する 
+	generate() {
+			this.reset();
+			const roomCount = randomInt(3, 6);
+			for (let i = 0; i < roomCount; i++) {
+				this.createRoom();
+			}
+			for (let i = 0; i < this.rooms.length - 1; i++) {
+				this.connectRooms(this.rooms[i], this.rooms[i + 1]);
+			}
+		}
+		// 指定位置が含まれる部屋を明かす 
+	revealRoom(px, py) {
+			for (let room of this.rooms) {
+				if (px >= room.x && px < room.x + room.w && py >= room.y && py < room.y +
+					room.h) {
+					for (let i = room.y; i < room.y + room.h; i++) {
+						for (let j = room.x; j < room.x + room.w; j++) {
+							this.visible[i][j] = true;
+							const dirs = [
+								[0, -1],
+								[0, 1],
+								[-1, 0],
+								[1, 0]
+							];
+							for (let [dx, dy] of dirs) {
+								let nx = j + dx,
+									ny = i + dy;
+								if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height && this.grid[
+										ny][nx] === ' ') {
+									this.visible[ny][nx] = true;
+								}
+							}
+						}
+					}
+					return;
+				}
+			}
+		}
+		// プレイヤーの周囲を明かす 
+	revealAround(x, y) {
+		if (this.grid[y][x] === ' ') {
+			for (let dy = -1; dy <= 1; dy++) {
+				for (let dx = -1; dx <= 1; dx++) {
+					let nx = x + dx,
+						ny = y + dy;
+					if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height) {
+						this.visible[ny][nx] = true;
+					}
+				}
+			}
+		}
+	}
+}
+// ゲーム全体を管理するクラス 
+class Game {
+	constructor() {
+			// 定数や初期状態 
+			this.width = 40;
+			this.height = 32;
+			this.initialHP = 8;
+			this.floor = 1;
+			this.score = 0;
+			this.isGameOver = false;
+			this.generateEnemyCycle = [0, 30];
+			this.restCycle = [0, 5];
+			this.hungerCycle = [0, 5];
+			this.timeoutQueue = [];
+			this.acceptingInput = true;
+			// 各種エンティティの配列 
+			this.enemies = [];
+			this.items = [];
+			this.gems = [];
+			this.foods = [];
+			this.stairs = {
+				x: 0,
+				y: 0
+			};
+			// クラスのインスタンス 
+			this.player = new Player(0, 0, this.initialHP);
+			this.map = new DungeonMap(this.width, this.height);
+			// DOM要素の参照 
+			this.gameContainer = document.getElementById("game");
+			this.hpBar = document.getElementById("hp-bar");
+			this.hungerBar = document.getElementById("hunger-bar");
+			document.getElementById("restCycle").innerText = this.restCycle[1];
+			// 初回ダンジョン生成と描画 
+			this.generateDungeon(false);
+			this.render();
+			// キー入力イベントを登録 
+			document.addEventListener('keydown', (e) => this.handleKeyDown(e));
+		}
+		// タイムアウトのキュー管理 
+	queueTimeout(callback, delay) {
+			this.acceptingInput = false;
+			const id = setTimeout(() => {
+				callback();
+				this.timeoutQueue = this.timeoutQueue.filter(t => t !== id);
+				if (this.timeoutQueue.length === 0) this.acceptingInput = true;
+				this.render();
+			}, delay);
+			this.timeoutQueue.push(id);
+		}
+		// ダンジョン（マップ）生成。keepHPがtrueならHPやスコアを引き継ぐ 
+	generateDungeon(keepHP = false) {
+			const prevHP = this.player.hp;
+			const prevScore = this.score;
+			this.map.generate();
+			this.enemies = [];
+			this.items = [];
+			this.gems = [];
+			this.foods = [];
+			// 最初の部屋の座標にプレイヤーを配置し、周囲を明かす 
+			const firstRoom = this.map.rooms[0];
+			this.player.x = firstRoom.x + 1;
+			this.player.y = firstRoom.y + 1;
+			this.map.revealRoom(this.player.x, this.player.y);
+			this.map.revealAround(this.player.x, this.player.y);
+			if (!keepHP) {
+				this.player.hp = this.initialHP;
+				this.score = 0;
+				this.floor = 1;
+				this.player.hunger = this.player.maxHunger;
+			} else {
+				this.player.hp = prevHP;
+				this.score = prevScore;
+				this.floor++;
+			}
+			// 最後の部屋に階段を配置 
+			const lastRoom = this.map.rooms.at(-1);
+			this.stairs.x = lastRoom.x + 2;
+			this.stairs.y = lastRoom.y + 2;
+			this.map.grid[this.stairs.y][this.stairs.x] = '🔼';
+			// 敵のHPスケーリング用の倍率 
+			this.minMagnification = 1.1;
+			this.maxMagnification = 1.4;
+			// 各エンティティを配置 
+			this.placeEntities(this.enemies, randomInt(2, 4), "enemy");
+			this.placeEntities(this.items, randomInt(0, 2), "entity");
+			this.placeEntities(this.gems, randomInt(1, 3), "entity");
+			this.placeEntities(this.foods, randomInt(1, 2), "food");
+		}
+		// エンティティ（敵・アイテム・食料など）をランダムに配置する 
+	placeEntities(arr, count, type) {
+			for (let i = 0; i < count; i++) {
+				let x, y, hp;
+				do {
+					const room = this.map.rooms[randomInt(0, this.map.rooms.length - 1)];
+					x = randomInt(room.x + 1, room.x + room.w - 2);
+					y = randomInt(room.y + 1, room.y + room.h - 2);
+					if (type === "enemy") {
+						hp = randomInt(Math.round(Math.pow(this.floor, this.minMagnification)),
+							Math.round(Math.pow(this.floor, this.maxMagnification)));
+					}
+				} while (this.map.grid[y][x] !== ' ' || (x === this.player.x && y === this.player
+						.y));
+				if (type === "entity") {
+					arr.push({
+						x, y
+					});
+				} else if (type === "enemy") {
+					arr.push(new Enemy(x, y, hp));
+				} else if (type === "food") {
+					const kind = Math.random() < 0.7 ? "small" : "big";
+					arr.push({
+						x, y, kind
+					});
+				}
+			}
+		}
+		// UIのバーを更新 
+	updateBars() {
+			this.hpBar.style.width = `${(this.player.hp / this.player.maxHp) * 100}%`;
+			this.hpBar.textContent = `${this.player.hp}/${this.player.maxHp}`;
+			this.hungerBar.style.width =
+				`${(this.player.hunger / this.player.maxHunger) * 100}%`;
+			this.hungerBar.textContent =
+				`${this.player.hunger}/${this.player.maxHunger}`;
+			if (this.player.hp > this.player.maxHp / 2) {
+				this.hpBar.style.backgroundColor = "green";
+			} else if (this.player.hp > this.player.maxHp / 4) {
+				this.hpBar.style.backgroundColor = "orange";
+			} else {
+				this.hpBar.style.backgroundColor = "red";
+			}
+		}
+		// 経験値を獲得し、レベルアップ処理を行う 
+	gainExp(amount) {
+			this.player.exp += amount;
+			const expToNext = this.player.level * 10;
+			if (this.player.exp >= expToNext) {
+				this.player.exp -= expToNext;
+				this.player.level++;
+				this.player.attack++;
+				this.player.maxHp++;
+				this.player.healAmount++;
+				this.player.hp = this.player.maxHp;
+				this.showEffect(this.player.x, this.player.y, "LEVEL UP!", "heal");
+			}
+		}
+		// 食事処理 
+	playerEat(amount) {
+			this.player.hunger += amount;
+			if (this.player.hunger > this.player.maxHunger) this.player.hunger = this.player
+				.maxHunger;
+			this.showEffect(this.player.x, this.player.y, `+${amount}`, "food");
+		}
+		// 満腹度（ハンガー）チェック 
+	checkHunger() {
+			this.hungerCycle[0] = (this.hungerCycle[0] + 1) % this.hungerCycle[1];
+			if (this.hungerCycle[0] === 0) {
+				this.player.hunger--;
+				if (this.player.hunger < 0) this.player.hunger = 0;
+			}
+			if (this.player.hunger === 0) {
+				this.player.hp--;
+				this.showEffect(this.player.x, this.player.y, "餓死", "damage");
+			}
+		}
+		// 敵の移動処理 
+	moveEnemies(nextPlayerX, nextPlayerY) {
+			this.enemies.forEach((enemy, idx) => {
+				if (enemy.hp <= 0) return;
+				const dx = Math.abs(enemy.x - this.player.x);
+				const dy = Math.abs(enemy.y - this.player.y);
+				this.queueTimeout(() => {
+					if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
+						this.player.hp--;
+						this.showEffect(this.player.x, this.player.y, "-1", "damage-me");
+						return;
+					}
+				}, 100);
+				const dirX = Math.sign(this.player.x - enemy.x);
+				const dirY = Math.sign(this.player.y - enemy.y);
+				const nx = enemy.x + dirX,
+					ny = enemy.y + dirY;
+				const canMoveX = this.map.grid[enemy.y][nx] !== '🌳' && !this.enemies.some(
+					e => e.x === nx && e.y === enemy.y) && !(nx === this.player.x && enemy.y ===
+					this.player.y) && !(nx === nextPlayerX && enemy.y === nextPlayerY);
+				const canMoveY = this.map.grid[ny] ? .[enemy.x] !== '🌳' && !this.enemies
+					.some(e => e.x === enemy.x && e.y === ny) && !(enemy.x === this.player.x &&
+						ny === this.player.y) && !(enemy.x === nextPlayerX && ny ===
+						nextPlayerY);
+				if (canMoveX && canMoveY) {
+					Math.random() < 0.5 ? enemy.x += dirX : enemy.y += dirY;
+				} else if (canMoveX) {
+					enemy.x += dirX;
+				} else if (canMoveY) {
+					enemy.y += dirY;
+				}
+			});
+		}
+		// 敵にダメージを与え、HPが0以下なら倒す 
+	damageEnemy(enemy, index) {
+			enemy.takeDamage(this.player.attack);
+			this.showEffect(enemy.x, enemy.y, `-${this.player.attack}`, "damage");
+			if (enemy.hp <= 0) {
+				this.showEffect(enemy.x, enemy.y, "💥", "explosion");
+				this.enemies.splice(index, 1);
+				this.score += 50;
+				this.gainExp(5);
+			}
+		}
+		// 各種エンティティとの衝突判定 
+	checkCollisions() {
+			this.items = this.items.filter(item => {
+				if (item.x === this.player.x && item.y === this.player.y) {
+					this.onHeal();
+					return false;
+				}
+				return true;
+			});
+			this.gems = this.gems.filter(gem => {
+				if (gem.x === this.player.x && gem.y === this.player.y) {
+					this.score += 100;
+					return false;
+				}
+				return true;
+			});
+			this.foods = this.foods.filter(food => {
+				if (food.x === this.player.x && food.y === this.player.y) {
+					const amount = food.kind === "big" ? 50 : 20;
+					this.playerEat(amount);
+					return false;
+				}
+				return true;
+			});
+			setTimeout(() => {
+				if (this.player.hp <= 0) {
+					this.isGameOver = true;
+					this.timeoutQueue.forEach(id => clearTimeout(id));
+					this.timeoutQueue = [];
+					this.acceptingInput = true;
+					this.restCycle[0] = 0;
+					this.generateEnemyCycle[0] = 0;
+					this.hungerCycle[0] = 0;
+					alert("倒れてしまった！");
+					this.generateDungeon(false);
+					this.isGameOver = false;
+					this.render();
+				}
+			}, 100);
+		}
+		// 画面上にエフェクト（浮遊テキスト）を表示する 
+	showEffect(x, y, text, type = "damage") {
+			const spans = this.gameContainer.children;
+			const index = y * (this.width + 1) + x;
+			if (!spans[index]) return;
+			const target = spans[index];
+			const rect = target.getBoundingClientRect();
+			const fx = document.createElement("div");
+			fx.className = type;
+			fx.textContent = text;
+			if (type === "explosion") {
+				fx.style.left = `${rect.left + rect.width / 2 + window.scrollX}px`;
+				fx.style.top = `${rect.top + window.scrollY - rect.height * 0.6 + 30}px`;
+			} else {
+				fx.style.left =
+					`${rect.left + rect.width / 2 + window.scrollX + randomInt(-30, 30)}px`;
+				fx.style.top = `${rect.top + window.scrollY - rect.height * 0.6}px`;
+			}
+			document.body.appendChild(fx);
+			setTimeout(() => fx.remove(), 1000);
+		}
+		// 回復処理（アイテム取得時など） 
+	onHeal() {
+			this.player.hp += this.player.healAmount;
+			if (this.player.hp > this.player.maxHp) this.player.hp = this.player.maxHp;
+			this.showEffect(this.player.x, this.player.y, `+${this.player.healAmount}`,
+				"heal");
+		}
+		// キー入力処理（移動、攻撃、休憩など） 
+	handleKeyDown(event) {
+			if (this.isGameOver || !this.acceptingInput) return;
+			let dx = 0,
+				dy = 0;
+			if (event.key === 'ArrowUp') dy = -1;
+			else if (event.key === 'ArrowDown') dy = 1;
+			else if (event.key === 'ArrowLeft') dx = -1;
+			else if (event.key === 'ArrowRight') dx = 1;
+			else if (event.key === '.') {
+				this.restCycle[0] = (this.restCycle[0] + 1) % this.restCycle[1];
+				if (this.restCycle[0] === 0 && this.player.hp < this.player.maxHp) {
+					this.player.hp++;
+				}
+			} else return;
+			this.generateEnemyCycle[0] = (this.generateEnemyCycle[0] + 1) % this.generateEnemyCycle[
+				1];
+			const tx = this.player.x + dx;
+			const ty = this.player.y + dy;
+			let attacked = false;
+			// 敵との衝突判定（攻撃処理） 
+			for (let i = 0; i < this.enemies.length; i++) {
+				if (this.enemies[i].x === tx && this.enemies[i].y === ty) {
+					attacked = true;
+					this.queueTimeout(() => {
+						this.damageEnemy(this.enemies[i], i);
+					}, 50);
+					break;
+				}
+			}
+			if (!attacked && this.map.grid[ty] ? .[tx] !== '🌳' && !this.enemies.some(e =>
+					e.x === tx && e.y === ty)) {
+				this.player.x = tx;
+				this.player.y = ty;
+				this.map.visible[ty][tx] = true;
+				this.map.revealRoom(tx, ty);
+				this.map.revealAround(tx, ty);
+			}
+			if (this.player.x === this.stairs.x && this.player.y === this.stairs.y) {
+				this.generateDungeon(true);
+				return;
+			}
+			this.checkHunger();
+			this.moveEnemies(tx, ty);
+			this.checkCollisions();
+			if (this.generateEnemyCycle[0] === 0) {
+				this.placeEntities(this.enemies, randomInt(1, 3), "enemy");
+			}
+			this.render();
+		}
+		// ゲーム画面の再描画 
+	render() {
+		let html = '';
+		for (let y = 0; y < this.height; y++) {
+			for (let x = 0; x < this.width; x++) {
+				if (!this.map.visible[y][x]) {
+					html += `<span class="wall">🌳</span>`;
+					continue;
+				}
+				let classList = '';
+				let tile = this.map.grid[y][x];
+				if (this.player.x === x && this.player.y === y) {
+					tile = '😊';
+				} else {
+					let drawn = false;
+					// 食料を描画 
+					for (let food of this.foods) {
+						if (food.x === x && food.y === y) {
+							tile = food.kind === "big" ? "🍞" : "🥖";
+							drawn = true;
+							break;
+						}
+					}
+					// 敵を描画 
+					if (!drawn) {
+						for (let enemy of this.enemies) {
+							if (enemy.x === x && enemy.y === y) {
+								tile = '👾';
+								drawn = true;
+								break;
+							}
+						}
+					}
+					// アイテム・お宝を描画 
+					if (!drawn) {
+						for (let item of this.items) {
+							if (item.x === x && item.y === y) {
+								tile = '🍣';
+								drawn = true;
+								break;
+							}
+						}
+						for (let gem of this.gems) {
+							if (gem.x === x && gem.y === y) {
+								tile = '💎';
+								drawn = true;
+								break;
+							}
+						}
+						if (this.stairs.x === x && this.stairs.y === y) tile = '🔼';
+					}
+				}
+				html += `<span class="${classList}">${tile}</span>`;
+			}
+			html += '<br>';
+		}
+		this.gameContainer.innerHTML = html;
+		// UI情報の更新 
+		document.getElementById('hp').innerText = this.player.hp;
+		document.getElementById('maxhp').innerText = this.player.maxHp;
+		document.getElementById('atk').innerText = this.player.attack;
+		document.getElementById('lv').innerText = this.player.level;
+		document.getElementById('exp').innerText = this.player.exp;
+		document.getElementById('floor').innerText = this.floor;
+		document.getElementById('score').innerText = this.score;
+		document.getElementById('hunger').innerText = this.player.hunger;
+		document.getElementById('maxhunger').innerText = this.player.maxHunger;
+		this.updateBars();
+	}
+}
+// インスタンス生成してゲーム開始 
+new Game();
+</script>
+</body>
+</html> 
