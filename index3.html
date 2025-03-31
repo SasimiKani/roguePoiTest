@@ -8,8 +8,9 @@
     * { user-select: none; }
     /* 元のスタイル */
     body { font-family: monospace; position: relative; }
-    .game-container { font-size: 16px; line-height: 1.2; white-space: pre; position: relative; }
+    .game-container { font-size: 16px; line-height: 1.2; white-space: pre; position: relative; float: left; }
     .game-container span { display: inline-block; width: 2.2ch; text-align: center; transition: all 0.1s; }
+    .ui-container { margin-left: 10px; float: left; }
     .wall { background-color: #C4DD87; display: inline-block; height: 20px; }
     .hit { background-color: red !important; color: white; }
     .shake { transform: translateY(-2px); }
@@ -51,16 +52,18 @@
 <body>
   <div class="game-container" id="game"></div>
   <!-- UIバー -->
-  ❤️ 体力: <div class="bar-container"><div id="hp-bar" class="bar hp"></div></div>
-  🍗 満腹度: <div class="bar-container"><div id="hunger-bar" class="bar hunger"></div></div>
-  <p style="display:none;">❤️ 体力: <span id="hp">*</span> / <span id="maxhp">*</span>　🍗 満腹度: <span id="hunger">*</span> / <span id="maxhunger">*</span></p>
-  <p>🔪 攻撃力: <span id="atk">*</span>　🎓 Lv: <span id="lv">1</span>　✨ EXP: <span id="exp">0</span></p>
-  <p>⛰️ フロア: <span id="floor">1</span>　💎 スコア: <span id="score">0</span></p>
-  <p>－－－－－－－－－</p>
-  <p>矢印キーで移動／敵と隣接してたら攻撃！／.で休憩（<span id="restCycle"></span>ターンごとに回復）　🔼:次のフロアへ</p>
-  <p>※ Shift＋方向キーで斜め移動、eキーでインベントリ表示</p>
-  <p>※ インベントリ内のアイテムは「パン」「大きなパン」など日本語表記</p>
-  <p>😊プレイヤー　👾敵　🍣体力回復　💎お宝！</p>
+  <div class="ui-container">
+    ❤️ 体力: <div class="bar-container"><div id="hp-bar" class="bar hp"></div></div>
+    🍗 満腹度: <div class="bar-container"><div id="hunger-bar" class="bar hunger"></div></div>
+    <p style="display:none;">❤️ 体力: <span id="hp">*</span> / <span id="maxhp">*</span>　🍗 満腹度: <span id="hunger">*</span> / <span id="maxhunger">*</span></p>
+    <p>🔪 攻撃力: <span id="atk">*</span>　🎓 Lv: <span id="lv">1</span>　✨ EXP: <span id="exp">0</span></p>
+    <p>⛰️ フロア: <span id="floor">1</span>　💎 スコア: <span id="score">0</span></p>
+    <p>－－－－－－－－－</p>
+    <p>矢印キーで移動／敵と隣接してたら攻撃！／.で休憩（<span id="restCycle"></span>ターンごとに回復）　🔼:次のフロアへ</p>
+    <p>※ Shift＋方向キーで斜め移動、eキーでインベントリ表示</p>
+    <p>※ インベントリ内のアイテムは「パン」「大きなパン」など日本語表記</p>
+    <p>😊プレイヤー　👾敵　🍣体力回復　💎お宝！</p>
+  </div>
   
   <script>
     // ---------------- Configuration ----------------
@@ -433,6 +436,13 @@
                     break;
                   }
                 }
+                for (let gem of this.gems) {
+                  if (gem.x === x && gem.y === y) {
+                    tile = '💎';
+                    drawn = true;
+                    break;
+                  }
+                }
                 if (!drawn && this.stairs.x === x && this.stairs.y === y) {
                   tile = '🔼';
                 }
@@ -602,6 +612,8 @@
               if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
               EffectsManager.showEffect(game.gameContainer, game.player.x, game.player.y, "+3", "heal");
             }));
+          } else if (type === "entity") {
+            arr.push(new BaseEntity(x, y));
           } else if (type === "enemy") {
             arr.push(new Enemy(x, y, hp));
           } else if (type === "food") {
