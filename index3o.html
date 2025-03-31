@@ -114,17 +114,47 @@
       }
     }
 
-    // ---------------- Enemy Class ----------------
+    // ---------------- Enemy Classes ----------------
     class Enemy extends BaseEntity {
-      constructor(x, y, hp, tile='👾') {
+      constructor(x, y, hp, atk=1, tile='👾') {
         super(x, y, tile=tile);
         this.hp = hp;
-        this.tile = tile;
+        this.atk = atk;
       }
       takeDamage(damage) {
         this.hp -= damage;
       }
     }
+    class EnemyLarvae extends Enemy {
+      constructor(x, y, hp) {
+        super(x, y, hp, /* atk = */ 1, '🐛');
+      }
+    }
+    class EnemyAnt extends Enemy {
+      constructor(x, y, hp) {
+        super(x, y, hp, /* atk = */ 2, '🐜');
+      }
+    }
+    class EnemyCrayfish extends Enemy {
+      constructor(x, y, hp) {
+        super(x, y, hp, /* atk = */ 3, '🦞');
+      }
+    }
+    // フロアごとに出現可能な敵クラスのリスト
+    // ※必要に応じてフロア毎の条件に合わせたリストを用意することも可能です
+    const enemyList = (floor) => {
+      if ([1, ].includes(floor)) {
+        return [Enemy, EnemyLarvae];
+      }
+      if ([2, ].includes(floor)) {
+        return [Enemy, EnemyLarvae, EnemyAnt];
+      }
+      if ([3, ].includes(floor)) {
+        return [EnemyLarvae, EnemyAnt, EnemyCrayfish];
+      }
+      // default
+      return [EnemyAnt, EnemyCrayfish];
+    };
 
     // ---------------- InventoryItem Class ----------------
     class InventoryItem extends BaseEntity {
@@ -623,7 +653,10 @@
           } else if (type === "entity") {
             arr.push(new BaseEntity(x, y));
           } else if (type === "enemy") {
-            arr.push(new Enemy(x, y, hp));
+            // enemyList からランダムに敵クラスを選択してインスタンス生成
+            const enemys = enemyList(this.floor);
+            const EnemyClass = enemys[randomInt(0, enemys.length - 1)];
+            arr.push(new EnemyClass(x, y, hp));
           } else if (type === "food") {
             if (Math.random() < 0.7) {
               arr.push(new InventoryItem(x, y, "パン", '🥖', function(game) {
@@ -646,13 +679,17 @@
         this.player.exp += amount;
         const expToNext = this.player.level * 10;
         if (this.player.exp >= expToNext) {
+          let upAtk, upHp;
+          
           this.player.exp -= expToNext;
           this.player.level++;
-          this.player.attack++;
-          this.player.maxHp++;
+          this.player.attack += (upAtk = randomInt(1, 3));
+          this.player.maxHp += (upHp = randomInt(2, 4));
           this.player.healAmount++;
           this.player.hp = this.player.maxHp;
           EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, "LEVEL UP!", "heal");
+          this.queueTimeout(() => { EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, `HP +${upHp}`, "heal"); }, 500);
+          this.queueTimeout(() => { EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, `攻撃力 +${upAtk}`, "heal"); }, 1000);
         }
       }
 
@@ -682,8 +719,8 @@
           this.queueTimeout(() => {
             if (enemy.hp <= 0) return;
             if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
-              this.player.hp--;
-              EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, "-1", "damage-me");
+              this.player.hp -= enemy.atk;
+              EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me");
               return;
             }
           }, 100);
