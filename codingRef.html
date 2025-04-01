@@ -2,9 +2,9 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>ローグっぽい何か コード解説ドキュメント（最新版）</title>
+  <title>ローグっぽい何か コード解説ドキュメント（最新版・UI改善反映）</title>
   <style>
-    /* 楽しくポップな全体スタイル */
+    /* ポップで楽しいスタイル */
     body {
       font-family: 'Comic Sans MS', cursive, sans-serif;
       background: radial-gradient(circle at top left, #ffebcd, #f4a460);
@@ -72,21 +72,21 @@
   </style>
 </head>
 <body>
-  <h1>ローグっぽい何か コード解説ドキュメント（最新版）</h1>
+  <h1>ローグっぽい何か コード解説ドキュメント（最新版・UI改善反映）</h1>
   <p>
-    この解説書は、HTML/CSS/JavaScript で実装されたローグライクゲームの最新版ソースコード（インベントリ統合版）に基づいています。基本部分の構造、応用的な処理、そして今回追加されたインベントリシステムについて詳しく解説しています。（&#8203;:contentReference[oaicite:2]{index=2}&#8203;:contentReference[oaicite:3]{index=3}）
+    本解説書は、最新版のソースコード「インベントリ統合版・修正済み」を基に、基本機能、応用的な処理、インベントリ統合、そして今回大幅に改善されたUIについて詳しく解説しています。新UIでは、従来のシンプルなレイアウトから、ダークテーマ・サイドバー・ミニマップの導入により、プレイヤーの視認性や操作性が向上しています。
   </p>
   
   <!-- 1. 基本 -->
   <div class="section">
     <h2>1. 基本</h2>
     <p>
-      このゲームは、HTML上にゲーム画面（グリッド状のタイル）とUIバーを配置し、JavaScriptでダンジョン生成やターン進行、キャラクターの移動、敵との衝突判定などの基本ロジックを実装しています。
+      ゲームはHTML上にグリッド状のゲーム画面とUIバーを配置し、JavaScriptでダンジョン生成、ターン進行、キャラクター移動、衝突判定などの基本ロジックを実装しています。
     </p>
     
-    <h3>1.1 CONFIG オブジェクト</h3>
+    <h3>1.1 CONFIG と定数</h3>
     <p>
-      ゲーム全体のパラメータ（マップサイズ、初期体力、各種ターンサイクル、インベントリの最大数など）を管理する定数オブジェクトです。
+      ゲーム全体のパラメータ（マップサイズ、初期体力、ターンサイクル、インベントリ上限など）およびタイル表示用の定数を管理します。
     </p>
     <pre><code>const CONFIG = {
   WIDTH: 40,
@@ -97,25 +97,32 @@
   HUNGER_CYCLE: 5,
   MIN_ENEMY_MULTIPLIER: 1.1,
   MAX_ENEMY_MULTIPLIER: 1.4,
-  INVENTORY_MAX: 10
+  INVENTORY_MAX: 10,
+  VIEW_RADIUS: 7  // プレイヤー周囲7マス（計15×15表示）
+};
+
+const MAP_TILE = {
+  WALL: '🌳',
+  STEPS: '🔼'
 };</code></pre>
     
     <h3>1.2 基本クラス群</h3>
     <p>
-      ゲーム内のエンティティは、基本となる <code>BaseEntity</code> クラスから派生しています。ここでは、<code>Player</code>、<code>Enemy</code> など、基本的なキャラクターの管理を行います。
+      各エンティティは <code>BaseEntity</code> を基に実装され、<code>Player</code>、<code>Enemy</code>、<code>InventoryItem</code> など、ゲーム内の各要素の状態を管理します。
     </p>
-    <pre><code>// BaseEntity: 全エンティティの基本クラス
+    <pre><code>// BaseEntity
 class BaseEntity {
-  constructor(x, y) {
+  constructor(x, y, tile) {
     this.x = x;
     this.y = y;
+    this.tile = tile;
   }
 }
 
-// Player: プレイヤーの情報と能力
+// Player: プレイヤーの状態
 class Player extends BaseEntity {
-  constructor(x, y, initialHP) {
-    super(x, y);
+  constructor(x, y, initialHP, tile = '😊') {
+    super(x, y, tile);
     this.hp = initialHP;
     this.maxHp = initialHP;
     this.attack = 2;
@@ -124,52 +131,17 @@ class Player extends BaseEntity {
     this.exp = 0;
     this.hunger = 100;
     this.maxHunger = 100;
-    this.inventory = []; // インベントリ（最大10個）
+    this.inventory = []; // 最大10個
   }
 }
 
-// Enemy: 敵キャラクター
-class Enemy extends BaseEntity {
-  constructor(x, y, hp) {
-    super(x, y);
-    this.hp = hp;
+// InventoryItem: アイテムの定義
+class InventoryItem extends BaseEntity {
+  constructor(x, y, name, tile, useFunction) {
+    super(x, y, tile);
+    this.name = name;
+    this.use = useFunction;
   }
-  takeDamage(damage) {
-    this.hp -= damage;
-  }
-}</code></pre>
-    
-    <h3>1.3 DungeonMap クラス</h3>
-    <p>
-      ダンジョンの自動生成、部屋作成、部屋同士の接続、視界の管理などを行うクラスです。各部屋はランダムなサイズ・位置で生成され、通路で接続されます。
-    </p>
-    <pre><code>class DungeonMap {
-  constructor(width, height) {
-    this.width = width;
-    this.height = height;
-    this.grid = [];
-    this.visible = [];
-    this.rooms = [];
-    this.reset();
-  }
-  reset() {
-    this.grid = Array.from({ length: this.height }, () => Array(this.width).fill('🌳'));
-    this.visible = Array.from({ length: this.height }, () => Array(this.width).fill(false));
-    this.rooms = [];
-  }
-  createRoom() {
-    let w = randomInt(5, 10);
-    let h = randomInt(4, 8);
-    let x = randomInt(1, this.width - w - 1);
-    let y = randomInt(1, this.height - h - 1);
-    for (let i = y; i < y + h; i++) {
-      for (let j = x; j < x + w; j++) {
-        this.grid[i][j] = ' '; // 空白タイル
-      }
-    }
-    this.rooms.push({ x, y, w, h });
-  }
-  // connectRooms, generate, revealRoom, revealAround などのメソッド...
 }</code></pre>
   </div>
   
@@ -177,51 +149,55 @@ class Enemy extends BaseEntity {
   <div class="section">
     <h2>2. 応用</h2>
     <p>
-      基本部分に加え、ゲーム内の動作を支える応用処理として、ターン進行や非同期処理、敵の移動アルゴリズム、衝突判定などのロジックが実装されています。
+      応用的な処理では、ダンジョン生成、敵の行動フェーズの分離、非同期処理によるターン進行などが実装されています。敵は攻撃フェーズと移動フェーズに分かれ、各敵に設定された行動回数で動作が管理されています。
     </p>
     
-    <h3>2.1 ターン進行と非同期処理</h3>
+    <h3>2.1 ダンジョン生成</h3>
     <p>
-      各ターンごとに敵の生成、ハンガーの更新、休憩による体力回復などが行われ、<code>advanceTurn()</code> や <code>queueTimeout()</code> でタイミングを管理しています。
+      <code>DungeonMap</code> クラスは部屋生成、部屋の接続、視界の管理を行い、ランダムなダンジョンを構築します。
     </p>
-    <pre><code>class Game {
-  // ターン進行処理
-  advanceTurn() {
-    this.generateEnemyCycle[0] = (this.generateEnemyCycle[0] + 1) % this.generateEnemyCycle[1];
-    this.hungerCycle[0] = (this.hungerCycle[0] + 1) % this.hungerCycle[1];
-  }
-
-  // 非同期処理で動作のタイミングを調整
-  queueTimeout(callback, delay) {
-    this.acceptingInput = false;
-    const id = setTimeout(() => {
-      callback();
-      this.timeoutQueue = this.timeoutQueue.filter(t => t !== id);
-      if (this.timeoutQueue.length === 0) this.acceptingInput = true;
-      this.render();
-    }, delay);
-    this.timeoutQueue.push(id);
-  }
+    <pre><code>class DungeonMap {
+  constructor(width, height) { ... }
+  reset() { ... }
+  createRoom() { ... }
+  connectRooms(r1, r2) { ... }
+  generate() { ... }
+  revealRoom(px, py) { ... }
+  revealAround(x, y) { ... }
 }</code></pre>
     
-    <h3>2.2 敵のAIと衝突判定</h3>
+    <h3>2.2 敵の行動フェーズ</h3>
     <p>
-      敵はプレイヤーの位置に基づき移動し、隣接した場合は攻撃を仕掛けます。敵の移動方向はプレイヤーへのベクトル計算により決定され、障害物チェックも行われます。
+      敵は「攻撃フェーズ」と「移動フェーズ」に分かれ、各フェーズで行動回数が減少します。行動間のタイミングは <code>queueTimeout()</code> によって調整され、非同期的に実行されます。
     </p>
-    <pre><code>moveEnemies(nextPlayerX, nextPlayerY) {
-  this.enemies.forEach((enemy, idx) => {
+    <pre><code>// 敵の攻撃フェーズ
+enemyAttackPhase() {
+  this.enemies.forEach((enemy) => {
+    if (enemy.hp <= 0 || enemy.action === 0) return;
     const dx = Math.abs(enemy.x - this.player.x);
     const dy = Math.abs(enemy.y - this.player.y);
-    this.queueTimeout(() => {
-      if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
-        this.player.hp--;
-        EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, "-1", "damage-me");
-        return;
-      }
-    }, 100);
+    if ((dx <= 1 && dy <= 1)) {
+      enemy.action--;
+      this.queueTimeout(() => {
+        this.player.hp -= enemy.atk;
+        EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me");
+      }, this.actionCount * this.actionTime);
+      this.actionCount++;
+    }
+  });
+}
+
+// 敵の移動フェーズ
+enemyMovementPhase(nextPlayerX, nextPlayerY) {
+  this.enemies.forEach((enemy) => {
+    if (enemy.hp <= 0 || enemy.action === 0) return;
     const dirX = Math.sign(this.player.x - enemy.x);
     const dirY = Math.sign(this.player.y - enemy.y);
-    // 壁や他の敵との衝突チェックの処理...
+    if (/* 移動可能条件 */) {
+      enemy.action--;
+      enemy.x += dirX;
+      enemy.y += dirY;
+    }
   });
 }</code></pre>
   </div>
@@ -230,145 +206,125 @@ class Enemy extends BaseEntity {
   <div class="section">
     <h2>3. インベントリ統合</h2>
     <p>
-      今回の最新版では、プレイヤーがマップ上のアイテム（例：すし、パン、大きなパン）を拾い、インベントリに統合できるようになりました。<code>InventoryItem</code> クラスを導入し、アイテムの使用やドロップが可能です。
+      プレイヤーはマップ上のアイテム（例：「すし」「パン」「大きなパン」）を拾い、最大 <code>CONFIG.INVENTORY_MAX</code> 個まで所持できます。インベントリはオーバーレイ形式で表示され、上下キーで選択、<code>u</code> で使用、<code>d</code> でドロップが可能です。
     </p>
-    
-    <h3>3.1 InventoryItem クラス</h3>
-    <p>
-      アイテムの名前と使用時の動作を定義するクラスです。使用時には、プレイヤーの体力や満腹度を回復する効果が実装されています。
-    </p>
-    <pre><code>// InventoryItem: インベントリ用アイテム
-class InventoryItem extends BaseEntity {
-  constructor(x, y, name, useFunction) {
-    super(x, y);
-    this.name = name;
-    this.use = useFunction; // 使用時の処理
-  }
-}</code></pre>
-    
-    <h3>3.2 インベントリのピックアップと表示</h3>
-    <p>
-      プレイヤーがマップ上のアイテムに接触すると、所持数（最大10個）内であればインベントリに追加され、アイテム取得時にはエフェクトが表示されます。また、<code>render()</code> 内でインベントリが開いている場合、オーバーレイ形式で所持品が表示されます。
-    </p>
-    <pre><code>// updateData 内でのアイテムピックアップ処理
+    <pre><code>// アイテム取得処理（updateData内）
 this.items = this.items.filter(item => {
   if (item.x === this.player.x && item.y === this.player.y) {
     if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
-      this.player.inventory.push(item);
       EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, "GET");
+      this.player.inventory.push(item);
       return false;
     }
   }
   return true;
 });
 
-// render() 内のインベントリ表示
+// インベントリ表示（render内）
 if (this.inventoryOpen) {
-  html += `<div class="inventory-modal">`;
-  html += `<h3>所持品 (${this.player.inventory.length}/${CONFIG.INVENTORY_MAX})</h3>`;
+  let invHtml = `<div class="inventory-modal">`;
+  invHtml += `<h3>所持品 (${this.player.inventory.length}/${CONFIG.INVENTORY_MAX})</h3>`;
   if (this.player.inventory.length === 0) {
-    html += `<p>(なし)</p>`;
+    invHtml += `<p>(なし)</p>`;
   } else {
-    html += `<ul>`;
+    invHtml += `<ul>`;
     for (let i = 0; i < this.player.inventory.length; i++) {
       let selected = (i === this.inventorySelection) ? ">> " : "";
       let itemName = this.player.inventory[i].name || "アイテム";
-      html += `<li class="${(i===this.inventorySelection) ? 'selected' : ''}">${selected}${itemName}</li>`;
+      invHtml += `<li class="${(i===this.inventorySelection) ? 'selected' : ''}">${selected}${itemName}</li>`;
     }
-    html += `</ul>`;
-    html += `<p>u: 使用, d: 置く, Esc/e: 閉じる</p>`;
+    invHtml += `</ul>`;
+    invHtml += `<p>u: 使用, d: 置く, Esc/e: 閉じる</p>`;
   }
-  html += `</div>`;
+  invHtml += `</div>`;
+  this.gameContainer.innerHTML += invHtml;
 }</code></pre>
-    
-    <h3>3.3 インベントリ操作の入力処理</h3>
+  </div>
+  
+  <!-- 4. UIの改善 -->
+  <div class="section">
+    <h2>4. UIの改善</h2>
     <p>
-      インベントリ表示中は、上下キーで選択、<code>u</code> で使用、<code>d</code> でドロップ、<code>Esc</code> または <code>e</code> で閉じる操作が可能です。<code>processInventoryInput()</code> により処理されます。
+      今回のUI改善では、従来のシンプルな画面表示から大幅にレイアウトを見直し、以下の点を強化しました。
     </p>
-    <pre><code>processInventoryInput(event) {
-  if (event.key === 'ArrowUp') {
-    if (this.player.inventory.length > 0) {
-      this.inventorySelection = (this.inventorySelection - 1 + this.player.inventory.length) % this.player.inventory.length;
-      this.render();
-    }
-    return;
-  }
-  if (event.key === 'ArrowDown') {
-    if (this.player.inventory.length > 0) {
-      this.inventorySelection = (this.inventorySelection + 1) % this.player.inventory.length;
-      this.render();
-    }
-    return;
-  }
-  if (event.key === 'u') {
-    let item = this.player.inventory[this.inventorySelection];
-    if (item && item.use) {
-      item.use(this);
-      this.player.inventory.splice(this.inventorySelection, 1);
-      if (this.inventorySelection >= this.player.inventory.length) {
-        this.inventorySelection = this.player.inventory.length - 1;
-      }
-    }
-    this.inventoryOpen = false;
-    this.render();
-    return;
-  }
-  if (event.key === 'd') {
-    let item = this.player.inventory[this.inventorySelection];
-    if (item) {
-      item.x = this.player.x;
-      item.y = this.player.y;
-      this.items.push(item);
-      this.player.inventory.splice(this.inventorySelection, 1);
-      if (this.inventorySelection >= this.player.inventory.length) {
-        this.inventorySelection = this.player.inventory.length - 1;
-      }
-    }
-    this.inventoryOpen = false;
-    this.render();
-    return;
-  }
-  if (event.key === 'Escape' || event.key === 'e') {
-    this.inventoryOpen = false;
-    this.render();
-    return;
-  }
-}</code></pre>
-    
+    <ul>
+      <li><strong>全体レイアウト：</strong> Flexbox を利用して、ゲーム画面とUIサイドバーを横並びに配置。背景はダークテーマを採用し、視認性を向上。</li>
+      <li><strong>UIサイドバー：</strong> HP、満腹度、攻撃力、レベル、EXP、スコアなどの各種ステータスバーを分かりやすく表示。各バーには進捗に応じた色分け（緑→オレンジ→赤）が施されています。</li>
+      <li><strong>ミニマップ：</strong> ゲーム全体のマップを小さなセル（グリッドレイアウト）で表示し、プレイヤーや敵、アイテム、階段の位置がひと目で分かるようになりました。</li>
+      <li><strong>インベントリ表示：</strong> オーバーレイ形式で所持品を表示し、直感的なアイテム管理を実現。上下キーで選択、使用やドロップの操作が可能です。</li>
+    </ul>
+    <pre><code>// rogue3o.html（UI改善版）の特徴
+// ・全体レイアウトは flex コンテナ内に配置（.container）
+// ・ゲーム画面 (.game-container) と UIサイドバー (.ui-container) に分離
+// ・ミニマップは grid レイアウトで描画し、各セルの色で状態を表現
+// ・UIサイドバーはダークテーマで、各種ステータスバーを表示
+</code></pre>
     <div class="note">
       <p>
-        インベントリ機能の追加により、プレイヤーはマップ上でアイテムを集め、使用やドロップといった操作が可能になりました。これにより、戦略性がさらに向上しています。
+        新UIにより、プレイヤーの状況把握や操作性が向上し、より直感的なゲームプレイが可能になりました。
       </p>
     </div>
   </div>
   
-  <!-- 4. 拡張 -->
+  <!-- 5. 敵の種類と拡張 -->
   <div class="section">
-    <h2>4. 拡張</h2>
+    <h2>5. 敵の種類と拡張</h2>
     <p>
-      現在のコードはシンプルな基盤を構築していますが、今後さらなる拡張が可能です。以下は、いくつかの拡張アイディアです。
+      今回の最新版では、多彩な敵キャラクター（例：スライム、コウモリ、ゴブリン、クモ、魔法使いなど）が実装され、各敵に出現可能フロアの範囲や特殊能力（再生、回避、毒付与など）が設定されています。現在のフロアに応じた敵リストからランダムに選択され、戦略性が向上しています。
     </p>
-    <ul>
-      <li>新たな敵キャラクターや特殊能力を持つボスの実装</li>
-      <li>アイテム効果の多様化（攻撃強化、シールド、スピードアップなど）</li>
-      <li>ダンジョン生成アルゴリズムの改良（迷宮や隠し部屋の追加）</li>
-      <li>UIやサウンドエフェクトの強化（Canvas API や Web Audio API の活用）</li>
-      <li>マルチプレイヤー機能の検討</li>
-    </ul>
+    <pre><code>// 例：EnemySlime（攻撃後に再生）
+class EnemySlime extends Enemy {
+  static floorRange = [5, 8];
+  constructor(x, y, hp) {
+    super(x, y, hp + 5, 1, '🟩');
+    this.regenerationRate = 1;
+  }
+  takeDamage(damage) {
+    super.takeDamage(damage);
+    if (this.hp > 0) {
+      this.hp += this.regenerationRate;
+    }
+  }
+}
+
+// 現在のフロアに適した敵リストの生成
+const enemyList = (floor) => {
+  const enemyClasses = [
+    EnemyLarvae,
+    EnemyAnt,
+    EnemyCrayfish,
+    EnemySlime,
+    EnemyBat,
+    EnemyGoblin,
+    EnemySkeleton,
+    EnemySpider,
+    EnemyWizard,
+  ];
+  return enemyClasses.filter(c =>
+    c.floorRange[0] <= floor && (c.floorRange[1] == null || floor <= c.floorRange[1])
+  );
+};
+</code></pre>
   </div>
   
   <h2>まとめ</h2>
   <p>
-    この最新版のゲームソースコードは、基本的なローグライクの要素に加え、インベントリ統合などの新機能を搭載しています。各セクションのサンプルコードを参考に、さらなる機能追加や改良を検討してください。楽しく、かつ戦略性のあるゲーム作りを目指しましょう！
+    この最新版のゲームソースコードは、基本的なローグライクの要素に加え、豊富な敵キャラクター、非同期処理による行動フェーズの制御、インベントリ統合、そして大幅に改善されたUIを実現しています。各セクションのサンプルコードと解説を参考に、さらなる機能追加や戦略的なゲームデザインに挑戦してください。
   </p>
   
   <div class="note">
     <p>
-      ※ 本解説書のサンプルコードは実際のプログラムからの抜粋および拡張例です。実装環境や目的に合わせて適宜調整してください。
+      ※ 本解説書のサンプルコードは実際のソースコードから抜粋・加工したものであり、実装環境や目的に合わせて調整してください。
     </p>
   </div>
   
-  <p>楽しいコードライフを！ <a class="button" href="#">もっと学ぶ</a></p>
+  <p>
+    バージョン比較：
+    <a class="button" href="index3o.html" target="_blank">初期版（index3o.html）</a>
+    <a class="button" href="rogue3o.html" target="_blank">UI改善版（rogue3o.html）</a>
+  </p>
+  
+  <p>楽しいコードライフを！</p>
   
 </body>
 </html>
