@@ -137,13 +137,13 @@
     class EnemyAnt extends Enemy {
       static floorRange = [2, 7];
       constructor(x, y, hp) {
-        super(x, y, hp, 2, '🐜');
+        super(x, y, hp + 2, 2, '🐜');
       }
     }
     class EnemyCrayfish extends Enemy {
       static floorRange = [3, 9];
       constructor(x, y, hp) {
-        super(x, y, hp, 3, '🦞');
+        super(x, y, hp + 3, 3, '🦞');
       }
     }
     // スライム（🟩）
@@ -152,7 +152,7 @@
     class EnemySlime extends Enemy {
       static floorRange = [5, 8];
       constructor(x, y, hp) {
-        super(x, y, hp, 1, '🟩');
+        super(x, y, hp + 5, 1, '🟩');
         this.regenerationRate = 1; // 毎ターンの再生量
       }
       takeDamage(damage) {
@@ -169,7 +169,7 @@
     class EnemyBat extends Enemy {
       static floorRange = [7, 12];
       constructor(x, y, hp) {
-        super(x, y, hp, 1, '🦇');
+        super(x, y, hp, 2, '🦇');
         this.evasion = 0.3; // 回避率（例）
       }
       // 必要に応じて攻撃や移動時の処理をオーバーライド可能
@@ -180,7 +180,7 @@
     class EnemyGoblin extends Enemy {
       static floorRange = [8, 13];
       constructor(x, y, hp) {
-        super(x, y, hp, 2, '👹');
+        super(x, y, hp + 8, 4, '👹');
         this.stealChance = 0.2; // アイテム奪取の確率（例）
       }
       // stealメソッドなどを実装すると、戦闘中にプレイヤーからアイテムを奪う処理が可能
@@ -191,7 +191,7 @@
     class EnemySkeleton extends Enemy {
       static floorRange = [10, null];
       constructor(x, y, hp) {
-        super(x, y, hp, 2, '💀');
+        super(x, y, hp + 10, 4, '💀');
         this.resurrectionTimer = 0; // 復活タイマー（例）
       }
       // updateや特定の条件下で復活処理を実装できる
@@ -202,7 +202,7 @@
     class EnemySpider extends Enemy {
       static floorRange = [10, null];
       constructor(x, y, hp) {
-        super(x, y, hp, 1, '🕷️');
+        super(x, y, hp + 8, 3, '🕷️');
         this.poisonDamage = 1; // 毒効果による持続ダメージ
       }
       // 攻撃時に毒効果を適用するメソッドを実装すると、プレイヤーに持続ダメージが与えられる
@@ -213,7 +213,7 @@
     class EnemyWizard extends Enemy {
       static floorRange = [10, null];
       constructor(x, y, hp) {
-        super(x, y, hp, 2, '🧙');
+        super(x, y, hp + 12, 5, '🧙');
         this.magicDamage = 2; // 魔法攻撃による追加ダメージ
       }
       // 遠距離攻撃や状態異常付与のためのメソッドを別途実装可能
@@ -234,10 +234,11 @@
       ];
       list = [];
       enemyClasses.forEach(c => {
-        if (c.floorRange[0] <= floor && (c.floorRange == null || floor <= c.floorRange[1])) {
+        if (c.floorRange[0] <= floor && (c.floorRange[1] == null || floor <= c.floorRange[1])) {
         	list.push(c);
         }
       });
+      //console.log(list)
       return list;
     };
 
@@ -552,8 +553,6 @@
           if (enemy.hp <= 0 || enemy.action === 0) return;
           const dx = Math.abs(enemy.x - this.player.x);
           const dy = Math.abs(enemy.y - this.player.y);
-          console.log(`E: ${enemy.x} ${enemy.y} P: ${this.player.x} ${this.player.y}`)
-          console.log(`${dx} ${dy}`)
           if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1) || (dx === 1 && dy === 1)) {
             enemy.action--;
             this.queueTimeout(() => {
@@ -815,8 +814,8 @@
           let upAtk, upHp;
           this.player.exp -= expToNext;
           this.player.level++;
-          this.player.attack += (upAtk = randomInt(1, 3));
-          this.player.maxHp += (upHp = randomInt(2, 4));
+          this.player.attack += (upAtk = randomInt(1, 2));
+          this.player.maxHp += (upHp = randomInt(2, 3));
           this.player.healAmount++;
           this.player.hp = this.player.maxHp;
           EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, "LEVEL UP!", "heal");
