@@ -813,6 +813,7 @@
         });
         setTimeout(() => {
           if (this.player.hp <= 0) {
+            this.player = new Player(0, 0, this.initialHP);
             this.isGameOver = true;
             this.timeoutQueue.forEach(id => clearTimeout(id));
             this.timeoutQueue = [];
