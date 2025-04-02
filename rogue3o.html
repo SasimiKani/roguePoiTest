@@ -7,6 +7,30 @@
   <style>
     /* 全体リセット */
     * { user-select: none; margin: 0; padding: 0; box-sizing: border-box; }
+    /* ホーム画面 */
+    #homeScreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.95);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 3000;
+    }
+    #homeScreen h1 {
+      margin-bottom: 20px;
+      font-size: 36px;
+    }
+    #homeScreen button {
+      margin: 5px;
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+    }
     /* 背景とレイアウト */
     body { 
       font-family: monospace; 
@@ -212,12 +236,21 @@
       margin-top: 10px;
       padding: 5px 10px;
     }
+    /* ダンジョンの難易度に合わせた背景変更 */
+    body.easy-dungeon { background-color: #444 !important; }
+    body.hard-dungeon { background-color: #222 !important; }
+    body.deep-dungeon { background-color: #000 !important; }
   </style>
 </head>
 <body>
-  <!--div id="title-container">
-    ローグっぽい何か
-  </div-->
+  <!-- ホーム画面：難易度選択 -->
+  <div id="homeScreen">
+    <h1>難易度を選択してください</h1>
+    <button onclick="startGame('easy')">Easy</button>
+    <button onclick="startGame('normal')">Normal</button>
+    <button onclick="startGame('hard')">Hard</button>
+  </div>
+  
   <div class="container">
     <div class="game-container" id="game"></div>
     <div class="ui-container">
@@ -239,6 +272,13 @@
   </div>
   
   <script>
+    // 難易度ごとの設定
+    const difficultySettings = {
+      easy:   { wallEmoji: "🌲", maxFloor: 10 },
+      normal: { wallEmoji: "🌳", maxFloor: 50 },
+      hard:   { wallEmoji: "🧱", maxFloor: 99 }
+    };
+
     // ---------------- Configuration ----------------
     const CONFIG = {
       WIDTH: 40,
@@ -250,11 +290,13 @@
       MIN_ENEMY_MULTIPLIER: 1.1,
       MAX_ENEMY_MULTIPLIER: 1.4,
       INVENTORY_MAX: 10,
-      VIEW_RADIUS: 7  // プレイヤー周囲7マス
+      VIEW_RADIUS: 7,  // プレイヤー周囲7マス
+      DIFFICULTY: "easy"  // 初期値。startGame()で上書き
     };
     
+    // MAP_TILE は選択された難易度に応じて更新
     const MAP_TILE = {
-      WALL: '🌳',
+      WALL: "🌳",  // defaultはNormal用。startGame()で変更
       STEPS: '🔼'
     };
 
@@ -385,7 +427,7 @@
       const list = [];
       enemyClasses.forEach(c => {
         if (c.floorRange[0] <= floor && (c.floorRange[1] == null || floor <= c.floorRange[1])) {
-        	list.push(c);
+          list.push(c);
         }
       });
       return list;
@@ -404,7 +446,6 @@
     class MagicSpell extends InventoryItem {
       constructor(x, y, name, tile, emoji, options) {
         super(x, y, name, tile, (game) => {
-          ///////console.log(`魔法使用 ${this.damage} ${this.area} ${this.fallbackHeal}`);
           let affected = false;
           EffectsManager.showMagicEffect(game.gameContainer, game.player, game.player.x, game.player.y, this.area, this.emoji || "✨");
           for (let i = game.enemies.length - 1; i >= 0; i--) {
@@ -436,13 +477,10 @@
     }
 
     // ---------------- 武器アイテム（equipable） ----------------
-    // 武器は消費されず、使用時に装備状態となる。すでに装備中の場合は入れ替え、装備効果（攻撃力アップ）を永続的に反映する。
     class WeaponItem extends InventoryItem {
       constructor(x, y, name, tile, bonus) {
         super(x, y, name, tile, (game) => {
-          // 既に武器装備中の場合は入れ替え
           if (game.player.weapon) {
-            // 以前の武器の効果を解除してインベントリに戻す
             game.player.attack -= game.player.weapon.bonus;
             game.player.weapon = null;
             EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `装備解除-${this.bonus}`, "heal");
@@ -499,7 +537,7 @@
       }
       generate() {
         this.reset();
-        const roomCount = randomInt(3, 6);
+        const roomCount = (CONFIG.DIFFICULTY === "hard") ? randomInt(5, 8) : randomInt(3, 6);
         for (let i = 0; i < roomCount; i++) {
           this.createRoom();
         }
@@ -565,8 +603,8 @@
     // ---------------- EffectsManager Class ----------------
     class EffectsManager {
       static showEffect(container, player, x, y, text, type = "damage") {
-        const dx = x - player.x; // 対象とプレイヤーの距離
-        const dy = y - player.y; // 対象とプレイヤーの距離
+        const dx = x - player.x;
+        const dy = y - player.y;
         const spans = container.children;
         const index = (8 + dy) * 16 + (7 + dx);
         if (!spans[index]) return;
@@ -585,7 +623,6 @@
         document.body.appendChild(fx);
         setTimeout(() => fx.remove(), 1000);
       }
-      // 魔法専用のエフェクト
       static showMagicEffect(container, player, centerX, centerY, area, emoji) {
         for (let dy = -area; dy <= area; dy++) {
           for (let dx = -area; dx <= area; dx++) {
@@ -848,6 +885,15 @@
       }
 
       render() {
+        // フロア数に応じた見た目の調整（bodyにクラスを追加）
+        document.body.classList.remove("easy-dungeon", "hard-dungeon", "deep-dungeon");
+        if (this.floor < 10) {
+          document.body.classList.add("easy-dungeon");
+        } else if (this.floor < 50) {
+          document.body.classList.add("hard-dungeon");
+        } else {
+          document.body.classList.add("deep-dungeon");
+        }
         this.renderMainView();
         this.renderMinimap();
         document.getElementById('hp').innerText = this.player.hp;
@@ -870,7 +916,6 @@
             for (let i = 0; i < this.player.inventory.length; i++) {
               let selected = (i === this.inventorySelection) ? ">> " : "";
               let itemName = this.player.inventory[i].name || "アイテム";
-              // 装備中の武器は表示に "(装備中)" と付加
               if (this.player.inventory[i].name.match(/武器.*/g) && this.player.weapon === this.player.inventory[i]) {
                 itemName += " (装備中)";
               }
@@ -1052,17 +1097,20 @@
         }, this.actionCount * this.actionTime);
       }
 
-      saveResult() {
+      saveResult(clear=false) {
         let results = JSON.parse(localStorage.getItem("gameResult") || "[]");
         results.push({
           date: new Date().toISOString(),
+          dungeonLv: CONFIG.DIFFICULTY,
+          floor: this.floor,
+          clear: clear,
           lv: this.player.level,
-          score: this.score,
-          floor: this.floor
+          score: this.score
         });
         localStorage.setItem("gameResult", JSON.stringify(results));
       }
 
+      // 修正：新しいデータ項目（dungeonLv, clear）を表示するようにテーブルを更新
       showResults() {
         let results = JSON.parse(localStorage.getItem("gameResult") || "[]");
         let modalHtml = '<div class="results-modal" id="resultsModal">';
@@ -1070,9 +1118,9 @@
         if(results.length === 0) {
           modalHtml += '<p>記録がありません。</p>';
         } else {
-          modalHtml += '<table><tr><th>日付</th><th>レベル</th><th>スコア</th><th>フロア</th></tr>';
+          modalHtml += '<table><tr><th>日付</th><th>難易度</th><th>フロア</th><th>結果</th><th>レベル</th><th>スコア</th></tr>';
           results.forEach(r => {
-            modalHtml += `<tr><td>${new Date(r.date).toLocaleString()}</td><td>${r.lv}</td><td>${r.score}</td><td>${r.floor}</td></tr>`;
+            modalHtml += `<tr><td>${new Date(r.date).toLocaleString()}</td><td>${r.dungeonLv == undefined ? "-" : r.dungeonLv}</td><td>${r.floor}</td><td>${r.clear ? "クリア" : "ゲームオーバー"}</td><td>${r.lv}</td><td>${r.score}</td></tr>`;
           });
           modalHtml += '</table>';
         }
@@ -1092,7 +1140,6 @@
         EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `+${this.player.healAmount}`, "heal");
       }
 
-      // インベントリ内のアイテム使用処理（武器は消費せず装備する）
       processInventoryInput(event) {
         if (event.key === 'ArrowUp') {
           if (this.player.inventory.length > 0) {
@@ -1110,10 +1157,8 @@
         }
         if (event.key === 'u') {
           let item = this.player.inventory[this.inventorySelection];
-          ///////console.log(`アイテム使用 ${item.name}`);
           if (item && item.use) {
             item.use(this);
-            // 武器の場合は装備扱いなので削除せず、他は消費する
             if (item.name.match(/武器.*/g) === null) {
               this.player.inventory.splice(this.inventorySelection, 1);
               if (this.inventorySelection >= this.player.inventory.length) {
@@ -1132,8 +1177,6 @@
         if (event.key === 'd') {
           let item = this.player.inventory[this.inventorySelection];
           if (item) {
-            ///////console.log(this.player.weapon)
-            ///////console.log(item)
             if (item.name.match(/武器.*/g) && this.player.weapon === item) {
               this.player.attack -= this.player.weapon.bonus;
               this.player.weapon = null;
@@ -1198,34 +1241,46 @@
           this.player.hp = prevHP;
           this.score = prevScore;
           this.floor++;
+          // ダンジョン難易度に合わせた最終フロアチェック
+          if (this.floor > difficultySettings[CONFIG.DIFFICULTY].maxFloor) {
+            alert("ダンジョンクリア！おめでとう！");
+            this.saveResult(true);
+            this.player = new Player(0, 0, this.initialHP);
+            this.floor = 1;
+            this.score = 0;
+            this.generateDungeon(false);
+            return;
+          }
         }
         const lastRoom = this.map.rooms.at(-1);
         this.stairs.x = lastRoom.x + 2;
         this.stairs.y = lastRoom.y + 2;
         this.map.grid[this.stairs.y][this.stairs.x] = MAP_TILE.STEPS;
-        this.minMagnification = CONFIG.MIN_ENEMY_MULTIPLIER;
-        this.maxMagnification = CONFIG.MAX_ENEMY_MULTIPLIER;
+        // 敵の強さ倍率を難易度で調整
+        if (CONFIG.DIFFICULTY === "hard") {
+          this.minMagnification = 1.4;
+          this.maxMagnification = 1.7;
+        } else {
+          this.minMagnification = CONFIG.MIN_ENEMY_MULTIPLIER;
+          this.maxMagnification = CONFIG.MAX_ENEMY_MULTIPLIER;
+        }
         
-        this.placeEntities(this.enemies, randomInt(3, 6), "enemy");    // 敵の数増やして難易度UP
-        this.placeEntities(this.gems, randomInt(1, 2), "entity");      // スコア要素は控えめ
+        this.placeEntities(this.enemies, randomInt(3, 6), "enemy");
+        this.placeEntities(this.gems, randomInt(1, 2), "entity");
         
-        // 最大アイテム数（フロアごとに変化させても良い）
         const maxItems = randomInt(3, 5);
         const weightedTypes = [
-          ...Array(2).fill("food"),   // 空腹対策はしやすく
-          ...Array(2).fill("sushi"),  // 回復少なめに安定供給
-          ...Array(1).fill("magic"),  // 魔法はほどよく出す
-          ...Array(1).fill("niku"),   // 強力回復はややレアに
-          ...Array(2).fill("weapon")  // 装備が枯渇しない程度に
+          ...Array(2).fill("food"),
+          ...Array(2).fill("sushi"),
+          ...Array(1).fill("magic"),
+          ...Array(1).fill("niku"),
+          ...Array(2).fill("weapon")
         ];
         
         for (let i = 0; i < maxItems; i++) {
           const type = weightedTypes.splice(randomInt(0, weightedTypes.length - 1), 1)[0];
           this.placeEntities(this.items, 1, type);
         }
-        ///////console.log(this.enemies);
-        ///////console.log(this.gems);
-        ///////console.log(this.items);
       }
       
       placeEntities(arr, count, type) {
@@ -1255,7 +1310,6 @@
               EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+6", "heal");
             }));
           } else if (type === "weapon") {
-            // ランダムボーナス1～3
             const bonus = randomInt(1, 3);
             arr.push(new WeaponItem(x, y, `武器 (+${bonus})`, '🗡️', bonus));
           } else if (type === "magic") {
@@ -1341,7 +1395,16 @@
       }
     }
 
-    new Game();
+    // startGame: ホーム画面で難易度を選択したときに呼ばれる
+    function startGame(difficulty) {
+      CONFIG.DIFFICULTY = difficulty;
+      // 難易度ごとにMAP_TILE.WALLの絵文字を設定
+      MAP_TILE.WALL = difficultySettings[difficulty].wallEmoji;
+      // ホーム画面を非表示にする
+      document.getElementById("homeScreen").style.display = "none";
+      // ゲーム開始
+      new Game();
+    }
   </script>
 </body>
 </html>
