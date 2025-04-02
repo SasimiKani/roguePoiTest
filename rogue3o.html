@@ -114,6 +114,20 @@
       0% { opacity: 1; transform: translate(-50%, -100%) scale(0.8); } 
       100% { opacity: 0; transform: translate(-50%, -180%) scale(1.6); } 
     }
+    /* 魔法エフェクト用 */
+    .magic-particle {
+      position: absolute;
+      font-size: 20px;
+      pointer-events: none;
+      animation: magicFloat 0.8s ease-out forwards;
+      opacity: 0.8;
+    }
+    
+    @keyframes magicFloat {
+      0%   { transform: translateY(0px) scale(1); opacity: 0.8; }
+      100% { transform: translateY(-20px) scale(1.2); opacity: 0; }
+    }
+    
     /* ステータスバー */
     .bar-container { 
       width: 200px; 
@@ -388,10 +402,11 @@
 
     // ---------------- MagicSpell クラス ----------------
     class MagicSpell extends InventoryItem {
-      constructor(x, y, name, tile, options) {
+      constructor(x, y, name, tile, emoji, options) {
         super(x, y, name, tile, (game) => {
           console.log(`魔法使用 ${this.damage} ${this.area} ${this.fallbackHeal}`);
           let affected = false;
+          EffectsManager.showMagicEffect(game.gameContainer, game.player, game.player.x, game.player.y, this.area, this.emoji || "✨");
           for (let i = game.enemies.length - 1; i >= 0; i--) {
             let enemy = game.enemies[i];
             if (Math.abs(enemy.x - game.player.x) <= this.area &&
@@ -407,12 +422,13 @@
               }
             }
           }
-          if (!affected) {
+          if (this.fallbackHeal && !affected) {
             game.player.hp += this.fallbackHeal;
             if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
             EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${this.fallbackHeal}`, "heal");
           }
         });
+        this.emoji = emoji;
         this.damage = options.damage;
         this.area = options.area;
         this.fallbackHeal = options.fallbackHeal;
@@ -568,6 +584,29 @@
         }
         document.body.appendChild(fx);
         setTimeout(() => fx.remove(), 1000);
+      }
+      // 魔法専用のエフェクト
+      static showMagicEffect(container, player, centerX, centerY, area, emoji) {
+        for (let dy = -area; dy <= area; dy++) {
+          for (let dx = -area; dx <= area; dx++) {
+            const x = centerX + dx;
+            const y = centerY + dy;
+            if (!(x === centerX && y === centerY)) {
+              const spans = container.children;
+              const index = (8 + (y - player.y)) * 16 + (7 + (x - player.x));
+              if (!spans[index]) continue;
+              const target = spans[index];
+              const rect = target.getBoundingClientRect();
+              const fx = document.createElement("div");
+              fx.className = "magic-particle";
+              fx.textContent = emoji;
+              fx.style.left = `${rect.left + rect.width / 2 + window.scrollX + randomInt(-8, 8)}px`;
+              fx.style.top = `${rect.top + window.scrollY - rect.height / 2 + randomInt(-8, 8)}px`;
+              document.body.appendChild(fx);
+              setTimeout(() => fx.remove(), 800);
+            }
+          }
+        }
       }
     }
 
@@ -1159,18 +1198,29 @@
         this.map.grid[this.stairs.y][this.stairs.x] = MAP_TILE.STEPS;
         this.minMagnification = CONFIG.MIN_ENEMY_MULTIPLIER;
         this.maxMagnification = CONFIG.MAX_ENEMY_MULTIPLIER;
-        // 既存のすし・パン配置に加え新規アイテムを配置
-        this.placeEntities(this.items, randomInt(0, 2), "sushi");
-        this.placeEntities(this.items, randomInt(0, 1), "niku");
-        // 武器は WeaponItem クラスで生成
-        this.placeEntities(this.items, randomInt(10, 10), "weapon");
-        // 魔法は MagicSpell クラスを利用して配置（複数種類作成可能）
-        this.placeEntities(this.items, randomInt(0, 1), "magic");
-        this.placeEntities(this.enemies, randomInt(2, 4), "enemy");
-        this.placeEntities(this.gems, randomInt(1, 3), "entity");
-        this.placeEntities(this.items, randomInt(1, 2), "food");
+        
+        this.placeEntities(this.enemies, randomInt(3, 6), "enemy");    // 敵の数増やして難易度UP
+        this.placeEntities(this.gems, randomInt(1, 2), "entity");      // スコア要素は控えめ
+        
+        // 最大アイテム数（フロアごとに変化させても良い）
+        const maxItems = randomInt(6, 10);
+        const weightedTypes = [
+          ...Array(4).fill("food"),   // 空腹対策はしやすく
+          ...Array(3).fill("sushi"),  // 回復少なめに安定供給
+          ...Array(2).fill("magic"),  // 魔法はほどよく出す
+          ...Array(1).fill("niku"),   // 強力回復はややレアに
+          ...Array(2).fill("weapon")  // 装備が枯渇しない程度に
+        ];
+        
+        for (let i = 0; i < maxItems; i++) {
+          const type = weightedTypes[randomInt(0, weightedTypes.length - 1)];
+          this.placeEntities(this.items, 1, type);
+        }
+        console.log(this.enemies);
+        console.log(this.gems);
+        console.log(this.items);
       }
-
+      
       placeEntities(arr, count, type) {
         for (let i = 0; i < count; i++) {
           let x, y, hp;
@@ -1205,16 +1255,16 @@
             var selection = randomInt(1, 4);
             switch (selection) {
             case 1:
-                arr.push(new MagicSpell(x, y, "火の玉", '🔥', {damage: 10, area: 1, fallbackHeal: 2}));
+                arr.push(new MagicSpell(x, y, "火の玉", '🔥', '🔥', {damage: 10, area: 1, fallbackHeal: null}));
             	break;
             case 2:
-                arr.push(new MagicSpell(x, y, "たつまき", '🌪️', {damage: 8, area: 2, fallbackHeal: 2}));
+                arr.push(new MagicSpell(x, y, "たつまき", '🌪️', '🌪️', {damage: 8, area: 2, fallbackHeal: null}));
             	break;
             case 3:
-                arr.push(new MagicSpell(x, y, "大波", '🌊', {damage: 5, area: 4, fallbackHeal: 2}));
+                arr.push(new MagicSpell(x, y, "大波", '🌊', '🌊', {damage: 5, area: 4, fallbackHeal: null}));
             	break;
             case 4:
-                arr.push(new MagicSpell(x, y, "カミナリ", '⚡️', {damage: 15, area: 1, fallbackHeal: 2}));
+                arr.push(new MagicSpell(x, y, "カミナリ", '⚡️', '⚡️', {damage: 15, area: 1, fallbackHeal: null}));
             	break;
             }
           } else if (type === "entity") {
