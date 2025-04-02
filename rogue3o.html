@@ -1132,6 +1132,13 @@
         if (event.key === 'd') {
           let item = this.player.inventory[this.inventorySelection];
           if (item) {
+            console.log(this.player.weapon)
+            console.log(item)
+            if (item.name.match(/武器.*/g) && this.player.weapon === item) {
+              this.player.attack -= this.player.weapon.bonus;
+              this.player.weapon = null;
+              EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `装備解除-${item.bonus}`, "heal");
+            }
             item.x = this.player.x;
             item.y = this.player.y;
             this.items.push(item);
