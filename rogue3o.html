@@ -1203,12 +1203,12 @@
         this.placeEntities(this.gems, randomInt(1, 2), "entity");      // スコア要素は控えめ
         
         // 最大アイテム数（フロアごとに変化させても良い）
-        const maxItems = randomInt(6, 10);
+        const maxItems = randomInt(4, 6);
         const weightedTypes = [
-          ...Array(4).fill("food"),   // 空腹対策はしやすく
-          ...Array(3).fill("sushi"),  // 回復少なめに安定供給
-          ...Array(2).fill("magic"),  // 魔法はほどよく出す
-          ...Array(1).fill("niku"),   // 強力回復はややレアに
+          ...Array(10).fill("food"),   // 空腹対策はしやすく
+          ...Array(5).fill("sushi"),  // 回復少なめに安定供給
+          ...Array(3).fill("magic"),  // 魔法はほどよく出す
+          ...Array(2).fill("niku"),   // 強力回復はややレアに
           ...Array(2).fill("weapon")  // 装備が枯渇しない程度に
         ];
         
