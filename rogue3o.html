@@ -501,7 +501,69 @@
         this.hungerCycle[0] = (this.hungerCycle[0] + 1) % this.hungerCycle[1];
       }
 
-      // メイン画面の描画：プレイヤーを中心に周囲7マスずつ（15×15）表示
+      // 新規追加：BFSによる経路探索で敵の移動先を求める
+      findPath(startX, startY, targetX, targetY) {
+        let queue = [];
+        queue.push({ x: startX, y: startY, path: [] });
+        let visited = new Set();
+        visited.add(`${startX},${startY}`);
+        const directions = [
+          { dx: 1, dy: 0 },
+          { dx: -1, dy: 0 },
+          { dx: 0, dy: 1 },
+          { dx: 0, dy: -1 },
+          { dx: 1, dy: 1 },
+          { dx: -1, dy: -1 },
+          { dx: 1, dy: -1 },
+          { dx: -1, dy: 1 }
+        ];
+        while (queue.length > 0) {
+          const current = queue.shift();
+          if (current.x === targetX && current.y === targetY) {
+            return current.path;
+          }
+          for (const d of directions) {
+            const nx = current.x + d.dx;
+            const ny = current.y + d.dy;
+            if (nx < 0 || ny < 0 || nx >= this.width || ny >= this.height) continue;
+            if (this.map.grid[ny][nx] === MAP_TILE.WALL) continue;
+            if (!(nx === targetX && ny === targetY) && this.enemies.some(e => e.x === nx && e.y === ny)) continue;
+            const key = `${nx},${ny}`;
+            if (!visited.has(key)) {
+              visited.add(key);
+              queue.push({ x: nx, y: ny, path: current.path.concat([{ x: nx, y: ny }]) });
+            }
+          }
+        }
+        return null;
+      }
+
+      // 改修：敵の移動ロジック（BFSで経路探索して１マス先へ）
+      enemyMovementPhase(nextPlayerX, nextPlayerY) {
+        this.enemies.forEach((enemy) => {
+          if (enemy.hp <= 0 || enemy.action === 0) return;
+
+          // プレイヤーに隣接している場合は移動せず、攻撃フェーズに任せる
+          let dx = Math.abs(enemy.x - this.player.x);
+          let dy = Math.abs(enemy.y - this.player.y);
+          if ((dx <= 1 && dy <= 1) && !(dx === 0 && dy === 0)) {
+            return;
+          }
+
+          const path = this.findPath(enemy.x, enemy.y, this.player.x, this.player.y);
+          if (path && path.length > 0) {
+            const nextStep = path[0];
+            // プレイヤーの次の位置と重なる場合は移動をスキップ（必要に応じて調整）
+            if (nextStep.x === nextPlayerX && nextStep.y === nextPlayerY) {
+              return;
+            }
+            enemy.action--;
+            enemy.x = nextStep.x;
+            enemy.y = nextStep.y;
+          }
+        });
+      }
+
       renderMainView() {
         let html = '';
         const radius = CONFIG.VIEW_RADIUS;
@@ -556,7 +618,6 @@
         this.gameContainer.innerHTML = html;
       }
 
-      // ミニマップ描画：グリッドレイアウトでセル間に隙間なく表示
       renderMinimap() {
         let html = '';
         for (let y = 0; y < this.height; y++) {
@@ -579,7 +640,6 @@
           }
         }
         this.minimapContainer.innerHTML = html;
-        // グリッドの列数を設定
         this.minimapContainer.style.gridTemplateColumns = `repeat(${this.width}, 4px)`;
       }
 
@@ -723,42 +783,7 @@
         });
       }
 
-      enemyMovementPhase(nextPlayerX, nextPlayerY) {
-        this.enemies.forEach((enemy) => {
-          if (enemy.hp <= 0 || enemy.action === 0) return;
-          const dirX = Math.sign(this.player.x - enemy.x);
-          const dirY = Math.sign(this.player.y - enemy.y);
-          const nx = enemy.x + dirX, ny = enemy.y + dirY;
-          const canMoveX = this.map.grid[enemy.y][nx] !== MAP_TILE.WALL &&
-                           !this.enemies.some(e => e.x === nx && e.y === enemy.y) &&
-                           !(nx === this.player.x && enemy.y === this.player.y) &&
-                           !(nx === nextPlayerX && enemy.y === nextPlayerY) &&
-                           !(nx === nextPlayerX && ny === nextPlayerY);
-          const canMoveY = this.map.grid[ny]?.[enemy.x] !== MAP_TILE.WALL &&
-                           !this.enemies.some(e => e.x === enemy.x && e.y === ny) &&
-                           !(enemy.x === this.player.x && ny === this.player.y) &&
-                           !(enemy.x === nextPlayerX && ny === nextPlayerY) &&
-                           !(nx === nextPlayerX && ny === nextPlayerY);
-          const canMoveXY = this.map.grid[ny]?.[nx] !== MAP_TILE.WALL &&
-                           !this.enemies.some(e => e.x === nx && e.y === ny) &&
-                           !(nx === this.player.x && ny === this.player.y) &&
-                           !(nx === nextPlayerX && ny === nextPlayerY) &&
-                           canMoveX && canMoveY;
-          
-          if (canMoveX && canMoveY && canMoveXY) {
-            enemy.action--;
-            enemy.x += dirX;
-            enemy.y += dirY;
-          } else if (canMoveX) {
-            enemy.action--;
-            enemy.x += dirX;
-          } else if (canMoveY) {
-            enemy.action--;
-            enemy.y += dirY;
-          }
-        });
-      }
-      
+
       enemyActionRefresh() {
         this.enemies.forEach((enemy) => {
           enemy.action = enemy.maxAction;
