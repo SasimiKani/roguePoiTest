@@ -572,18 +572,41 @@
       enemyMovementPhase(nextPlayerX, nextPlayerY) {
         this.enemies.forEach((enemy) => {
           if (enemy.hp <= 0 || enemy.action === 0) return;
-
-          // プレイヤーに隣接している場合は移動せず、攻撃フェーズに任せる
+          
           let dx = Math.abs(enemy.x - this.player.x);
           let dy = Math.abs(enemy.y - this.player.y);
+          // プレイヤーに隣接している場合は移動せず、攻撃フェーズへ委ねる
           if ((dx <= 1 && dy <= 1) && !(dx === 0 && dy === 0)) {
             return;
           }
-
+          
           const path = this.findPath(enemy.x, enemy.y, this.player.x, this.player.y);
           if (path && path.length > 0) {
             const nextStep = path[0];
-            // プレイヤーの次の位置と重なる場合は移動をスキップ（必要に応じて調整）
+            // 斜め移動の場合、横・縦の中間セルが壁であるかチェック
+            if (enemy.x !== nextStep.x && enemy.y !== nextStep.y) {
+              const horizontalBlocked = (this.map.grid[enemy.y][nextStep.x] === MAP_TILE.WALL);
+              const verticalBlocked   = (this.map.grid[nextStep.y][enemy.x] === MAP_TILE.WALL);
+              if (horizontalBlocked || verticalBlocked) {
+                // 利用可能な移動候補を作成（両方利用可能ならランダムに選択）
+                let possibleMoves = [];
+                if (!horizontalBlocked) possibleMoves.push({ x: nextStep.x, y: enemy.y });
+                if (!verticalBlocked) possibleMoves.push({ x: enemy.x, y: nextStep.y });
+                if (possibleMoves.length > 0) {
+                  const move = possibleMoves[randomInt(0, possibleMoves.length - 1)];
+                  // プレイヤーの次の位置と重なっていなければ代替移動
+                  if (!(move.x === nextPlayerX && move.y === nextPlayerY)) {
+                    enemy.action--;
+                    enemy.x = move.x;
+                    enemy.y = move.y;
+                    return;
+                  }
+                }
+                // 利用可能な代替移動がなければ、この敵は移動をスキップ
+                return;
+              }
+            }
+            // 通常の移動：プレイヤーの次の位置と重なっていなければ
             if (nextStep.x === nextPlayerX && nextStep.y === nextPlayerY) {
               return;
             }
@@ -807,13 +830,26 @@
           if (enemy.hp <= 0 || enemy.action === 0) return;
           const dx = Math.abs(enemy.x - this.player.x);
           const dy = Math.abs(enemy.y - this.player.y);
-          if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1) || (dx === 1 && dy === 1)) {
+          // 横・縦の隣接ならそのまま攻撃
+          if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
             enemy.action--;
             this.queueTimeout(() => {
               this.player.hp -= enemy.atk;
               EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me");
             }, this.actionCount * this.actionTime);
             this.actionCount++;
+          }
+          // 斜めの場合、横と縦の経路が壁でないことをチェック
+          else if (dx === 1 && dy === 1) {
+            if (this.map.grid[this.player.y][enemy.x] !== MAP_TILE.WALL &&
+                this.map.grid[enemy.y][this.player.x] !== MAP_TILE.WALL) {
+              enemy.action--;
+              this.queueTimeout(() => {
+                this.player.hp -= enemy.atk;
+                EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me");
+              }, this.actionCount * this.actionTime);
+              this.actionCount++;
+            }
           }
         });
       }
