@@ -13,9 +13,56 @@
       background-color: #000; 
       color: #eee; 
       display: flex; 
+      flex-flow: column;
       height: 100vh; 
       align-items: center; 
       justify-content: center; 
+    }
+    /* タイトル用スタイル */
+    /*#title-container {
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      font-family: monospace;
+      padding: 20px;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #ff0080, #ff8c00);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+    }
+    #title-container {
+      align-items: center;
+      justify-content: center;
+      font-size: 50px;
+      font-family: 'Courier New', monospace;
+      color: #fff;
+      padding: 20px;
+      margin-bottom: 20px;
+      background-color: #222;
+      border: 2px solid #ff0080;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(255, 0, 128, 0.7);
+    }*/
+    #title-container {
+      display: flex;
+      flex-flow: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      font-family: monospace;
+      padding: 20px;
+      margin-bottom: 20px;
+      background: linear-gradient(90deg, #f00, #0f0, #00f);
+      background-size: 300% 300%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientAnimation 3s ease infinite;
+    }
+    @keyframes gradientAnimation {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
     .container { display: flex; }
     /* メイン画面（プレイヤー中心15×15表示） */
@@ -154,6 +201,9 @@
   </style>
 </head>
 <body>
+  <!--div id="title-container">
+    ローグっぽい何か
+  </div-->
   <div class="container">
     <div class="game-container" id="game"></div>
     <div class="ui-container">
@@ -570,17 +620,21 @@
 
       // 改修：敵の移動ロジック（BFSで経路探索して１マス先へ）
       enemyMovementPhase(nextPlayerX, nextPlayerY) {
+        // 初期状態：各敵の現在位置を occupied に登録
+        let occupied = new Set();
+        this.enemies.forEach(e => occupied.add(`${e.x},${e.y}`));
+      
         this.enemies.forEach((enemy) => {
           if (enemy.hp <= 0 || enemy.action === 0) return;
           
           let dx = Math.abs(enemy.x - this.player.x);
           let dy = Math.abs(enemy.y - this.player.y);
           
-          // 横・縦隣接の場合はそのまま攻撃フェーズへ委ねる
+          // 横または縦隣接の場合は攻撃フェーズに任せる（移動せず）
           if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
             return;
           }
-          // 斜め隣接の場合、横・縦の中間セルが両方とも壁でなければ攻撃可能と判定
+          // 斜め隣接の場合、横・縦中間セルが両方とも壁でなければ攻撃可能なので移動せず
           else if (dx === 1 && dy === 1) {
             if (this.map.grid[this.player.y][enemy.x] !== MAP_TILE.WALL &&
                 this.map.grid[enemy.y][this.player.x] !== MAP_TILE.WALL) {
@@ -590,34 +644,40 @@
           
           const path = this.findPath(enemy.x, enemy.y, this.player.x, this.player.y);
           if (path && path.length > 0) {
-            const nextStep = path[0];
-            // 斜め移動の場合、中間セルが壁でブロックされる場合は、横または縦の代替移動を試みる
-            if (enemy.x !== nextStep.x && enemy.y !== nextStep.y) {
-              const horizontalBlocked = (this.map.grid[enemy.y][nextStep.x] === MAP_TILE.WALL);
-              const verticalBlocked   = (this.map.grid[nextStep.y][enemy.x] === MAP_TILE.WALL);
+            // 基本候補
+            let candidate = path[0];
+            // プレイヤーの次の位置と重なる場合は移動をスキップ
+            if (candidate.x === nextPlayerX && candidate.y === nextPlayerY) return;
+            
+            // 斜め移動の場合、途中の横・縦セルチェック
+            if (enemy.x !== candidate.x && enemy.y !== candidate.y) {
+              const horizontalBlocked = (this.map.grid[enemy.y][candidate.x] === MAP_TILE.WALL);
+              const verticalBlocked   = (this.map.grid[candidate.y][enemy.x] === MAP_TILE.WALL);
               if (horizontalBlocked || verticalBlocked) {
                 let possibleMoves = [];
-                if (!horizontalBlocked) possibleMoves.push({ x: nextStep.x, y: enemy.y });
-                if (!verticalBlocked)   possibleMoves.push({ x: enemy.x, y: nextStep.y });
-                if (possibleMoves.length > 0) {
-                  const move = possibleMoves[randomInt(0, possibleMoves.length - 1)];
-                  if (!(move.x === nextPlayerX && move.y === nextPlayerY)) {
-                    enemy.action--;
-                    enemy.x = move.x;
-                    enemy.y = move.y;
-                    return;
+                if (!horizontalBlocked) possibleMoves.push({ x: candidate.x, y: enemy.y });
+                if (!verticalBlocked)   possibleMoves.push({ x: enemy.x, y: candidate.y });
+                // 代替候補から、occupied に含まれていないものを選択
+                candidate = null;
+                for (let move of possibleMoves) {
+                  if (!occupied.has(`${move.x},${move.y}`)) {
+                    candidate = move;
+                    break;
                   }
                 }
-                return;
+                if (!candidate) return; // 代替移動候補がなければ移動スキップ
               }
             }
-            // プレイヤーの次の位置と重なる場合は移動をスキップ
-            if (nextStep.x === nextPlayerX && nextStep.y === nextPlayerY) {
-              return;
-            }
+            
+            // もし候補座標が既に occupied に含まれている場合は移動しない
+            if (occupied.has(`${candidate.x},${candidate.y}`)) return;
+            
+            // 移動可能なら、現在の座標を occupied から外し、新しい座標を登録
+            occupied.delete(`${enemy.x},${enemy.y}`);
             enemy.action--;
-            enemy.x = nextStep.x;
-            enemy.y = nextStep.y;
+            enemy.x = candidate.x;
+            enemy.y = candidate.y;
+            occupied.add(`${enemy.x},${enemy.y}`);
           }
         });
       }
@@ -1072,6 +1132,12 @@
           } while (this.map.grid[y][x] !== ' ' || (x === this.player.x && y === this.player.y));
           if (type === "sushi") {
             arr.push(new InventoryItem(x, y, "すし", '🍣', function(game) {
+              game.player.hp += 3;
+              if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
+              EffectsManager.showEffect(game.gameContainer, game.player.x, game.player.y, "+3", "heal");
+            }));
+          } else if (type === "niku") {
+            arr.push(new InventoryItem(x, y, "お肉", '🍖', function(game) {
               game.player.hp += 3;
               if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
               EffectsManager.showEffect(game.gameContainer, game.player.x, game.player.y, "+3", "heal");
