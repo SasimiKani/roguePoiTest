@@ -404,7 +404,7 @@
     class MagicSpell extends InventoryItem {
       constructor(x, y, name, tile, emoji, options) {
         super(x, y, name, tile, (game) => {
-          console.log(`魔法使用 ${this.damage} ${this.area} ${this.fallbackHeal}`);
+          ///////console.log(`魔法使用 ${this.damage} ${this.area} ${this.fallbackHeal}`);
           let affected = false;
           EffectsManager.showMagicEffect(game.gameContainer, game.player, game.player.x, game.player.y, this.area, this.emoji || "✨");
           for (let i = game.enemies.length - 1; i >= 0; i--) {
@@ -1110,7 +1110,7 @@
         }
         if (event.key === 'u') {
           let item = this.player.inventory[this.inventorySelection];
-          console.log(`アイテム使用 ${item.name}`);
+          ///////console.log(`アイテム使用 ${item.name}`);
           if (item && item.use) {
             item.use(this);
             // 武器の場合は装備扱いなので削除せず、他は消費する
@@ -1132,8 +1132,8 @@
         if (event.key === 'd') {
           let item = this.player.inventory[this.inventorySelection];
           if (item) {
-            console.log(this.player.weapon)
-            console.log(item)
+            ///////console.log(this.player.weapon)
+            ///////console.log(item)
             if (item.name.match(/武器.*/g) && this.player.weapon === item) {
               this.player.attack -= this.player.weapon.bonus;
               this.player.weapon = null;
@@ -1210,22 +1210,22 @@
         this.placeEntities(this.gems, randomInt(1, 2), "entity");      // スコア要素は控えめ
         
         // 最大アイテム数（フロアごとに変化させても良い）
-        const maxItems = randomInt(4, 6);
+        const maxItems = randomInt(3, 5);
         const weightedTypes = [
-          ...Array(10).fill("food"),   // 空腹対策はしやすく
-          ...Array(5).fill("sushi"),  // 回復少なめに安定供給
-          ...Array(3).fill("magic"),  // 魔法はほどよく出す
-          ...Array(2).fill("niku"),   // 強力回復はややレアに
+          ...Array(2).fill("food"),   // 空腹対策はしやすく
+          ...Array(2).fill("sushi"),  // 回復少なめに安定供給
+          ...Array(1).fill("magic"),  // 魔法はほどよく出す
+          ...Array(1).fill("niku"),   // 強力回復はややレアに
           ...Array(2).fill("weapon")  // 装備が枯渇しない程度に
         ];
         
         for (let i = 0; i < maxItems; i++) {
-          const type = weightedTypes[randomInt(0, weightedTypes.length - 1)];
+          const type = weightedTypes.splice(randomInt(0, weightedTypes.length - 1), 1)[0];
           this.placeEntities(this.items, 1, type);
         }
-        console.log(this.enemies);
-        console.log(this.gems);
-        console.log(this.items);
+        ///////console.log(this.enemies);
+        ///////console.log(this.gems);
+        ///////console.log(this.items);
       }
       
       placeEntities(arr, count, type) {
@@ -1281,7 +1281,7 @@
             const EnemyClass = enemys[randomInt(0, enemys.length - 1)];
             arr.push(new EnemyClass(x, y, hp));
           } else if (type === "food") {
-            if (Math.random() < 0.7) {
+            if (Math.random() > 0.7) {
               arr.push(new InventoryItem(x, y, "パン", '🥖', function(game) {
                 game.player.hunger += 20;
                 if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger;
