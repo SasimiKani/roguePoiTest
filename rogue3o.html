@@ -271,6 +271,7 @@
         this.hunger = 100;
         this.maxHunger = 100;
         this.inventory = []; // インベントリ（最大10個）
+        this.weapon = null; // 装備中の武器（nullなら未装備）
       }
     }
 
@@ -386,12 +387,10 @@
     }
 
     // ---------------- MagicSpell クラス ----------------
-    // 使い切り魔法を抽象化するクラス。damage（ダメージ量）、area（有効範囲）、fallbackHeal（対象がなかった場合の回復量）などを設定可能。
     class MagicSpell extends InventoryItem {
       constructor(x, y, name, tile, options) {
-        // useFunction はクラス内の use メソッドで定義
         super(x, y, name, tile, (game) => {
-          console.log(`魔法使用 ${this.damage} ${this.area} ${this.fallbackHeal}`)
+          console.log(`魔法使用 ${this.damage} ${this.area} ${this.fallbackHeal}`);
           let affected = false;
           for (let i = game.enemies.length - 1; i >= 0; i--) {
             let enemy = game.enemies[i];
@@ -417,6 +416,27 @@
         this.damage = options.damage;
         this.area = options.area;
         this.fallbackHeal = options.fallbackHeal;
+      }
+    }
+
+    // ---------------- 武器アイテム（equipable） ----------------
+    // 武器は消費されず、使用時に装備状態となる。すでに装備中の場合は入れ替え、装備効果（攻撃力アップ）を永続的に反映する。
+    class WeaponItem extends InventoryItem {
+      constructor(x, y, name, tile, bonus) {
+        super(x, y, name, tile, (game) => {
+          // 既に武器装備中の場合は入れ替え
+          if (game.player.weapon) {
+            // 以前の武器の効果を解除してインベントリに戻す
+            game.player.attack -= game.player.weapon.bonus;
+            game.player.weapon = null;
+            EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `装備解除-${this.bonus}`, "heal");
+          } else {
+            game.player.weapon = this;
+            game.player.attack += this.bonus;
+            EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `武器装備+${this.bonus}`, "heal");
+          }
+        });
+        this.bonus = bonus;
       }
     }
 
@@ -644,7 +664,6 @@
             const ny = current.y + d.dy;
             if (nx < 0 || ny < 0 || nx >= this.width || ny >= this.height) continue;
             if (this.map.grid[ny][nx] === MAP_TILE.WALL) continue;
-            // ※ 敵の位置は無視するため、ここでのチェックは削除
             const key = `${nx},${ny}`;
             if (!visited.has(key)) {
               visited.add(key);
@@ -657,7 +676,6 @@
 
       // 改修：敵の移動ロジック（BFSで経路探索して１マス先へ）
       enemyMovementPhase(nextPlayerX, nextPlayerY) {
-        // 初期状態：各敵の現在位置を occupied に登録
         let occupied = new Set();
         this.enemies.forEach(e => occupied.add(`${e.x},${e.y}`));
       
@@ -667,11 +685,9 @@
           let dx = Math.abs(enemy.x - this.player.x);
           let dy = Math.abs(enemy.y - this.player.y);
           
-          // 横または縦隣接の場合は攻撃フェーズに任せる（移動せず）
           if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
             return;
           }
-          // 斜め隣接の場合、横・縦中間セルが両方とも壁でなければ攻撃可能なので移動せず
           else if (dx === 1 && dy === 1) {
             if (this.map.grid[this.player.y][enemy.x] !== MAP_TILE.WALL &&
                 this.map.grid[enemy.y][this.player.x] !== MAP_TILE.WALL) {
@@ -681,12 +697,9 @@
           
           const path = this.findPath(enemy.x, enemy.y, this.player.x, this.player.y);
           if (path && path.length > 0) {
-            // 基本候補
             let candidate = path[0];
-            // プレイヤーの次の位置と重なる場合は移動をスキップ
             if (candidate.x === nextPlayerX && candidate.y === nextPlayerY) return;
             
-            // 斜め移動の場合、途中の横・縦セルチェック
             if (enemy.x !== candidate.x && enemy.y !== candidate.y) {
               const horizontalBlocked = (this.map.grid[enemy.y][candidate.x] === MAP_TILE.WALL);
               const verticalBlocked   = (this.map.grid[candidate.y][enemy.x] === MAP_TILE.WALL);
@@ -694,7 +707,6 @@
                 let possibleMoves = [];
                 if (!horizontalBlocked) possibleMoves.push({ x: candidate.x, y: enemy.y });
                 if (!verticalBlocked)   possibleMoves.push({ x: enemy.x, y: candidate.y });
-                // 代替候補から、occupied に含まれていないものを選択
                 candidate = null;
                 for (let move of possibleMoves) {
                   if (!occupied.has(`${move.x},${move.y}`)) {
@@ -702,14 +714,12 @@
                     break;
                   }
                 }
-                if (!candidate) return; // 代替移動候補がなければ移動スキップ
+                if (!candidate) return;
               }
             }
             
-            // もし候補座標が既に occupied に含まれている場合は移動しない
             if (occupied.has(`${candidate.x},${candidate.y}`)) return;
             
-            // 移動可能なら、現在の座標を occupied から外し、新しい座標を登録
             occupied.delete(`${enemy.x},${enemy.y}`);
             enemy.action--;
             enemy.x = candidate.x;
@@ -821,6 +831,10 @@
             for (let i = 0; i < this.player.inventory.length; i++) {
               let selected = (i === this.inventorySelection) ? ">> " : "";
               let itemName = this.player.inventory[i].name || "アイテム";
+              // 装備中の武器は表示に "(装備中)" と付加
+              if (this.player.inventory[i].name.match(/武器.*/g) && this.player.weapon === this.player.inventory[i]) {
+                itemName += " (装備中)";
+              }
               invHtml += `<li class="${(i===this.inventorySelection) ? 'selected' : ''}">${selected}${itemName}</li>`;
             }
             invHtml += `</ul>`;
@@ -854,7 +868,6 @@
           }
           return { tx: this.player.x, ty: this.player.y };
         }
-        // 新規追加：rキーで結果表示
         if (event.key === 'r') {
           this.showResults();
           return null;
@@ -932,7 +945,6 @@
           if (enemy.hp <= 0 || enemy.action === 0) return;
           const dx = Math.abs(enemy.x - this.player.x);
           const dy = Math.abs(enemy.y - this.player.y);
-          // 横・縦の隣接ならそのまま攻撃
           if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
             enemy.action--;
             this.queueTimeout(() => {
@@ -941,7 +953,6 @@
             }, this.actionCount * this.actionTime);
             this.actionCount++;
           }
-          // 斜めの場合、横と縦の経路が壁でないことをチェック
           else if (dx === 1 && dy === 1) {
             if (this.map.grid[this.player.y][enemy.x] !== MAP_TILE.WALL &&
                 this.map.grid[enemy.y][this.player.x] !== MAP_TILE.WALL) {
@@ -955,7 +966,6 @@
           }
         });
       }
-
 
       enemyActionRefresh() {
         this.enemies.forEach((enemy) => {
@@ -986,7 +996,6 @@
         });
         setTimeout(() => {
           if (this.player.hp <= 0) {
-            // ゲームオーバー時、結果を保存してから新規ダンジョン生成
             this.saveResult();
             this.player = new Player(0, 0, this.initialHP);
             this.isGameOver = true;
@@ -1004,7 +1013,6 @@
         }, this.actionCount * this.actionTime);
       }
 
-      // 結果をローカルストレージに保存（JSON形式）
       saveResult() {
         let results = JSON.parse(localStorage.getItem("gameResult") || "[]");
         results.push({
@@ -1016,7 +1024,6 @@
         localStorage.setItem("gameResult", JSON.stringify(results));
       }
 
-      // 結果表示モーダルを生成
       showResults() {
         let results = JSON.parse(localStorage.getItem("gameResult") || "[]");
         let modalHtml = '<div class="results-modal" id="resultsModal">';
@@ -1046,6 +1053,7 @@
         EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `+${this.player.healAmount}`, "heal");
       }
 
+      // インベントリ内のアイテム使用処理（武器は消費せず装備する）
       processInventoryInput(event) {
         if (event.key === 'ArrowUp') {
           if (this.player.inventory.length > 0) {
@@ -1063,13 +1071,15 @@
         }
         if (event.key === 'u') {
           let item = this.player.inventory[this.inventorySelection];
-          console.log(`アイテム使用 ${item} ${item.use}`)
-          console.log(item)
+          console.log(`アイテム使用 ${item.name}`);
           if (item && item.use) {
             item.use(this);
-            this.player.inventory.splice(this.inventorySelection, 1);
-            if (this.inventorySelection >= this.player.inventory.length) {
-              this.inventorySelection = this.player.inventory.length - 1;
+            // 武器の場合は装備扱いなので削除せず、他は消費する
+            if (item.name.match(/武器.*/g) === null) {
+              this.player.inventory.splice(this.inventorySelection, 1);
+              if (this.inventorySelection >= this.player.inventory.length) {
+                this.inventorySelection = this.player.inventory.length - 1;
+              }
             }
             this.advanceTurn();
             this.enemyMovementPhase(this.player.x, this.player.y);
@@ -1152,8 +1162,9 @@
         // 既存のすし・パン配置に加え新規アイテムを配置
         this.placeEntities(this.items, randomInt(0, 2), "sushi");
         this.placeEntities(this.items, randomInt(0, 1), "niku");
-        this.placeEntities(this.items, randomInt(0, 1), "weapon");
-        // 魔法は MagicSpell クラスを利用して配置。パラメータを変えることで複数種類の魔法を作成可能
+        // 武器は WeaponItem クラスで生成
+        this.placeEntities(this.items, randomInt(10, 10), "weapon");
+        // 魔法は MagicSpell クラスを利用して配置（複数種類作成可能）
         this.placeEntities(this.items, randomInt(0, 1), "magic");
         this.placeEntities(this.enemies, randomInt(2, 4), "enemy");
         this.placeEntities(this.gems, randomInt(1, 3), "entity");
@@ -1187,17 +1198,13 @@
               EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+6", "heal");
             }));
           } else if (type === "weapon") {
-            arr.push(new InventoryItem(x, y, "武器", '🗡️', function(game) {
-              const bonus = randomInt(1, 3);
-              game.player.attack += bonus;
-              EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `攻撃力+${bonus}`, "heal");
-            }));
+            // ランダムボーナス1～3
+            const bonus = randomInt(1, 3);
+            arr.push(new WeaponItem(x, y, `武器 (+${bonus})`, '🗡️', bonus));
           } else if (type === "magic") {
             var selection = randomInt(1, 4);
-            var macig;
             switch (selection) {
             case 1:
-                // 例として「火の玉」魔法を配置。オプションを変更することで他の魔法も容易に作成可能
                 arr.push(new MagicSpell(x, y, "火の玉", '🔥', {damage: 10, area: 1, fallbackHeal: 2}));
             	break;
             case 2:
@@ -1270,7 +1277,6 @@
       }
     }
 
-    // 結果表示モーダルを閉じるグローバル関数
     function closeResults() {
       const modal = document.getElementById("resultsModal");
       if (modal) {
