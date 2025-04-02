@@ -385,6 +385,41 @@
       }
     }
 
+    // ---------------- MagicSpell クラス ----------------
+    // 使い切り魔法を抽象化するクラス。damage（ダメージ量）、area（有効範囲）、fallbackHeal（対象がなかった場合の回復量）などを設定可能。
+    class MagicSpell extends InventoryItem {
+      constructor(x, y, name, tile, options) {
+        // useFunction はクラス内の use メソッドで定義
+        super(x, y, name, tile, (game) => {
+          console.log(`魔法使用 ${this.damage} ${this.area} ${this.fallbackHeal}`)
+          let affected = false;
+          for (let i = game.enemies.length - 1; i >= 0; i--) {
+            let enemy = game.enemies[i];
+            if (Math.abs(enemy.x - game.player.x) <= this.area &&
+                Math.abs(enemy.y - game.player.y) <= this.area) {
+              enemy.hp -= this.damage;
+              EffectsManager.showEffect(game.gameContainer, game.player, enemy.x, enemy.y, `-${this.damage}`, "damage");
+              affected = true;
+              if (enemy.hp <= 0) {
+                EffectsManager.showEffect(game.gameContainer, game.player, enemy.x, enemy.y, "💥", "explosion");
+                game.enemies.splice(i, 1);
+                game.score += 50;
+                game.gainExp(5);
+              }
+            }
+          }
+          if (!affected) {
+            game.player.hp += this.fallbackHeal;
+            if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
+            EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${this.fallbackHeal}`, "heal");
+          }
+        });
+        this.damage = options.damage;
+        this.area = options.area;
+        this.fallbackHeal = options.fallbackHeal;
+      }
+    }
+
     // ---------------- DungeonMap Class ----------------
     class DungeonMap {
       constructor(width, height) {
@@ -493,9 +528,11 @@
 
     // ---------------- EffectsManager Class ----------------
     class EffectsManager {
-      static showEffect(container, x, y, text, type = "damage") {
+      static showEffect(container, player, x, y, text, type = "damage") {
+        const dx = x - player.x; // 対象とプレイヤーの距離
+        const dy = y - player.y; // 対象とプレイヤーの距離
         const spans = container.children;
-        const index = 8 * 16 + 7;
+        const index = (8 + dy) * 16 + (7 + dx);
         if (!spans[index]) return;
         const target = spans[index];
         const rect = target.getBoundingClientRect();
@@ -864,7 +901,7 @@
           if (item.x === this.player.x && item.y === this.player.y) {
             if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
               this.player.inventory.push(item);
-              EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, "GET");
+              EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "GET");
               return false;
             }
           }
@@ -900,7 +937,7 @@
             enemy.action--;
             this.queueTimeout(() => {
               this.player.hp -= enemy.atk;
-              EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me");
+              EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me");
             }, this.actionCount * this.actionTime);
             this.actionCount++;
           }
@@ -911,7 +948,7 @@
               enemy.action--;
               this.queueTimeout(() => {
                 this.player.hp -= enemy.atk;
-                EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me");
+                EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me");
               }, this.actionCount * this.actionTime);
               this.actionCount++;
             }
@@ -928,10 +965,10 @@
 
       damageEnemy(enemy, index) {
         enemy.takeDamage(this.player.attack);
-        EffectsManager.showEffect(this.gameContainer, enemy.x, enemy.y, `-${this.player.attack}`, "damage");
+        EffectsManager.showEffect(this.gameContainer, this.player, enemy.x, enemy.y, `-${this.player.attack}`, "damage");
         this.actionCount++;
         if (enemy.hp <= 0) {
-          EffectsManager.showEffect(this.gameContainer, enemy.x, enemy.y, "💥", "explosion");
+          EffectsManager.showEffect(this.gameContainer, this.player, enemy.x, enemy.y, "💥", "explosion");
           this.enemies.splice(index, 1);
           this.score += 50;
           this.gainExp(5);
@@ -942,7 +979,7 @@
         this.gems = this.gems.filter(gem => {
           if (gem.x === this.player.x && gem.y === this.player.y) {
             this.score += 100;
-            EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, "+100");
+            EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "+100");
             return false;
           }
           return true;
@@ -1006,7 +1043,7 @@
       onHeal() {
         this.player.hp += this.player.healAmount;
         if (this.player.hp > this.player.maxHp) this.player.hp = this.player.maxHp;
-        EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, `+${this.player.healAmount}`, "heal");
+        EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `+${this.player.healAmount}`, "heal");
       }
 
       processInventoryInput(event) {
@@ -1026,6 +1063,8 @@
         }
         if (event.key === 'u') {
           let item = this.player.inventory[this.inventorySelection];
+          console.log(`アイテム使用 ${item} ${item.use}`)
+          console.log(item)
           if (item && item.use) {
             item.use(this);
             this.player.inventory.splice(this.inventorySelection, 1);
@@ -1114,6 +1153,7 @@
         this.placeEntities(this.items, randomInt(0, 2), "sushi");
         this.placeEntities(this.items, randomInt(0, 1), "niku");
         this.placeEntities(this.items, randomInt(0, 1), "weapon");
+        // 魔法は MagicSpell クラスを利用して配置。パラメータを変えることで複数種類の魔法を作成可能
         this.placeEntities(this.items, randomInt(0, 1), "magic");
         this.placeEntities(this.enemies, randomInt(2, 4), "enemy");
         this.placeEntities(this.gems, randomInt(1, 3), "entity");
@@ -1138,45 +1178,38 @@
             arr.push(new InventoryItem(x, y, "すし", '🍣', function(game) {
               game.player.hp += 3;
               if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
-              EffectsManager.showEffect(game.gameContainer, game.player.x, game.player.y, "+3", "heal");
+              EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+3", "heal");
             }));
           } else if (type === "niku") {
             arr.push(new InventoryItem(x, y, "お肉", '🍖', function(game) {
               game.player.hp += 6;
               if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
-              EffectsManager.showEffect(game.gameContainer, game.player.x, game.player.y, "+6", "heal");
+              EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+6", "heal");
             }));
           } else if (type === "weapon") {
             arr.push(new InventoryItem(x, y, "武器", '🗡️', function(game) {
               const bonus = randomInt(1, 3);
               game.player.attack += bonus;
-              EffectsManager.showEffect(game.gameContainer, game.player.x, game.player.y, `攻撃力+${bonus}`, "heal");
+              EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `攻撃力+${bonus}`, "heal");
             }));
           } else if (type === "magic") {
-            arr.push(new InventoryItem(x, y, "使い切り魔法", '✨', function(game) {
-              // プレイヤー周囲1マス以内の全敵にダメージ
-              let affected = false;
-              for (let i = game.enemies.length - 1; i >= 0; i--) {
-                let enemy = game.enemies[i];
-                if (Math.abs(enemy.x - game.player.x) <= 1 && Math.abs(enemy.y - game.player.y) <= 1) {
-                  enemy.hp -= 4;
-                  EffectsManager.showEffect(game.gameContainer, enemy.x, enemy.y, "-4", "damage");
-                  affected = true;
-                  if (enemy.hp <= 0) {
-                    EffectsManager.showEffect(game.gameContainer, enemy.x, enemy.y, "💥", "explosion");
-                    game.enemies.splice(i, 1);
-                    game.score += 50;
-                    game.gainExp(5);
-                  }
-                }
-              }
-              if (!affected) {
-                // 対象がなければ控えめに回復
-                game.player.hp += 2;
-                if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
-                EffectsManager.showEffect(game.gameContainer, game.player.x, game.player.y, "+2", "heal");
-              }
-            }));
+            var selection = randomInt(1, 4);
+            var macig;
+            switch (selection) {
+            case 1:
+                // 例として「火の玉」魔法を配置。オプションを変更することで他の魔法も容易に作成可能
+                arr.push(new MagicSpell(x, y, "火の玉", '🔥', {damage: 10, area: 1, fallbackHeal: 2}));
+            	break;
+            case 2:
+                arr.push(new MagicSpell(x, y, "たつまき", '🌪️', {damage: 8, area: 2, fallbackHeal: 2}));
+            	break;
+            case 3:
+                arr.push(new MagicSpell(x, y, "大波", '🌊', {damage: 5, area: 4, fallbackHeal: 2}));
+            	break;
+            case 4:
+                arr.push(new MagicSpell(x, y, "カミナリ", '⚡️', {damage: 15, area: 1, fallbackHeal: 2}));
+            	break;
+            }
           } else if (type === "entity") {
             arr.push(new BaseEntity(x, y));
           } else if (type === "enemy") {
@@ -1188,13 +1221,13 @@
               arr.push(new InventoryItem(x, y, "パン", '🥖', function(game) {
                 game.player.hunger += 20;
                 if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger;
-                EffectsManager.showEffect(game.gameContainer, game.player.x, game.player.y, "+20", "food");
+                EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+20", "food");
               }));
             } else {
               arr.push(new InventoryItem(x, y, "大きなパン", '🍞', function(game) {
                 game.player.hunger += 50;
                 if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger;
-                EffectsManager.showEffect(game.gameContainer, game.player.x, game.player.y, "+50", "food");
+                EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+50", "food");
               }));
             }
           }
@@ -1212,16 +1245,16 @@
           this.player.maxHp += (upHp = randomInt(2, 3));
           this.player.healAmount++;
           this.player.hp = this.player.maxHp;
-          EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, "LEVEL UP!", "heal");
-          this.queueTimeout(() => { EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, `HP +${upHp}`, "heal"); }, 500);
-          this.queueTimeout(() => { EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, `攻撃力 +${upAtk}`, "heal"); }, 1000);
+          EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "LEVEL UP!", "heal");
+          this.queueTimeout(() => { EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `HP +${upHp}`, "heal"); }, 500);
+          this.queueTimeout(() => { EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `攻撃力 +${upAtk}`, "heal"); }, 1000);
         }
       }
 
       playerEat(amount) {
         this.player.hunger += amount;
         if (this.player.hunger > this.player.maxHunger) this.player.hunger = this.player.maxHunger;
-        EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, `+${amount}`, "food");
+        EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `+${amount}`, "food");
       }
 
       checkHunger() {
@@ -1232,7 +1265,7 @@
         }
         if (this.player.hunger === 0) {
           this.player.hp--;
-          EffectsManager.showEffect(this.gameContainer, this.player.x, this.player.y, "餓死", "damage");
+          EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "餓死", "damage");
         }
       }
     }
