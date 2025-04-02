@@ -7,30 +7,16 @@
   <style>
     /* 全体リセット */
     * { user-select: none; margin: 0; padding: 0; box-sizing: border-box; }
-    /* ホーム画面 */
-    #homeScreen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.95);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 3000;
+    /* 難易度選択用マップ */
+    #game { 
+      font-size: 24px; 
+      line-height: 1.2; 
+      white-space: pre; 
+      position: relative; 
+      margin-right: 20px; 
     }
-    #homeScreen h1 {
-      margin-bottom: 20px;
-      font-size: 36px;
-    }
-    #homeScreen button {
-      margin: 5px;
-      padding: 10px 20px;
-      font-size: 18px;
-      cursor: pointer;
-    }
+    #homeScreen { display: none; } /* 旧ホーム画面は削除 */
+
     /* 背景とレイアウト */
     body { 
       font-family: monospace; 
@@ -43,31 +29,6 @@
       justify-content: center; 
     }
     /* タイトル用スタイル */
-    /*#title-container {
-      align-items: center;
-      justify-content: center;
-      font-size: 48px;
-      font-family: monospace;
-      padding: 20px;
-      margin-bottom: 20px;
-      background: linear-gradient(135deg, #ff0080, #ff8c00);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
-    }
-    #title-container {
-      align-items: center;
-      justify-content: center;
-      font-size: 50px;
-      font-family: 'Courier New', monospace;
-      color: #fff;
-      padding: 20px;
-      margin-bottom: 20px;
-      background-color: #222;
-      border: 2px solid #ff0080;
-      border-radius: 10px;
-      box-shadow: 0 0 15px rgba(255, 0, 128, 0.7);
-    } */
     #title-container {
       display: flex;
       flex-flow: column;
@@ -146,12 +107,14 @@
       animation: magicFloat 0.8s ease-out forwards;
       opacity: 0.8;
     }
-    
     @keyframes magicFloat {
       0%   { transform: translateY(0px) scale(1); opacity: 0.8; }
       100% { transform: translateY(-20px) scale(1.2); opacity: 0; }
     }
-    
+    /* 難易度 */
+    #difficulty-container {
+      border-bottom: 1px solid white;
+    }
     /* ステータスバー */
     .bar-container { 
       width: 200px; 
@@ -194,7 +157,7 @@
     .inventory-modal ul { list-style: none; padding: 0; }
     .inventory-modal li { padding: 4px 0; }
     .inventory-modal li.selected { background: #444; }
-    /* ミニマップ用（グリッドレイアウトで隙間なく） */
+    /* ミニマップ用 */
     .minimap-container {
       margin-top: 20px;
       background: #111;
@@ -236,24 +199,18 @@
       margin-top: 10px;
       padding: 5px 10px;
     }
-    /* ダンジョンの難易度に合わせた背景変更 */
+    /* 難易度に合わせた背景変更 */
     body.easy-dungeon { background-color: #444 !important; }
     body.hard-dungeon { background-color: #222 !important; }
     body.deep-dungeon { background-color: #000 !important; }
   </style>
 </head>
 <body>
-  <!-- ホーム画面：難易度選択 -->
-  <div id="homeScreen">
-    <h1>難易度を選択してください</h1>
-    <button onclick="startGame('easy')">Easy</button>
-    <button onclick="startGame('normal')">Normal</button>
-    <button onclick="startGame('hard')">Hard</button>
-  </div>
-  
+  <!-- DifficultySelector用の画面は「game」コンテナを流用 -->
   <div class="container">
     <div class="game-container" id="game"></div>
     <div class="ui-container">
+      <div id="difficulty-container">難易度： <span id="difficulty"></span></div>
       ❤️ 体力: <div class="bar-container"><div id="hp-bar" class="bar hp"></div></div>
       🍗 満腹度: <div class="bar-container"><div id="hunger-bar" class="bar hunger"></div></div>
       <p style="display:none;">❤️ 体力: <span id="hp">*</span> / <span id="maxhp">*</span>　🍗 満腹度: <span id="hunger">*</span> / <span id="maxhunger">*</span></p>
@@ -291,12 +248,12 @@
       MAX_ENEMY_MULTIPLIER: 1.4,
       INVENTORY_MAX: 10,
       VIEW_RADIUS: 7,  // プレイヤー周囲7マス
-      DIFFICULTY: "easy"  // 初期値。startGame()で上書き
+      DIFFICULTY: "easy"  // 初期値。DifficultySelectorで上書き
     };
     
     // MAP_TILE は選択された難易度に応じて更新
     const MAP_TILE = {
-      WALL: "🌳",  // defaultはNormal用。startGame()で変更
+      WALL: "🌳",  // defaultはNormal用。startDungeonGame()で変更
       STEPS: '🔼'
     };
 
@@ -326,8 +283,8 @@
         this.exp = 0;
         this.hunger = 100;
         this.maxHunger = 100;
-        this.inventory = []; // インベントリ（最大10個）
-        this.weapon = null; // 装備中の武器（nullなら未装備）
+        this.inventory = [];
+        this.weapon = null;
       }
     }
 
@@ -371,9 +328,7 @@
       }
       takeDamage(damage) {
         super.takeDamage(damage);
-        if (this.hp > 0) {
-          this.hp += this.regenerationRate;
-        }
+        if (this.hp > 0) { this.hp += this.regenerationRate; }
       }
     }
     class EnemyBat extends Enemy {
@@ -411,18 +366,10 @@
         this.magicDamage = 2;
       }
     }
-    
     const enemyList = (floor) => {
       const enemyClasses = [
-        EnemyLarvae,
-        EnemyAnt,
-        EnemyCrayfish,
-        EnemySlime,
-        EnemyBat,
-        EnemyGoblin,
-        EnemySkeleton,
-        EnemySpider,
-        EnemyWizard,
+        EnemyLarvae, EnemyAnt, EnemyCrayfish, EnemySlime,
+        EnemyBat, EnemyGoblin, EnemySkeleton, EnemySpider, EnemyWizard
       ];
       const list = [];
       enemyClasses.forEach(c => {
@@ -476,7 +423,7 @@
       }
     }
 
-    // ---------------- 武器アイテム（equipable） ----------------
+    // ---------------- 武器アイテム ----------------
     class WeaponItem extends InventoryItem {
       constructor(x, y, name, tile, bonus) {
         super(x, y, name, tile, (game) => {
@@ -516,7 +463,7 @@
         let y = randomInt(1, this.height - h - 1);
         for (let i = y; i < y + h; i++) {
           for (let j = x; j < x + w; j++) {
-            this.grid[i][j] = ' '; // 空白タイル
+            this.grid[i][j] = ' ';
           }
         }
         this.rooms.push({ x, y, w, h });
@@ -538,12 +485,8 @@
       generate() {
         this.reset();
         const roomCount = (CONFIG.DIFFICULTY === "hard") ? randomInt(5, 8) : randomInt(3, 6);
-        for (let i = 0; i < roomCount; i++) {
-          this.createRoom();
-        }
-        for (let i = 0; i < this.rooms.length - 1; i++) {
-          this.connectRooms(this.rooms[i], this.rooms[i + 1]);
-        }
+        for (let i = 0; i < roomCount; i++) { this.createRoom(); }
+        for (let i = 0; i < this.rooms.length - 1; i++) { this.connectRooms(this.rooms[i], this.rooms[i + 1]); }
       }
       revealRoom(px, py) {
         for (let room of this.rooms) {
@@ -554,8 +497,7 @@
                 const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
                 for (let [dx, dy] of dirs) {
                   let nx = j + dx, ny = i + dy;
-                  if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height &&
-                      this.grid[ny][nx] === ' ') {
+                  if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height && this.grid[ny][nx] === ' ') {
                     this.visible[ny][nx] = true;
                   }
                 }
@@ -590,13 +532,9 @@
         this.hpBar.textContent = `${player.hp}/${player.maxHp}`;
         this.hungerBar.style.width = `${(player.hunger / player.maxHunger) * 100}%`;
         this.hungerBar.textContent = `${player.hunger}/${player.maxHunger}`;
-        if (player.hp > player.maxHp / 2) {
-          this.hpBar.style.backgroundColor = "green";
-        } else if (player.hp > player.maxHp / 4) {
-          this.hpBar.style.backgroundColor = "orange";
-        } else {
-          this.hpBar.style.backgroundColor = "red";
-        }
+        if (player.hp > player.maxHp / 2) this.hpBar.style.backgroundColor = "green";
+        else if (player.hp > player.maxHp / 4) this.hpBar.style.backgroundColor = "orange";
+        else this.hpBar.style.backgroundColor = "red";
       }
     }
 
@@ -697,7 +635,6 @@
         this.render();
         new InputManager(this);
       }
-
       queueTimeout(callback, delay) {
         this.acceptingInput = false;
         const id = setTimeout(() => {
@@ -708,13 +645,10 @@
         }, delay);
         this.timeoutQueue.push(id);
       }
-
       advanceTurn() {
         this.generateEnemyCycle[0] = (this.generateEnemyCycle[0] + 1) % this.generateEnemyCycle[1];
         this.hungerCycle[0] = (this.hungerCycle[0] + 1) % this.hungerCycle[1];
       }
-
-      // 新規追加：BFSによる経路探索で敵の移動先を求める
       findPath(startX, startY, targetX, targetY) {
         let queue = [];
         queue.push({ x: startX, y: startY, path: [] });
@@ -732,9 +666,7 @@
         ];
         while (queue.length > 0) {
           const current = queue.shift();
-          if (current.x === targetX && current.y === targetY) {
-            return current.path;
-          }
+          if (current.x === targetX && current.y === targetY) return current.path;
           for (const d of directions) {
             const nx = current.x + d.dx;
             const ny = current.y + d.dy;
@@ -749,40 +681,29 @@
         }
         return null;
       }
-
-      // 改修：敵の移動ロジック（BFSで経路探索して１マス先へ）
       enemyMovementPhase(nextPlayerX, nextPlayerY) {
         let occupied = new Set();
         this.enemies.forEach(e => occupied.add(`${e.x},${e.y}`));
-      
         this.enemies.forEach((enemy) => {
           if (enemy.hp <= 0 || enemy.action === 0) return;
-          
           let dx = Math.abs(enemy.x - this.player.x);
           let dy = Math.abs(enemy.y - this.player.y);
-          
-          if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
-            return;
-          }
+          if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) return;
           else if (dx === 1 && dy === 1) {
             if (this.map.grid[this.player.y][enemy.x] !== MAP_TILE.WALL &&
-                this.map.grid[enemy.y][this.player.x] !== MAP_TILE.WALL) {
-              return;
-            }
+                this.map.grid[enemy.y][this.player.x] !== MAP_TILE.WALL) return;
           }
-          
           const path = this.findPath(enemy.x, enemy.y, this.player.x, this.player.y);
           if (path && path.length > 0) {
             let candidate = path[0];
             if (candidate.x === nextPlayerX && candidate.y === nextPlayerY) return;
-            
             if (enemy.x !== candidate.x && enemy.y !== candidate.y) {
               const horizontalBlocked = (this.map.grid[enemy.y][candidate.x] === MAP_TILE.WALL);
-              const verticalBlocked   = (this.map.grid[candidate.y][enemy.x] === MAP_TILE.WALL);
+              const verticalBlocked = (this.map.grid[candidate.y][enemy.x] === MAP_TILE.WALL);
               if (horizontalBlocked || verticalBlocked) {
                 let possibleMoves = [];
                 if (!horizontalBlocked) possibleMoves.push({ x: candidate.x, y: enemy.y });
-                if (!verticalBlocked)   possibleMoves.push({ x: enemy.x, y: candidate.y });
+                if (!verticalBlocked) possibleMoves.push({ x: enemy.x, y: candidate.y });
                 candidate = null;
                 for (let move of possibleMoves) {
                   if (!occupied.has(`${move.x},${move.y}`)) {
@@ -793,9 +714,7 @@
                 if (!candidate) return;
               }
             }
-            
             if (occupied.has(`${candidate.x},${candidate.y}`)) return;
-            
             occupied.delete(`${enemy.x},${enemy.y}`);
             enemy.action--;
             enemy.x = candidate.x;
@@ -804,7 +723,6 @@
           }
         });
       }
-
       renderMainView() {
         let html = '';
         const radius = CONFIG.VIEW_RADIUS;
@@ -814,41 +732,22 @@
           for (let x = startX; x <= this.player.x + radius; x++) {
             let tile = MAP_TILE.WALL;
             if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
-              if (!this.map.visible[y][x]) {
-                html += `<span class="wall">${MAP_TILE.WALL}</span>`;
-                continue;
-              } else if (this.player.x === x && this.player.y === y) {
-                tile = this.player.tile;
-              } else {
+              if (!this.map.visible[y][x]) { html += `<span class="wall">${MAP_TILE.WALL}</span>`; continue; }
+              else if (this.player.x === x && this.player.y === y) tile = this.player.tile;
+              else {
                 let drawn = false;
                 for (let enemy of this.enemies) {
-                  if (enemy.x === x && enemy.y === y) {
-                    tile = enemy.tile;
-                    drawn = true;
-                    break;
-                  }
+                  if (enemy.x === x && enemy.y === y) { tile = enemy.tile; drawn = true; break; }
                 }
                 if (!drawn) {
                   for (let item of this.items) {
-                    if (item.x === x && item.y === y) {
-                      tile = item.tile;
-                      drawn = true;
-                      break;
-                    }
+                    if (item.x === x && item.y === y) { tile = item.tile; drawn = true; break; }
                   }
                   for (let gem of this.gems) {
-                    if (gem.x === x && gem.y === y) {
-                      tile = '💎';
-                      drawn = true;
-                      break;
-                    }
+                    if (gem.x === x && gem.y === y) { tile = '💎'; drawn = true; break; }
                   }
-                  if (!drawn && this.stairs.x === x && this.stairs.y === y) {
-                    tile = MAP_TILE.STEPS;
-                  }
-                  if (!drawn && tile === MAP_TILE.WALL) {
-                    tile = this.map.grid[y][x];
-                  }
+                  if (!drawn && this.stairs.x === x && this.stairs.y === y) tile = MAP_TILE.STEPS;
+                  if (!drawn && tile === MAP_TILE.WALL) tile = this.map.grid[y][x];
                 }
               }
             }
@@ -858,24 +757,17 @@
         }
         this.gameContainer.innerHTML = html;
       }
-
       renderMinimap() {
         let html = '';
         for (let y = 0; y < this.height; y++) {
           for (let x = 0; x < this.width; x++) {
             let style = "";
             if (this.map.visible[y][x]) {
-              if (this.player.x === x && this.player.y === y) {
-                style = "background-color: yellow;";
-              } else if (this.enemies.some(e => e.x === x && e.y === y)) {
-                style = "background-color: red;";
-              } else if (this.items.some(item => item.x === x && item.y === y)) {
-                style = "background-color: cyan;";
-              } else if (this.stairs.x === x && this.stairs.y === y) {
-                style = "border: 1px solid cyan; background-color: transparent;";
-              } else {
-                style = (this.map.grid[y][x] === ' ') ? "background-color: #555;" : "background-color: #222;";
-              }
+              if (this.player.x === x && this.player.y === y) style = "background-color: yellow;";
+              else if (this.enemies.some(e => e.x === x && e.y === y)) style = "background-color: red;";
+              else if (this.items.some(item => item.x === x && item.y === y)) style = "background-color: cyan;";
+              else if (this.stairs.x === x && this.stairs.y === y) style = "border: 1px solid cyan; background-color: transparent;";
+              else style = (this.map.grid[y][x] === ' ') ? "background-color: #555;" : "background-color: #222;";
             }
             html += `<div class="minimap-cell" style="${style}"></div>`;
           }
@@ -883,19 +775,14 @@
         this.minimapContainer.innerHTML = html;
         this.minimapContainer.style.gridTemplateColumns = `repeat(${this.width}, 4px)`;
       }
-
       render() {
-        // フロア数に応じた見た目の調整（bodyにクラスを追加）
         document.body.classList.remove("easy-dungeon", "hard-dungeon", "deep-dungeon");
-        if (this.floor < 10) {
-          document.body.classList.add("easy-dungeon");
-        } else if (this.floor < 50) {
-          document.body.classList.add("hard-dungeon");
-        } else {
-          document.body.classList.add("deep-dungeon");
-        }
+        if (this.floor < 10) document.body.classList.add("easy-dungeon");
+        else if (this.floor < 50) document.body.classList.add("hard-dungeon");
+        else document.body.classList.add("deep-dungeon");
         this.renderMainView();
         this.renderMinimap();
+        document.getElementById('difficulty').innerText = CONFIG.DIFFICULTY;
         document.getElementById('hp').innerText = this.player.hp;
         document.getElementById('maxhp').innerText = this.player.maxHp;
         document.getElementById('atk').innerText = this.player.attack;
@@ -909,16 +796,14 @@
         if (this.inventoryOpen) {
           let invHtml = `<div class="inventory-modal">`;
           invHtml += `<h3>所持品 (${this.player.inventory.length}/${CONFIG.INVENTORY_MAX})</h3>`;
-          if (this.player.inventory.length === 0) {
-            invHtml += `<p>(なし)</p>`;
-          } else {
+          if (this.player.inventory.length === 0) invHtml += `<p>(なし)</p>`;
+          else {
             invHtml += `<ul>`;
             for (let i = 0; i < this.player.inventory.length; i++) {
               let selected = (i === this.inventorySelection) ? ">> " : "";
               let itemName = this.player.inventory[i].name || "アイテム";
-              if (this.player.inventory[i].name.match(/武器.*/g) && this.player.weapon === this.player.inventory[i]) {
+              if (this.player.inventory[i].name.match(/武器.*/g) && this.player.weapon === this.player.inventory[i])
                 itemName += " (装備中)";
-              }
               invHtml += `<li class="${(i===this.inventorySelection) ? 'selected' : ''}">${selected}${itemName}</li>`;
             }
             invHtml += `</ul>`;
@@ -928,7 +813,6 @@
           this.gameContainer.innerHTML += invHtml;
         }
       }
-
       computeInput(event) {
         if (this.keysDown['Shift']) {
           let hor = 0, ver = 0;
@@ -938,38 +822,28 @@
           else if (this.keysDown['ArrowDown'] && !this.keysDown['ArrowUp']) { ver = 1; }
           if (hor !== 0 && ver !== 0) {
             if (this.map.grid[this.player.y][this.player.x + hor] === MAP_TILE.WALL ||
-                this.map.grid[this.player.y + ver][this.player.x] === MAP_TILE.WALL) {
-              return null;
-            }
+                this.map.grid[this.player.y + ver][this.player.x] === MAP_TILE.WALL) return null;
             return { tx: this.player.x + hor, ty: this.player.y + ver };
           }
           return null;
         }
         if (event.key === '.') {
           this.restCycle[0] = (this.restCycle[0] + 1) % this.restCycle[1];
-          if (this.restCycle[0] === 0 && this.player.hp < this.player.maxHp) {
-            this.player.hp++;
-          }
+          if (this.restCycle[0] === 0 && this.player.hp < this.player.maxHp) this.player.hp++;
           return { tx: this.player.x, ty: this.player.y };
         }
-        if (event.key === 'r') {
-          this.showResults();
-          return null;
-        }
+        if (event.key === 'r') { this.showResults(); return null; }
         let dx = 0, dy = 0, count = 0;
         if (this.keysDown['ArrowLeft']) { dx = -1; count++; }
         if (this.keysDown['ArrowRight']) { dx = 1; count++; }
         if (this.keysDown['ArrowUp']) { dy = -1; count++; }
         if (this.keysDown['ArrowDown']) { dy = 1; count++; }
         if (count === 1) {
-          if (this.map.grid[this.player.y + dy]?.[this.player.x + dx] === MAP_TILE.WALL) {
-            return null;
-          }
+          if (this.map.grid[this.player.y + dy]?.[this.player.x + dx] === MAP_TILE.WALL) return null;
           return { tx: this.player.x + dx, ty: this.player.y + dy };
         }
         return null;
       }
-
       updateData(inputResult) {
         if (!inputResult) return;
         this.actionCount = 0;
@@ -1014,16 +888,13 @@
         } else {
           this.enemyMovementPhase(tx, ty);
           this.enemyAttackPhase();
-          this.queueTimeout(() => {
-            this.enemyActionRefresh();
-          }, this.actionCount * this.actionTime);
+          this.queueTimeout(() => { this.enemyActionRefresh(); }, this.actionCount * this.actionTime);
         }
         this.checkCollisions();
         if (this.generateEnemyCycle[0] === 0) {
           this.placeEntities(this.enemies, randomInt(1, 3), "enemy");
         }
       }
-
       enemyAttackPhase() {
         this.enemies.forEach((enemy) => {
           if (enemy.hp <= 0 || enemy.action === 0) return;
@@ -1050,13 +921,9 @@
           }
         });
       }
-
       enemyActionRefresh() {
-        this.enemies.forEach((enemy) => {
-          enemy.action = enemy.maxAction;
-        });
+        this.enemies.forEach((enemy) => { enemy.action = enemy.maxAction; });
       }
-
       damageEnemy(enemy, index) {
         enemy.takeDamage(this.player.attack);
         EffectsManager.showEffect(this.gameContainer, this.player, enemy.x, enemy.y, `-${this.player.attack}`, "damage");
@@ -1068,7 +935,6 @@
           this.gainExp(5);
         }
       }
-
       checkCollisions() {
         this.gems = this.gems.filter(gem => {
           if (gem.x === this.player.x && gem.y === this.player.y) {
@@ -1096,7 +962,6 @@
           }
         }, this.actionCount * this.actionTime);
       }
-
       saveResult(clear=false) {
         let results = JSON.parse(localStorage.getItem("gameResult") || "[]");
         results.push({
@@ -1109,15 +974,12 @@
         });
         localStorage.setItem("gameResult", JSON.stringify(results));
       }
-
-      // 修正：新しいデータ項目（dungeonLv, clear）を表示するようにテーブルを更新
       showResults() {
         let results = JSON.parse(localStorage.getItem("gameResult") || "[]");
         let modalHtml = '<div class="results-modal" id="resultsModal">';
         modalHtml += '<h3>記録された結果</h3>';
-        if(results.length === 0) {
-          modalHtml += '<p>記録がありません。</p>';
-        } else {
+        if(results.length === 0) modalHtml += '<p>記録がありません。</p>';
+        else {
           modalHtml += '<table><tr><th>日付</th><th>難易度</th><th>フロア</th><th>結果</th><th>レベル</th><th>スコア</th></tr>';
           results.forEach(r => {
             modalHtml += `<tr><td>${new Date(r.date).toLocaleString()}</td><td>${r.dungeonLv == undefined ? "-" : r.dungeonLv}</td><td>${r.floor}</td><td>${r.clear ? "クリア" : "ゲームオーバー"}</td><td>${r.lv}</td><td>${r.score}</td></tr>`;
@@ -1133,13 +995,231 @@
           document.body.appendChild(modalDiv);
         }
       }
-
       onHeal() {
         this.player.hp += this.player.healAmount;
         if (this.player.hp > this.player.maxHp) this.player.hp = this.player.maxHp;
         EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `+${this.player.healAmount}`, "heal");
       }
-
+      processInventoryInput(event) {
+        if (event.key === 'ArrowUp') {
+          if (this.player.inventory.length > 0) {
+            this.inventorySelection = (this.inventorySelection - 1 + this.player.inventory.length) % this.player.inventory.length;
+            this.render();
+          }
+          return;
+        }
+        if (event.key === 'ArrowDown') {
+          if (this.player.inventory.length > 0) {
+            this.inventorySelection = (this.inventorySelection + 1) % this.player.inventory.length;
+            this.render();
+          }
+          return;
+        }
+        if (event.key === 'u') {
+          let item = this.player.inventory[this.inventorySelection];
+          if (item && item.use) {
+            item.use(this);
+            if (item.name.match(/武器.*/g) === null) {
+              this.player.inventory.splice(this.inventorySelection, 1);
+              if (this.inventorySelection >= this.player.inventory.length)
+                this.inventorySelection = this.player.inventory.length - 1;
+            }
+            this.advanceTurn();
+            this.enemyMovementPhase(this.player.x, this.player.y);
+            this.enemyAttackPhase();
+            this.checkCollisions();
+          }
+          this.inventoryOpen = false;
+          this.render();
+          return;
+        }
+        if (event.key === 'd') {
+          let item = this.player.inventory[this.inventorySelection];
+          if (item) {
+            if (item.name.match(/武器.*/g) && this.player.weapon === item) {
+              this.player.attack -= this.player.weapon.bonus;
+              this.player.weapon = null;
+              EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `装備解除-${item.bonus}`, "heal");
+            }
+            item.x = this.player.x;
+            item.y = this.player.y;
+            this.items.push(item);
+            this.player.inventory.splice(this.inventorySelection, 1);
+            if (this.inventorySelection >= this.player.inventory.length)
+              this.inventorySelection = this.player.inventory.length - 1;
+          }
+          this.inventoryOpen = false;
+          this.render();
+          return;
+        }
+        if (event.key === 'Escape' || event.key === 'e') {
+          this.inventoryOpen = false;
+          this.render();
+          return;
+        }
+      }
+      processInput(event) {
+        if (this.isGameOver || !this.acceptingInput) return;
+        if (event.key === 'e') {
+          this.inventoryOpen = !this.inventoryOpen;
+          if (this.inventoryOpen) this.inventorySelection = 0;
+          this.render();
+          return;
+        }
+        if (this.inventoryOpen) {
+          this.processInventoryInput(event);
+          return;
+        }
+        const inputResult = this.computeInput(event);
+        if (!inputResult) return;
+        this.advanceTurn();
+        this.updateData(inputResult);
+        this.render();
+      }
+      generateDungeon(keepHP = false) {
+        const prevHP = this.player.hp;
+        const prevScore = this.score;
+        this.map.generate();
+        this.enemies = [];
+        this.items = [];
+        this.gems = [];
+        const firstRoom = this.map.rooms[0];
+        this.player.x = firstRoom.x + 1;
+        this.player.y = firstRoom.y + 1;
+        this.map.revealRoom(this.player.x, this.player.y);
+        this.map.revealAround(this.player.x, this.player.y);
+        if (!keepHP) {
+          this.player.hp = this.initialHP;
+          this.score = 0;
+          this.floor = 1;
+          this.player.hunger = this.player.maxHunger;
+        } else {
+          this.player.hp = prevHP;
+          this.score = prevScore;
+          this.floor++;
+          if (this.floor > difficultySettings[CONFIG.DIFFICULTY].maxFloor) {
+            alert("ダンジョンクリア！おめでとう！");
+            this.saveResult(true);
+            this.player = new Player(0, 0, this.initialHP);
+            this.floor = 1;
+            this.score = 0;
+            this.generateDungeon(false);
+            return;
+          }
+        }
+        const lastRoom = this.map.rooms.at(-1);
+        this.stairs.x = lastRoom.x + 2;
+        this.stairs.y = lastRoom.y + 2;
+        this.map.grid[this.stairs.y][this.stairs.x] = MAP_TILE.STEPS;
+        if (CONFIG.DIFFICULTY === "hard") {
+          this.minMagnification = 1.4;
+          this.maxMagnification = 1.7;
+        } else {
+          this.minMagnification = CONFIG.MIN_ENEMY_MULTIPLIER;
+          this.maxMagnification = CONFIG.MAX_ENEMY_MULTIPLIER;
+        }
+        this.placeEntities(this.enemies, randomInt(3, 6), "enemy");
+        this.placeEntities(this.gems, randomInt(1, 2), "entity");
+        const maxItems = randomInt(3, 5);
+        const weightedTypes = [
+          ...Array(2).fill("food"),
+          ...Array(2).fill("sushi"),
+          ...Array(1).fill("magic"),
+          ...Array(1).fill("niku"),
+          ...Array(2).fill("weapon")
+        ];
+        for (let i = 0; i < maxItems; i++) {
+          const type = weightedTypes.splice(randomInt(0, weightedTypes.length - 1), 1)[0];
+          this.placeEntities(this.items, 1, type);
+        }
+      }
+      placeEntities(arr, count, type) {
+        for (let i = 0; i < count; i++) {
+          let x, y, hp;
+          do {
+            const room = this.map.rooms[randomInt(0, this.map.rooms.length - 1)];
+            x = randomInt(room.x + 1, room.x + room.w - 2);
+            y = randomInt(room.y + 1, room.y + room.h - 2);
+            if (type === "enemy") {
+              hp = randomInt(
+                Math.round(Math.pow(this.floor, this.minMagnification)),
+                Math.round(Math.pow(this.floor, this.maxMagnification))
+              );
+            }
+          } while (this.map.grid[y][x] !== ' ' || (x === this.player.x && y === this.player.y));
+          if (type === "sushi") {
+            arr.push(new InventoryItem(x, y, "すし", '🍣', function(game) {
+              game.player.hp += 3;
+              if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
+              EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+3", "heal");
+            }));
+          } else if (type === "niku") {
+            arr.push(new InventoryItem(x, y, "お肉", '🍖', function(game) {
+              game.player.hp += 6;
+              if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
+              EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+6", "heal");
+            }));
+          } else if (type === "weapon") {
+            const bonus = randomInt(1, 3);
+            arr.push(new WeaponItem(x, y, `武器 (+${bonus})`, '🗡️', bonus));
+          } else if (type === "magic") {
+            var selection = randomInt(1, 4);
+            switch (selection) {
+              case 1: arr.push(new MagicSpell(x, y, "火の玉", '🔥', '🔥', {damage: 10, area: 1, fallbackHeal: null})); break;
+              case 2: arr.push(new MagicSpell(x, y, "たつまき", '🌪️', '🌪️', {damage: 8, area: 2, fallbackHeal: null})); break;
+              case 3: arr.push(new MagicSpell(x, y, "大波", '🌊', '🌊', {damage: 5, area: 4, fallbackHeal: null})); break;
+              case 4: arr.push(new MagicSpell(x, y, "カミナリ", '⚡️', '⚡️', {damage: 15, area: 1, fallbackHeal: null})); break;
+            }
+          } else if (type === "entity") {
+            arr.push(new BaseEntity(x, y));
+          } else if (type === "enemy") {
+            const enemys = enemyList(this.floor);
+            const EnemyClass = enemys[randomInt(0, enemys.length - 1)];
+            arr.push(new EnemyClass(x, y, hp));
+          } else if (type === "food") {
+            if (Math.random() > 0.7) {
+              arr.push(new InventoryItem(x, y, "パン", '🥖', function(game) {
+                game.player.hunger += 20;
+                if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger;
+                EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+20", "food");
+              }));
+            } else {
+              arr.push(new InventoryItem(x, y, "大きなパン", '🍞', function(game) {
+                game.player.hunger += 50;
+                if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger;
+                EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+50", "food");
+              }));
+            }
+          }
+        }
+      }
+      gainExp(amount) {
+        this.player.exp += amount;
+        const expToNext = this.player.level * 10;
+        if (this.player.exp >= expToNext) {
+          let upAtk, upHp;
+          this.player.exp -= expToNext;
+          this.player.level++;
+          this.player.attack += (upAtk = randomInt(1, 2));
+          this.player.maxHp += (upHp = randomInt(2, 3));
+          this.player.healAmount++;
+          this.player.hp = this.player.maxHp;
+          EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "LEVEL UP!", "heal");
+          this.queueTimeout(() => { EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `HP +${upHp}`, "heal"); }, 500);
+          this.queueTimeout(() => { EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `攻撃力 +${upAtk}`, "heal"); }, 1000);
+        }
+      }
+      playerEat(amount) {
+        this.player.hunger += amount;
+        if (this.player.hunger > this.player.maxHunger) this.player.hunger = this.player.maxHunger;
+        EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `+${amount}`, "food");
+      }
+      checkHunger() {
+        this.hungerCycle[0] = (this.hungerCycle[0] + 1) % this.hungerCycle[1];
+        if (this.hungerCycle[0] === 0) { this.player.hunger--; if (this.player.hunger < 0) this.player.hunger = 0; }
+        if (this.player.hunger === 0) { this.player.hp--; EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "餓死", "damage"); }
+      }
+      // processInventoryInput() と processInput() は従来通り
       processInventoryInput(event) {
         if (event.key === 'ArrowUp') {
           if (this.player.inventory.length > 0) {
@@ -1242,9 +1322,8 @@
           this.score = prevScore;
           this.floor++;
           // ダンジョン難易度に合わせた最終フロアチェック
-          if (this.floor > difficultySettings[CONFIG.DIFFICULTY].maxFloor) {
+          if ((CONFIG.DIFFICULTY === "easy" && this.floor > 10) || (CONFIG.DIFFICULTY === "hard" && this.floor > 99)) {
             alert("ダンジョンクリア！おめでとう！");
-            this.saveResult(true);
             this.player = new Player(0, 0, this.initialHP);
             this.floor = 1;
             this.score = 0;
@@ -1351,60 +1430,93 @@
           }
         }
       }
+    }
 
-      gainExp(amount) {
-        this.player.exp += amount;
-        const expToNext = this.player.level * 10;
-        if (this.player.exp >= expToNext) {
-          let upAtk, upHp;
-          this.player.exp -= expToNext;
-          this.player.level++;
-          this.player.attack += (upAtk = randomInt(1, 2));
-          this.player.maxHp += (upHp = randomInt(2, 3));
-          this.player.healAmount++;
-          this.player.hp = this.player.maxHp;
-          EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "LEVEL UP!", "heal");
-          this.queueTimeout(() => { EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `HP +${upHp}`, "heal"); }, 500);
-          this.queueTimeout(() => { EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `攻撃力 +${upAtk}`, "heal"); }, 1000);
+    // ---------------- DifficultySelector クラス ----------------
+    class DifficultySelector {
+      constructor() {
+        this.gridWidth = 15;
+        this.gridHeight = 15;
+        this.grid = [];
+        for (let y = 0; y < this.gridHeight; y++) {
+          this.grid[y] = [];
+          for (let x = 0; x < this.gridWidth; x++) {
+            this.grid[y][x] = " ";
+          }
+        }
+        // 難易度オプションの配置（例）
+        this.options = [
+          { x: 3, y: 3, difficulty: "easy", tile: "🌲" },
+          { x: 11, y: 3, difficulty: "normal", tile: "🌳" },
+          { x: 7, y: 11, difficulty: "hard", tile: "🧱" }
+        ];
+        this.options.forEach(opt => {
+          this.grid[opt.y][opt.x] = opt.tile;
+        });
+        // プレイヤーの初期位置（中央）
+        this.playerX = Math.floor(this.gridWidth / 2);
+        this.playerY = Math.floor(this.gridHeight / 2);
+        this.inSelection = true;
+        this.render();
+        this.handleKeyDown = this.handleKeyDown.bind(this);
+        document.addEventListener('keydown', this.handleKeyDown);
+      }
+      render() {
+        let html = "";
+        for (let y = 0; y < this.gridHeight; y++) {
+          for (let x = 0; x < this.gridWidth; x++) {
+            if (x === this.playerX && y === this.playerY) {
+              html += "<span>😊</span>";
+            } else {
+              html += `<span>${this.grid[y][x]}</span>`;
+            }
+          }
+          html += "<br>";
+        }
+        document.getElementById("game").innerHTML = html;
+      }
+      handleKeyDown(e) {
+        if (!this.inSelection) return;
+        let dx = 0, dy = 0;
+        if (e.key === "ArrowLeft") dx = -1;
+        else if (e.key === "ArrowRight") dx = 1;
+        else if (e.key === "ArrowUp") dy = -1;
+        else if (e.key === "ArrowDown") dy = 1;
+        if (dx !== 0 || dy !== 0) {
+          let newX = this.playerX + dx;
+          let newY = this.playerY + dy;
+          if (newX < 0 || newX >= this.gridWidth || newY < 0 || newY >= this.gridHeight) return;
+          this.playerX = newX;
+          this.playerY = newY;
+          this.render();
+          // 難易度オプションに到達していればゲーム開始
+          for (let opt of this.options) {
+            if (opt.x === this.playerX && opt.y === this.playerY) {
+              this.inSelection = false;
+              document.removeEventListener('keydown', this.handleKeyDown);
+              startDungeonGame(opt.difficulty);
+              break;
+            }
+          }
         }
       }
+    }
 
-      playerEat(amount) {
-        this.player.hunger += amount;
-        if (this.player.hunger > this.player.maxHunger) this.player.hunger = this.player.maxHunger;
-        EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `+${amount}`, "food");
-      }
-
-      checkHunger() {
-        this.hungerCycle[0] = (this.hungerCycle[0] + 1) % this.hungerCycle[1];
-        if (this.hungerCycle[0] === 0) {
-          this.player.hunger--;
-          if (this.player.hunger < 0) this.player.hunger = 0;
-        }
-        if (this.player.hunger === 0) {
-          this.player.hp--;
-          EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "餓死", "damage");
-        }
-      }
+    // 難易度選択後に呼ばれる
+    function startDungeonGame(difficulty) {
+      CONFIG.DIFFICULTY = difficulty;
+      MAP_TILE.WALL = difficultySettings[difficulty].wallEmoji;
+      // 既存のGameクラスを起動
+      new Game();
     }
 
     function closeResults() {
       const modal = document.getElementById("resultsModal");
-      if (modal) {
-        modal.remove();
-      }
+      if (modal) modal.remove();
     }
 
-    // startGame: ホーム画面で難易度を選択したときに呼ばれる
-    function startGame(difficulty) {
-      CONFIG.DIFFICULTY = difficulty;
-      // 難易度ごとにMAP_TILE.WALLの絵文字を設定
-      MAP_TILE.WALL = difficultySettings[difficulty].wallEmoji;
-      // ホーム画面を非表示にする
-      document.getElementById("homeScreen").style.display = "none";
-      // ゲーム開始
-      new Game();
-    }
+    // エントリーポイント：DifficultySelectorから難易度選択させる
+    new DifficultySelector();
   </script>
 </body>
 </html>
