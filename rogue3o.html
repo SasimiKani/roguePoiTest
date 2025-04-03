@@ -741,9 +741,9 @@
         if (attacked) {
           this.enemyAttackPhase();
           this.queueTimeout(() => {
-            this.enemyMovementPhase(tx, ty);
+            this.enemyMovementPhase(tx, ty, attacked);
             this.enemyActionRefresh();
-          }, this.actionCount * this.actionTime);
+          }, (this.actionCount + 1) * this.actionTime);
         } else {
           this.enemyMovementPhase(tx, ty);
           this.enemyAttackPhase();
@@ -966,71 +966,122 @@
       }
       
       // ---------------- 敵関連 ----------------
-      enemyMovementPhase(nextPlayerX, nextPlayerY) {
+      // 敵の移動処理
+      enemyMovementPhase(nextPlayerX, nextPlayerY, attacked=false) {
+        // 敵が占有している座標を管理するセットを作成
         let occupied = new Set();
+        // すべての敵の現在位置を occupied に追加
         this.enemies.forEach(e => occupied.add(`${e.x},${e.y}`));
+      
+        // 各敵について移動処理を行う
         this.enemies.forEach((enemy) => {
+          // 体力が0以下、または行動回数が0なら処理をスキップ
           if (enemy.hp <= 0 || enemy.action === 0) return;
+      
+          // プレイヤーとの距離を水平方向(dx)・垂直方向(dy)で算出
           let dx = Math.abs(enemy.x - this.player.x);
           let dy = Math.abs(enemy.y - this.player.y);
+      
+          // プレイヤーの隣接（上下左右）なら移動不要なので処理をスキップ
           if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) return;
+          // 斜め隣の場合、壁が間に無ければ移動しない
           else if (dx === 1 && dy === 1) {
             if (this.map.grid[this.player.y][enemy.x] !== MAP_TILE.WALL &&
                 this.map.grid[enemy.y][this.player.x] !== MAP_TILE.WALL) return;
           }
+      
+          // プレイヤーまでの最短経路を探索
           const path = this.findPath(enemy.x, enemy.y, this.player.x, this.player.y);
           if (path && path.length > 0) {
+            // 経路の最初のステップを候補位置とする
             let candidate = path[0];
-            if (candidate.x === nextPlayerX && candidate.y === nextPlayerY) return;
+            
+            // 敵が候補位置に斜め移動する場合のチェック
             if (enemy.x !== candidate.x && enemy.y !== candidate.y) {
+              // 候補位置への水平移動が壁で塞がれているかチェック
               const horizontalBlocked = (this.map.grid[enemy.y][candidate.x] === MAP_TILE.WALL);
+              // 候補位置への垂直移動が壁で塞がれているかチェック
               const verticalBlocked = (this.map.grid[candidate.y][enemy.x] === MAP_TILE.WALL);
+              // どちらかが塞がれている場合、別の移動候補を検討する
               if (horizontalBlocked || verticalBlocked) {
                 let possibleMoves = [];
+                // 水平方向に塞がれていなければ、水平移動の候補を追加
                 if (!horizontalBlocked) possibleMoves.push({ x: candidate.x, y: enemy.y });
+                // 垂直方向に塞がれていなければ、垂直移動の候補を追加
                 if (!verticalBlocked) possibleMoves.push({ x: enemy.x, y: candidate.y });
+                // 候補を一旦クリア
                 candidate = null;
+                // 可能な移動候補から空いている場所を探す
                 for (let move of possibleMoves) {
                   if (!occupied.has(`${move.x},${move.y}`)) {
                     candidate = move;
                     break;
                   }
                 }
+                // 移動候補が見つからなければ、この敵は移動しない
                 if (!candidate) return;
               }
             }
+            // その候補位置がプレイヤーの次の移動先と一致していれば移動しない
+            if (!attacked && candidate.x === nextPlayerX && candidate.y === nextPlayerY) return;
+            // 候補位置が既に他の敵に占有されている場合、移動しない
             if (occupied.has(`${candidate.x},${candidate.y}`)) return;
+            // 現在の位置を occupied から削除
             occupied.delete(`${enemy.x},${enemy.y}`);
+            // 行動回数を1減らす
             enemy.action--;
+            // 敵の座標を候補位置に更新
             enemy.x = candidate.x;
             enemy.y = candidate.y;
+            // 新しい位置を occupied に追加
             occupied.add(`${enemy.x},${enemy.y}`);
           }
         });
       }
+      
+      // 敵の攻撃処理
       enemyAttackPhase() {
+        // 各敵について攻撃処理を行う
         this.enemies.forEach((enemy) => {
-          if (enemy.hp <= 0 || enemy.action === 0) return;
+          // 体力が0以下、または行動回数が0なら攻撃を行わない
+          if (enemy.hp <= 0 || enemy.action === 0) {
+            this.x = this.y = -1;
+            return;
+          }
+      
+          // プレイヤーとの距離を水平方向(dx)・垂直方向(dy)で算出
           const dx = Math.abs(enemy.x - this.player.x);
           const dy = Math.abs(enemy.y - this.player.y);
+      
+          // プレイヤーが上下左右に隣接している場合
           if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
+            // 敵の行動回数を1減らす
             enemy.action--;
+            // 遅延を加えて攻撃エフェクトとダメージ反映の処理を行う
             this.queueTimeout(() => {
               this.player.hp -= enemy.atk;
               if (this.player.hp < 0) this.player.hp = 0;
+              // ダメージエフェクトを表示
               EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me");
             }, this.actionCount * this.actionTime);
+            // 次の攻撃タイミングのために actionCount をインクリメント
             this.actionCount++;
           }
+          // プレイヤーが斜めに隣接している場合
           else if (dx === 1 && dy === 1) {
+            // 隣接する斜め方向の移動経路に壁がなければ攻撃する
             if (this.map.grid[this.player.y][enemy.x] !== MAP_TILE.WALL &&
                 this.map.grid[enemy.y][this.player.x] !== MAP_TILE.WALL) {
+              // 敵の行動回数を1減らす
               enemy.action--;
+              // 遅延を加えて攻撃エフェクトとダメージ反映の処理を実施
               this.queueTimeout(() => {
                 this.player.hp -= enemy.atk;
                 if (this.player.hp < 0) this.player.hp = 0;
+                // ダメージエフェクトを表示
                 EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me");
               }, this.actionCount * this.actionTime);
+              // 次の攻撃タイミングのために actionCount をインクリメント
               this.actionCount++;
             }
           }
