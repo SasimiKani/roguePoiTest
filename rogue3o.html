@@ -231,9 +231,9 @@
   <script>
     // 難易度ごとの設定
     const difficultySettings = {
-      easy:   { wallEmoji: "🌲", maxFloor: 10 },
-      normal: { wallEmoji: "🌳", maxFloor: 50 },
-      hard:   { wallEmoji: "🧱", maxFloor: 99 }
+      easy:   { name: "森レベル", wallEmoji: "🌳", maxFloor: 2 },
+      normal: { name: "山レベル", wallEmoji: "⛰️", maxFloor: 30 },
+      hard:   { name: "火山レベル", wallEmoji: "🌋", maxFloor: 99 }
     };
 
     // ---------------- Configuration ----------------
@@ -633,7 +633,9 @@
         document.getElementById("restCycle").innerText = CONFIG.REST_CYCLE;
         this.generateDungeon(false);
         this.render();
-        new InputManager(this);
+        setTimeout(() => {
+          new InputManager(this);
+        }, 300);
       }
       queueTimeout(callback, delay) {
         this.acceptingInput = false;
@@ -904,6 +906,7 @@
             enemy.action--;
             this.queueTimeout(() => {
               this.player.hp -= enemy.atk;
+              if (this.player.hp < 0) this.player.hp = 0;
               EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me");
             }, this.actionCount * this.actionTime);
             this.actionCount++;
@@ -914,6 +917,7 @@
               enemy.action--;
               this.queueTimeout(() => {
                 this.player.hp -= enemy.atk;
+                if (this.player.hp < 0) this.player.hp = 0;
                 EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me");
               }, this.actionCount * this.actionTime);
               this.actionCount++;
@@ -956,9 +960,8 @@
             this.generateEnemyCycle[0] = 0;
             this.hungerCycle[0] = 0;
             alert("倒れてしまった！");
-            this.generateDungeon(false);
-            this.isGameOver = false;
-            this.render();
+            new DifficultySelector();
+            delete(this);
           }
         }, this.actionCount * this.actionTime);
       }
@@ -1103,8 +1106,8 @@
             this.player = new Player(0, 0, this.initialHP);
             this.floor = 1;
             this.score = 0;
-            this.generateDungeon(false);
-            return;
+            new DifficultySelector();
+            delete(this);
           }
         }
         const lastRoom = this.map.rooms.at(-1);
@@ -1322,7 +1325,9 @@
           this.score = prevScore;
           this.floor++;
           // ダンジョン難易度に合わせた最終フロアチェック
-          if ((CONFIG.DIFFICULTY === "easy" && this.floor > 10) || (CONFIG.DIFFICULTY === "hard" && this.floor > 99)) {
+          console.log(difficultySettings)
+          console.log(CONFIG.DIFFICULTY)
+          if (this.floor > difficultySettings[CONFIG.DIFFICULTY].maxFloor) {
             alert("ダンジョンクリア！おめでとう！");
             this.player = new Player(0, 0, this.initialHP);
             this.floor = 1;
@@ -1446,12 +1451,14 @@
         }
         // 難易度オプションの配置（例）
         this.options = [
-          { x: 3, y: 3, difficulty: "easy", tile: "🌲" },
-          { x: 11, y: 3, difficulty: "normal", tile: "🌳" },
-          { x: 7, y: 11, difficulty: "hard", tile: "🧱" }
+          { x: 3, y: 3, difficulty: "easy", tile: difficultySettings.easy.wallEmoji },
+          { x: 11, y: 3, difficulty: "normal", tile: difficultySettings.normal.wallEmoji },
+          { x: 7, y: 11, difficulty: "hard", tile: difficultySettings.hard.wallEmoji }
         ];
         this.options.forEach(opt => {
-          this.grid[opt.y][opt.x] = opt.tile;
+          for (var pos of [[-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0]]) {
+            this.grid[opt.y + pos[1]][opt.x + pos[0]] = opt.tile;
+          }
         });
         // プレイヤーの初期位置（中央）
         this.playerX = Math.floor(this.gridWidth / 2);
@@ -1507,7 +1514,9 @@
       CONFIG.DIFFICULTY = difficulty;
       MAP_TILE.WALL = difficultySettings[difficulty].wallEmoji;
       // 既存のGameクラスを起動
-      new Game();
+      setTimeout(() => { 
+        new Game();
+      }, 300);
     }
 
     function closeResults() {
