@@ -379,7 +379,7 @@
     const enemyList = (floor, difficulty) => {
       const list = [];
       let enemyClasses;
-      console.log("enemy list " + difficulty);
+      ////console.log("enemy list " + difficulty);
       
       switch (difficulty) {
       case "easy":
@@ -424,7 +424,7 @@
         break;
       }
       
-      console.log(list);
+      ////console.log(list);
       return list;
     };
 
@@ -1123,7 +1123,9 @@
       // ---------------- レンダリング ----------------
       renderMainView() {
         let html = '';
-        const radius = CONFIG.VIEW_RADIUS;
+        //// console.log(`P(${this.player.x}, ${this.player.y})`);
+        //// console.log(`MAP(${this.map.grid[this.player.y][this.player.x]})`);
+        var radius = CONFIG.VIEW_RADIUS;
         const startX = this.player.x - radius;
         const startY = this.player.y - radius;
         for (let y = startY; y <= this.player.y + radius; y++) {
@@ -1185,8 +1187,8 @@
         const maxFloor = difficultySettings[CONFIG.DIFFICULTY].maxFloor;
         const brightness = 80 - ((this.floor - 1) / (maxFloor - 1)) * 60; // 80% から 20% へ
         document.body.style.backgroundColor = `hsl(0, 0%, ${brightness}%)`;
-        console.log(this.floor, brightness)
-        console.log(document.body.style.backgroundColor)
+        ////console.log(this.floor, brightness)
+        ////console.log(document.body.style.backgroundColor)
         // ★ ここまで新しい背景色設定 ★
 
         this.renderMainView();
@@ -1281,8 +1283,8 @@
           this.score = prevScore;
           this.floor++;
           // ダンジョン難易度に合わせた最終フロアチェック
-          console.log(difficultySettings)
-          console.log(CONFIG.DIFFICULTY)
+          ////console.log(difficultySettings)
+          ////console.log(CONFIG.DIFFICULTY)
           if (this.floor > difficultySettings[CONFIG.DIFFICULTY].maxFloor) {
             alert("ダンジョンクリア！おめでとう！");
             this.player = new Player(0, 0, this.initialHP);
