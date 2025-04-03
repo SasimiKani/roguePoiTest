@@ -231,9 +231,9 @@
   <script>
     // 難易度ごとの設定
     const difficultySettings = {
-      easy:   { name: "森レベル", wallEmoji: "🌳", maxFloor: 2 },
-      normal: { name: "山レベル", wallEmoji: "⛰️", maxFloor: 30 },
-      hard:   { name: "火山レベル", wallEmoji: "🌋", maxFloor: 99 }
+      easy:   { name: "森レベル", wallEmoji: "🌳", maxFloor: 2, revealLv: 4 },
+      normal: { name: "山レベル", wallEmoji: "⛰️", maxFloor: 30, revealLv: 3 },
+      hard:   { name: "火山レベル", wallEmoji: "🌋", maxFloor: 99, revealLv: 2 }
     };
 
     // ---------------- Configuration ----------------
@@ -248,7 +248,8 @@
       MAX_ENEMY_MULTIPLIER: 1.4,
       INVENTORY_MAX: 10,
       VIEW_RADIUS: 7,  // プレイヤー周囲7マス
-      DIFFICULTY: "easy"  // 初期値。DifficultySelectorで上書き
+      DIFFICULTY: "easy",  // 初期値。DifficultySelectorで上書き
+      REVEALLV: 3 // 初期値。DifficultySelectorで上書き
     };
     
     // MAP_TILE は選択された難易度に応じて更新
@@ -509,8 +510,8 @@
       }
       revealAround(x, y) {
         if (this.grid[y][x] === ' ') {
-          for (let dy = -1; dy <= 1; dy++) {
-            for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -CONFIG.REVEALLV; dy <= CONFIG.REVEALLV; dy++) {
+            for (let dx = -CONFIG.REVEALLV; dx <= CONFIG.REVEALLV; dx++) {
               let nx = x + dx, ny = y + dy;
               if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height) {
                 this.visible[ny][nx] = true;
@@ -1512,6 +1513,7 @@
     // 難易度選択後に呼ばれる
     function startDungeonGame(difficulty) {
       CONFIG.DIFFICULTY = difficulty;
+      CONFIG.REVEALLV = difficultySettings[difficulty].revealLv;
       MAP_TILE.WALL = difficultySettings[difficulty].wallEmoji;
       // 既存のGameクラスを起動
       setTimeout(() => { 
