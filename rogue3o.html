@@ -367,17 +367,46 @@
         this.magicDamage = 2;
       }
     }
-    const enemyList = (floor) => {
-      const enemyClasses = [
-        EnemyLarvae, EnemyAnt, EnemyCrayfish, EnemySlime,
-        EnemyBat, EnemyGoblin, EnemySkeleton, EnemySpider, EnemyWizard
-      ];
+    const enemyList = (floor, difficulty) => {
       const list = [];
-      enemyClasses.forEach(c => {
-        if (c.floorRange[0] <= floor && (c.floorRange[1] == null || floor <= c.floorRange[1])) {
-          list.push(c);
-        }
-      });
+      let enemyClasses;
+      console.log("enemy list " + difficulty);
+      
+      switch (difficulty) {
+      case "easy":
+        enemyClasses = [
+          EnemyLarvae, EnemyAnt, EnemyCrayfish, EnemySlime
+        ];
+        enemyClasses.forEach(c => {
+          if (c.floorRange[0] <= floor && (c.floorRange[1] == null || floor <= c.floorRange[1])) {
+            list.push(c);
+          }
+        });
+        break;
+      case "normal":
+        enemyClasses = [
+          EnemyAnt, EnemyCrayfish, EnemySlime,
+          EnemyBat, EnemyGoblin, EnemySkeleton
+        ];
+        enemyClasses.forEach(c => {
+          if (c.floorRange[0] <= floor && (c.floorRange[1] == null || floor <= c.floorRange[1])) {
+            list.push(c);
+          }
+        });
+        break;
+      case "hard":
+        enemyClasses = [
+          EnemyLarvae, EnemyAnt, EnemyCrayfish, EnemySlime,
+          EnemyBat, EnemyGoblin, EnemySkeleton, EnemySpider, EnemyWizard
+        ];
+        enemyClasses.forEach(c => {
+          if (c.floorRange[0] <= floor && (c.floorRange[1] == null || floor <= c.floorRange[1])) {
+            list.push(c);
+          }
+        });
+        break;
+      }
+      
       return list;
     };
 
@@ -726,6 +755,16 @@
         }
       }
       computeInput(event) {
+        // 回復サイクル
+        if (this.keysDown['ArrowLeft'] ||
+            this.keysDown['ArrowRight'] ||
+            this.keysDown['ArrowUp'] ||
+            this.keysDown['ArrowDown'] ||
+            event.key === '.') {
+          this.restCycle[0] = (this.restCycle[0] + 1) % this.restCycle[1];
+          if (this.restCycle[0] === 0 && this.player.hp < this.player.maxHp) this.player.hp++;
+        }
+        
         if (this.keysDown['Shift']) {
           let hor = 0, ver = 0;
           if (this.keysDown['ArrowLeft'] && !this.keysDown['ArrowRight']) { hor = -1; }
@@ -740,8 +779,6 @@
           return null;
         }
         if (event.key === '.') {
-          this.restCycle[0] = (this.restCycle[0] + 1) % this.restCycle[1];
-          if (this.restCycle[0] === 0 && this.player.hp < this.player.maxHp) this.player.hp++;
           return { tx: this.player.x, ty: this.player.y };
         }
         if (event.key === 'r') { this.showResults(); return null; }
@@ -1253,7 +1290,7 @@
           } else if (type === "entity") {
             arr.push(new BaseEntity(x, y));
           } else if (type === "enemy") {
-            const enemys = enemyList(this.floor);
+            const enemys = enemyList(this.floor, CONFIG.DIFFICULTY);
             const EnemyClass = enemys[randomInt(0, enemys.length - 1)];
             arr.push(new EnemyClass(x, y, hp));
           } else if (type === "food") {
