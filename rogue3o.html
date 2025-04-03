@@ -58,12 +58,21 @@
       position: relative; 
       margin-right: 20px; 
     }
-    .game-container span { 
-      background-color: #333;
+    .game-container span {
+      background-color: hsl(0, 0%, 50%);
       display: inline-block; 
       width: 2.2ch; 
       text-align: center; 
       transition: all 0.1s; 
+    }
+    .game-container span.easy {
+      background-color: hsl(60, 25%, 50%);
+    }
+    .game-container span.normal {
+      background-color: hsl(150, 5%, 50%);
+    }
+    .game-container span.hard {
+      background-color: hsl(0, 25%, 50%);
     }
     /* UIサイドバー */
     .ui-container { 
@@ -73,7 +82,7 @@
       border: 2px solid #555; 
       border-radius: 4px; 
     }
-    .wall { background-color: #333; display: inline-block; height: 20px; }
+    .wall { background-color: #333; display: inline-block; height: fit-content; }
     .hit { background-color: red !important; color: white; }
     .shake { transform: translateY(-2px); }
     /* エフェクト用 */
@@ -199,10 +208,10 @@
       margin-top: 10px;
       padding: 5px 10px;
     }
-    /* 難易度に合わせた背景変更 */
-    body.easy-dungeon { background-color: #444 !important; }
-    body.hard-dungeon { background-color: #222 !important; }
-    body.deep-dungeon { background-color: #000 !important; }
+    /* 難易度に合わせた背景変更（既存コード） */
+    body.easy-dungeon { background-color: #444; }
+    body.hard-dungeon { background-color: #222; }
+    body.deep-dungeon { background-color: #000; }
   </style>
 </head>
 <body>
@@ -385,7 +394,7 @@
         break;
       case "normal":
         enemyClasses = [
-          EnemyAnt, EnemyCrayfish, EnemySlime,
+          EnemyLarvae, EnemyAnt, EnemyCrayfish, EnemySlime,
           EnemyBat, EnemyGoblin, EnemySkeleton
         ];
         enemyClasses.forEach(c => {
@@ -405,8 +414,17 @@
           }
         });
         break;
+      default:
+        enemyClasses = [EnemyLarvae];
+        enemyClasses.forEach(c => {
+          if (c.floorRange[0] <= floor && (c.floorRange[1] == null || floor <= c.floorRange[1])) {
+            list.push(c);
+          }
+        });
+        break;
       }
       
+      console.log(list);
       return list;
     };
 
@@ -1112,7 +1130,7 @@
           for (let x = startX; x <= this.player.x + radius; x++) {
             let tile = MAP_TILE.WALL;
             if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
-              if (!this.map.visible[y][x]) { html += `<span class="wall">${MAP_TILE.WALL}</span>`; continue; }
+              if (!this.map.visible[y][x]) { html += `<span class="wall ${CONFIG.DIFFICULTY}">${MAP_TILE.WALL}</span>`; continue; }
               else if (this.player.x === x && this.player.y === y) tile = this.player.tile;
               else {
                 let drawn = false;
@@ -1131,7 +1149,7 @@
                 }
               }
             }
-            html += `<span>${tile}</span>`;
+            html += `<span class="${CONFIG.DIFFICULTY}">${tile}</span>`;
           }
           html += '<br>';
         }
@@ -1156,10 +1174,21 @@
         this.minimapContainer.style.gridTemplateColumns = `repeat(${this.width}, 4px)`;
       }
       render() {
+        // 既存の背景色クラス設定
         document.body.classList.remove("easy-dungeon", "hard-dungeon", "deep-dungeon");
         if (this.floor < 10) document.body.classList.add("easy-dungeon");
         else if (this.floor < 50) document.body.classList.add("hard-dungeon");
         else document.body.classList.add("deep-dungeon");
+        
+        // ★ 新しい背景色設定 ★
+        // 現在のフロアと難易度設定の最大フロア数に基づき、背景の明るさを線形補間で調整（浅い階層は明るく、深い階層は暗くなる）
+        const maxFloor = difficultySettings[CONFIG.DIFFICULTY].maxFloor;
+        const brightness = 80 - ((this.floor - 1) / (maxFloor - 1)) * 60; // 80% から 20% へ
+        document.body.style.backgroundColor = `hsl(0, 0%, ${brightness}%)`;
+        console.log(this.floor, brightness)
+        console.log(document.body.style.backgroundColor)
+        // ★ ここまで新しい背景色設定 ★
+
         this.renderMainView();
         this.renderMinimap();
         document.getElementById('difficulty').innerText = CONFIG.DIFFICULTY;
