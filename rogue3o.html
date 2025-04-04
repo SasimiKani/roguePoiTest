@@ -218,7 +218,7 @@
   <script>
     const difficultySettings = {
       easy:   { name: "森レベル", wallEmoji: "🌳", maxFloor: 10, revealLv: 5 },
-      normal: { name: "山レベル", wallEmoji: "⛰️", maxFloor: 30, revealLv: 3 },
+      normal: { name: "山レベル", wallEmoji: "⛰️", maxFloor: 20, revealLv: 3 },
       hard:   { name: "火山レベル", wallEmoji: "🌋", maxFloor: 99, revealLv: 2 }
     };
 
@@ -347,12 +347,30 @@
         this.magicDamage = 2;
       }
     }
+    
+    const enemyClassList = (floorRanges, ...EnemyClass) => {
+      for (var i in EnemyClass) {
+        EnemyClass[i].floorRange = floorRanges[i];
+      }
+      return EnemyClass;
+    }
     const enemyList = (floor, difficulty) => {
       const list = [];
       let enemyClasses;
       switch (difficulty) {
       case "easy":
-        enemyClasses = [EnemyLarvae, EnemyAnt, EnemyCrayfish, EnemySlime];
+        enemyClasses = enemyClassList(
+          [
+            [1, 5], // いもむし
+            [3, 7], // アリ
+            [4, 10], // ザリガニ
+            [6, 10], // スライム
+          ],
+	      EnemyLarvae,
+	      EnemyAnt,
+	      EnemyCrayfish,
+	      EnemySlime
+	    );
         enemyClasses.forEach(c => {
           if (c.floorRange[0] <= floor && (c.floorRange[1] == null || floor <= c.floorRange[1])) {
             list.push(c);
@@ -360,8 +378,24 @@
         });
         break;
       case "normal":
-        enemyClasses = [EnemyLarvae, EnemyAnt, EnemyCrayfish, EnemySlime,
-          EnemyBat, EnemyGoblin, EnemySkeleton];
+        enemyClasses = enemyClassList(
+          [
+            [1, 4], // いもむし
+            [2, 5], // アリ
+            [4, 8], // ザリガニ
+            [8, 10], // スライム
+            [12, 18], // コウモリ
+            [16, 20], // ゴブリン
+            [19, 20], // スケルトン
+          ],
+          EnemyLarvae,
+          EnemyAnt,
+          EnemyCrayfish,
+          EnemySlime,
+          EnemyBat,
+          EnemyGoblin,
+          EnemySkeleton
+        );
         enemyClasses.forEach(c => {
           if (c.floorRange[0] <= floor && (c.floorRange[1] == null || floor <= c.floorRange[1])) {
             list.push(c);
@@ -369,8 +403,28 @@
         });
         break;
       case "hard":
-        enemyClasses = [EnemyLarvae, EnemyAnt, EnemyCrayfish, EnemySlime,
-          EnemyBat, EnemyGoblin, EnemySkeleton, EnemySpider, EnemyWizard];
+        enemyClasses = enemyClassList(
+          [
+            [1, null], // いもむし
+            [2, null], // アリ
+            [4, null], // ザリガニ
+            [8, null], // スライム
+            [12, null], // コウモリ
+            [16, null], // ゴブリン
+            [19, null], // スケルトン
+            [24, null], // クモ
+            [30, null], // 魔法使い
+          ],
+          EnemyLarvae,
+          EnemyAnt,
+          EnemyCrayfish,
+          EnemySlime,
+          EnemyBat,
+          EnemyGoblin,
+          EnemySkeleton,
+          EnemySpider,
+          EnemyWizard
+        );
         enemyClasses.forEach(c => {
           if (c.floorRange[0] <= floor && (c.floorRange[1] == null || floor <= c.floorRange[1])) {
             list.push(c);
