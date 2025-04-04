@@ -15,7 +15,7 @@
       position: relative; 
       margin-right: 20px; 
     }
-    #homeScreen { display: none; } /* 旧ホーム画面は削除 */
+    #homeScreen { display: none; }
 
     /* 背景とレイアウト */
     body { 
@@ -50,7 +50,7 @@
       100% { background-position: 0% 50%; }
     }
     .container { display: flex; }
-    /* メイン画面（プレイヤー中心15×15表示） */
+    /* メイン画面 */
     .game-container { 
       font-size: 24px; 
       line-height: 1.2; 
@@ -65,15 +65,9 @@
       text-align: center; 
       transition: all 0.1s; 
     }
-    .game-container span.easy {
-      background-color: hsl(60, 25%, 50%);
-    }
-    .game-container span.normal {
-      background-color: hsl(150, 5%, 50%);
-    }
-    .game-container span.hard {
-      background-color: hsl(0, 25%, 50%);
-    }
+    .game-container span.easy { background-color: hsl(60, 25%, 50%); }
+    .game-container span.normal { background-color: hsl(150, 5%, 50%); }
+    .game-container span.hard { background-color: hsl(0, 25%, 50%); }
     /* UIサイドバー */
     .ui-container { 
       width: 360px; 
@@ -121,9 +115,7 @@
       100% { transform: translateY(-20px) scale(1.2); opacity: 0; }
     }
     /* 難易度 */
-    #difficulty-container {
-      border-bottom: 1px solid white;
-    }
+    #difficulty-container { border-bottom: 1px solid white; }
     /* ステータスバー */
     .bar-container { 
       width: 200px; 
@@ -144,11 +136,7 @@
     }
     .bar.hp { background-color: green; }
     .bar.hunger { background-color: skyblue; }
-    p { 
-      font-size: 14px; 
-      line-height: 1.4; 
-      margin-bottom: 8px; 
-    }
+    p { font-size: 14px; line-height: 1.4; margin-bottom: 8px; }
     /* インベントリオーバーレイ */
     .inventory-modal {
       font-size: .7em;
@@ -181,10 +169,7 @@
       grid-auto-rows: 4px;
       gap: 0;
     }
-    .minimap-cell {
-      width: 4px;
-      height: 4px;
-    }
+    .minimap-cell { width: 4px; height: 4px; }
     /* 結果表示用モーダル */
     .results-modal {
       font-size: 1em;
@@ -206,15 +191,9 @@
     .results-modal table, .results-modal th, .results-modal td {
       border: 1px solid #eee;
     }
-    .results-modal th, .results-modal td {
-      padding: 5px;
-      text-align: center;
-    }
-    .results-modal button {
-      margin-top: 10px;
-      padding: 5px 10px;
-    }
-    /* 難易度に合わせた背景変更（既存コード） */
+    .results-modal th, .results-modal td { padding: 5px; text-align: center; }
+    .results-modal button { margin-top: 10px; padding: 5px 10px; }
+    /* 難易度に合わせた背景変更 */
     body.easy-dungeon { background-color: #444; }
     body.hard-dungeon { background-color: #222; }
     body.deep-dungeon { background-color: #000; }
@@ -232,9 +211,8 @@
       <p>⛰️ フロア: <span id="floor">1</span>　💎 スコア: <span id="score">0</span></p>
       <p>－－－－－－－－－</p>
       <p>矢印キーで移動／敵と隣接してたら攻撃！</p>
-      <p>※ Shift＋方向キーで斜め移動</p>
-      <p>※ Ctrl＋方向キーでアイテムに乗る</p>
       <p>．で休憩（<span id="restCycle"></span>ターンごとに回復）　🔼:次のフロアへ</p>
+      <p>※ Shift＋方向キーで斜め移動</p>
       <p>eキーでインベントリ表示</p>
       <p>rキーで結果表示</p>
       <p>🟨プレイヤー　🟥敵　🟦アイテム</p>
@@ -243,14 +221,12 @@
   </div>
   
   <script>
-    // 難易度ごとの設定
     const difficultySettings = {
       easy:   { name: "森レベル", wallEmoji: "🌳", maxFloor: 10, revealLv: 5 },
       normal: { name: "山レベル", wallEmoji: "⛰️", maxFloor: 30, revealLv: 3 },
       hard:   { name: "火山レベル", wallEmoji: "🌋", maxFloor: 99, revealLv: 2 }
     };
 
-    // ---------------- Configuration ----------------
     const CONFIG = {
       WIDTH: 40,
       HEIGHT: 32,
@@ -674,7 +650,7 @@
         this.inventoryOpen = false;
         this.inventorySelection = 0;
         this.ctrlPressed = false;
-        // 足元アイテム用のプロパティ
+        // 足元アイテム用プロパティ
         this.groundItem = null;
         document.getElementById("restCycle").innerText = CONFIG.REST_CYCLE;
         this.generateDungeon(false);
@@ -711,8 +687,16 @@
             break;
           }
         }
+        // 移動前に、もし足元にアイテムがあれば、プレイヤーの現在位置に残す
         if (!attacked && this.map.grid[ty]?.[tx] !== MAP_TILE.WALL &&
             !this.enemies.some(e => e.x === tx && e.y === ty)) {
+          if (this.groundItem) {
+             this.groundItem.x = this.player.x;
+             this.groundItem.y = this.player.y;
+             this.items.push(this.groundItem);
+             //EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "足元に残す");
+             this.groundItem = null;
+          }
           this.player.x = tx;
           this.player.y = ty;
           this.map.visible[ty][tx] = true;
@@ -723,7 +707,6 @@
           this.generateDungeon(true);
           return;
         }
-        // 通常は自動で拾うが、Ctrlが押されている場合は足元に保持する
         if (!this.ctrlPressed) {
           this.items = this.items.filter(item => {
             if (item.x === this.player.x && item.y === this.player.y) {
@@ -740,7 +723,7 @@
             if (this.items[i].x === this.player.x && this.items[i].y === this.player.y) {
               if (!this.groundItem) {
                 this.groundItem = this.items[i];
-                EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "足元に設置");
+                EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `${this.groundItem.name}に乗った`);
                 this.items.splice(i, 1);
               }
               break;
@@ -773,7 +756,6 @@
           this.restCycle[0] = (this.restCycle[0] + 1) % this.restCycle[1];
           if (this.restCycle[0] === 0 && this.player.hp < this.player.maxHp) this.player.hp++;
         }
-        
         if (this.keysDown['Shift']) {
           let hor = 0, ver = 0;
           if (this.keysDown['ArrowLeft'] && !this.keysDown['ArrowRight']) { hor = -1; }
@@ -803,7 +785,6 @@
         return null;
       }
       processInventoryInput(event) {
-        // 足元アイテム用の操作
         if (event.key === 'p') {
           if (this.groundItem && this.player.inventory.length < CONFIG.INVENTORY_MAX) {
             this.player.inventory.push(this.groundItem);
@@ -898,7 +879,6 @@
       }
       processInput(event) {
         if (this.isGameOver || !this.acceptingInput) return;
-        // Ctrlキーの状態を記録
         this.ctrlPressed = event.ctrlKey;
         if (event.key === 'e') {
           this.inventoryOpen = !this.inventoryOpen;
@@ -1150,7 +1130,6 @@
         if (this.floor < 10) document.body.classList.add("easy-dungeon");
         else if (this.floor < 50) document.body.classList.add("hard-dungeon");
         else document.body.classList.add("deep-dungeon");
-        
         const maxFloor = difficultySettings[CONFIG.DIFFICULTY].maxFloor;
         const brightness = 80 - ((this.floor - 1) / (maxFloor - 1)) * 60;
         document.body.style.backgroundColor = `hsl(0, 0%, ${brightness}%)`;
@@ -1194,7 +1173,6 @@
           this.gameContainer.innerHTML += invHtml;
         }
       }
-      
       saveResult(clear=false) {
         let results = JSON.parse(localStorage.getItem("gameResult") || "[]");
         results.push({
@@ -1228,7 +1206,6 @@
           document.body.appendChild(modalDiv);
         }
       }
-      
       generateDungeon(keepHP = false) {
         const prevHP = this.player.hp;
         const prevScore = this.score;
@@ -1270,10 +1247,8 @@
           this.minMagnification = CONFIG.MIN_ENEMY_MULTIPLIER;
           this.maxMagnification = CONFIG.MAX_ENEMY_MULTIPLIER;
         }
-        
         this.placeEntities(this.enemies, randomInt(2, 4), "enemy");
         this.placeEntities(this.gems, randomInt(1, 2), "entity");
-        
         const maxItems = randomInt(3, 5);
         const weightedTypes = [
           ...Array(2).fill("food"),
@@ -1282,7 +1257,6 @@
           ...Array(1).fill("niku"),
           ...Array(2).fill("weapon")
         ];
-        
         for (let i = 0; i < maxItems; i++) {
           const type = weightedTypes.splice(randomInt(0, weightedTypes.length - 1), 1)[0];
           this.placeEntities(this.items, 1, type);
