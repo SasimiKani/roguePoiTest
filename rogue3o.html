@@ -166,6 +166,12 @@
     .inventory-modal ul { list-style: none; padding: 0; }
     .inventory-modal li { padding: 4px 0; }
     .inventory-modal li.selected { background: #444; }
+    /* 足元アイテム用セクション */
+    .ground-item-section {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #555;
+    }
     /* ミニマップ用 */
     .minimap-container {
       margin-top: 20px;
@@ -215,7 +221,6 @@
   </style>
 </head>
 <body>
-  <!-- DifficultySelector用の画面は「game」コンテナを流用 -->
   <div class="container">
     <div class="game-container" id="game"></div>
     <div class="ui-container">
@@ -227,12 +232,12 @@
       <p>⛰️ フロア: <span id="floor">1</span>　💎 スコア: <span id="score">0</span></p>
       <p>－－－－－－－－－</p>
       <p>矢印キーで移動／敵と隣接してたら攻撃！</p>
-      <p>．で休憩（<span id="restCycle"></span>ターンごとに回復）　🔼:次のフロアへ</p>
       <p>※ Shift＋方向キーで斜め移動</p>
+      <p>※ Ctrl＋方向キーでアイテムに乗る</p>
+      <p>．で休憩（<span id="restCycle"></span>ターンごとに回復）　🔼:次のフロアへ</p>
       <p>eキーでインベントリ表示</p>
       <p>rキーで結果表示</p>
       <p>🟨プレイヤー　🟥敵　🟦アイテム</p>
-      <!-- ミニマップ -->
       <div id="minimap" class="minimap-container"></div>
     </div>
   </div>
@@ -256,23 +261,20 @@
       MIN_ENEMY_MULTIPLIER: 1.1,
       MAX_ENEMY_MULTIPLIER: 1.4,
       INVENTORY_MAX: 10,
-      VIEW_RADIUS: 7,  // プレイヤー周囲7マス
-      DIFFICULTY: "easy",  // 初期値。DifficultySelectorで上書き
-      REVEALLV: 3 // 初期値。DifficultySelectorで上書き
+      VIEW_RADIUS: 7,
+      DIFFICULTY: "easy",
+      REVEALLV: 3
     };
     
-    // MAP_TILE は選択された難易度に応じて更新
     const MAP_TILE = {
-      WALL: "🌳",  // defaultはNormal用。startDungeonGame()で変更
+      WALL: "🌳",
       STEPS: '🔼'
     };
 
-    // ---------------- Helper Functions ----------------
     function randomInt(min, max) {
       return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
-    // ---------------- Base Entity Class ----------------
     class BaseEntity {
       constructor(x, y, tile) {
         this.x = x;
@@ -281,7 +283,6 @@
       }
     }
 
-    // ---------------- Player Class ----------------
     class Player extends BaseEntity {
       constructor(x, y, initialHP, tile='😊') {
         super(x, y, tile);
@@ -298,7 +299,6 @@
       }
     }
 
-    // ---------------- Enemy Classes ----------------
     class Enemy extends BaseEntity {
       static floorRange = [1, 3];
       constructor(x, y, hp, atk=1, tile='👾') {
@@ -379,13 +379,9 @@
     const enemyList = (floor, difficulty) => {
       const list = [];
       let enemyClasses;
-      ////console.log("enemy list " + difficulty);
-      
       switch (difficulty) {
       case "easy":
-        enemyClasses = [
-          EnemyLarvae, EnemyAnt, EnemyCrayfish, EnemySlime
-        ];
+        enemyClasses = [EnemyLarvae, EnemyAnt, EnemyCrayfish, EnemySlime];
         enemyClasses.forEach(c => {
           if (c.floorRange[0] <= floor && (c.floorRange[1] == null || floor <= c.floorRange[1])) {
             list.push(c);
@@ -393,10 +389,8 @@
         });
         break;
       case "normal":
-        enemyClasses = [
-          EnemyLarvae, EnemyAnt, EnemyCrayfish, EnemySlime,
-          EnemyBat, EnemyGoblin, EnemySkeleton
-        ];
+        enemyClasses = [EnemyLarvae, EnemyAnt, EnemyCrayfish, EnemySlime,
+          EnemyBat, EnemyGoblin, EnemySkeleton];
         enemyClasses.forEach(c => {
           if (c.floorRange[0] <= floor && (c.floorRange[1] == null || floor <= c.floorRange[1])) {
             list.push(c);
@@ -404,10 +398,8 @@
         });
         break;
       case "hard":
-        enemyClasses = [
-          EnemyLarvae, EnemyAnt, EnemyCrayfish, EnemySlime,
-          EnemyBat, EnemyGoblin, EnemySkeleton, EnemySpider, EnemyWizard
-        ];
+        enemyClasses = [EnemyLarvae, EnemyAnt, EnemyCrayfish, EnemySlime,
+          EnemyBat, EnemyGoblin, EnemySkeleton, EnemySpider, EnemyWizard];
         enemyClasses.forEach(c => {
           if (c.floorRange[0] <= floor && (c.floorRange[1] == null || floor <= c.floorRange[1])) {
             list.push(c);
@@ -423,12 +415,9 @@
         });
         break;
       }
-      
-      ////console.log(list);
       return list;
     };
 
-    // ---------------- InventoryItem Class ----------------
     class InventoryItem extends BaseEntity {
       constructor(x, y, name, tile, useFunction) {
         super(x, y, tile);
@@ -437,7 +426,6 @@
       }
     }
 
-    // ---------------- MagicSpell クラス ----------------
     class MagicSpell extends InventoryItem {
       constructor(x, y, name, tile, emoji, options) {
         super(x, y, name, tile, (game) => {
@@ -471,35 +459,29 @@
       }
     }
 
-    // ---------------- 武器アイテム ----------------
     class WeaponItem extends InventoryItem {
       constructor(x, y, name, tile, bonus) {
         super(x, y, name, tile, (game) => {
           if (game.player.weapon === this) {
-            // 装備を解除する
             this.unEquip(game);
           } else if (game.player.weapon) {
-            // 今の装備を解除する
             this.unEquip(game, game.player.weapon);
-            // 選択した武器を装備する
             game.queueTimeout(() => {
               this.equip(game);
             }, 400);
           } else {
-            // 装備する
             this.equip(game);
           }
         });
         this.bonus = bonus;
       }
       
-      // 装備する
       equip(game, weapon=this) {
         game.player.weapon = weapon;
         game.player.attack += weapon.bonus;
         EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `武器装備+${weapon.bonus}`, "heal");
       }
-      // 装備解除
+      
       unEquip(game, weapon=this) {
         game.player.attack -= game.player.weapon.bonus;
         game.player.weapon = null;
@@ -507,7 +489,6 @@
       }
     }
 
-    // ---------------- DungeonMap Class ----------------
     class DungeonMap {
       constructor(width, height) {
         this.width = width;
@@ -587,7 +568,6 @@
       }
     }
 
-    // ---------------- UIManager Class ----------------
     class UIManager {
       constructor() {
         this.hpBar = document.getElementById("hp-bar");
@@ -604,7 +584,6 @@
       }
     }
 
-    // ---------------- EffectsManager Class ----------------
     class EffectsManager {
       static showEffect(container, player, x, y, text, type = "damage") {
         const dx = x - player.x;
@@ -642,7 +621,7 @@
               fx.className = "magic-particle";
               fx.textContent = emoji;
               fx.style.left = `${rect.left + rect.width / 2 + window.scrollX + randomInt(-8, 8)}px`;
-              fx.style.top = `${rect.top + window.scrollY - rect.height / 2 + randomInt(-8, 8)}px`;
+              fx.style.top = `${rect.top + rect.height / 2 + window.scrollY + randomInt(-8, 8)}px`;
               document.body.appendChild(fx);
               setTimeout(() => fx.remove(), 800);
             }
@@ -651,7 +630,6 @@
       }
     }
 
-    // ---------------- InputManager Class ----------------
     class InputManager {
       constructor(game) {
         this.game = game;
@@ -668,7 +646,6 @@
       }
     }
 
-    // ---------------- Game Class ----------------
     class Game {
       constructor() {
         this.actionCount = 0;
@@ -696,6 +673,9 @@
         this.minimapContainer = document.getElementById("minimap");
         this.inventoryOpen = false;
         this.inventorySelection = 0;
+        this.ctrlPressed = false;
+        // 足元アイテム用のプロパティ
+        this.groundItem = null;
         document.getElementById("restCycle").innerText = CONFIG.REST_CYCLE;
         this.generateDungeon(false);
         this.render();
@@ -704,7 +684,6 @@
         }, 300);
       }
       
-      // ---------------- ヘルパーメソッド ----------------
       queueTimeout(callback, delay) {
         this.acceptingInput = false;
         const id = setTimeout(() => {
@@ -716,7 +695,6 @@
         this.timeoutQueue.push(id);
       }
       
-      // ---------------- ゲーム進行制御 ----------------
       advanceTurn() {
         this.generateEnemyCycle[0] = (this.generateEnemyCycle[0] + 1) % this.generateEnemyCycle[1];
         this.hungerCycle[0] = (this.hungerCycle[0] + 1) % this.hungerCycle[1];
@@ -745,16 +723,30 @@
           this.generateDungeon(true);
           return;
         }
-        this.items = this.items.filter(item => {
-          if (item.x === this.player.x && item.y === this.player.y) {
-            if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
-              this.player.inventory.push(item);
-              EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "GET");
-              return false;
+        // 通常は自動で拾うが、Ctrlが押されている場合は足元に保持する
+        if (!this.ctrlPressed) {
+          this.items = this.items.filter(item => {
+            if (item.x === this.player.x && item.y === this.player.y) {
+              if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
+                this.player.inventory.push(item);
+                EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "GET");
+                return false;
+              }
+            }
+            return true;
+          });
+        } else {
+          for (let i = 0; i < this.items.length; i++) {
+            if (this.items[i].x === this.player.x && this.items[i].y === this.player.y) {
+              if (!this.groundItem) {
+                this.groundItem = this.items[i];
+                EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "足元に設置");
+                this.items.splice(i, 1);
+              }
+              break;
             }
           }
-          return true;
-        });
+        }
         this.checkHunger();
         if (attacked) {
           this.enemyAttackPhase();
@@ -773,7 +765,6 @@
         }
       }
       computeInput(event) {
-        // 回復サイクル
         if (this.keysDown['ArrowLeft'] ||
             this.keysDown['ArrowRight'] ||
             this.keysDown['ArrowUp'] ||
@@ -811,8 +802,41 @@
         }
         return null;
       }
-      // processInventoryInput() と processInput() は従来通り
       processInventoryInput(event) {
+        // 足元アイテム用の操作
+        if (event.key === 'p') {
+          if (this.groundItem && this.player.inventory.length < CONFIG.INVENTORY_MAX) {
+            this.player.inventory.push(this.groundItem);
+            EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "GET");
+            this.groundItem = null;
+          }
+          this.inventoryOpen = false;
+          this.render();
+          return;
+        }
+        if (event.key === 'u' && this.groundItem) {
+          if (this.groundItem.use) {
+            this.groundItem.use(this);
+            if (this.groundItem.name.match(/武器.*/g) === null) {
+              this.groundItem = null;
+            }
+          }
+          this.inventoryOpen = false;
+          this.render();
+          return;
+        }
+        if (event.key === 'x' && this.groundItem) {
+          let invItem = this.player.inventory[this.inventorySelection];
+          if (invItem) {
+            let temp = invItem;
+            this.player.inventory[this.inventorySelection] = this.groundItem;
+            this.groundItem = temp;
+            EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "交換");
+          }
+          this.inventoryOpen = false;
+          this.render();
+          return;
+        }
         if (event.key === 'ArrowUp') {
           if (this.player.inventory.length > 0) {
             this.inventorySelection = (this.inventorySelection - 1 + this.player.inventory.length) % this.player.inventory.length;
@@ -831,7 +855,6 @@
           let item = this.player.inventory[this.inventorySelection];
           if (item && item.use) {
             item.use(this);
-            // 武器は消費しない
             if (item.name.match(/武器.*/g) === null) {
               this.player.inventory.splice(this.inventorySelection, 1);
               if (this.inventorySelection >= this.player.inventory.length) {
@@ -875,6 +898,8 @@
       }
       processInput(event) {
         if (this.isGameOver || !this.acceptingInput) return;
+        // Ctrlキーの状態を記録
+        this.ctrlPressed = event.ctrlKey;
         if (event.key === 'e') {
           this.inventoryOpen = !this.inventoryOpen;
           if (this.inventoryOpen) this.inventorySelection = 0;
@@ -892,7 +917,6 @@
         this.render();
       }
       
-      // ---------------- プレイヤー関連 ----------------
       findPath(startX, startY, targetX, targetY) {
         let queue = [];
         queue.push({ x: startX, y: startY, path: [] });
@@ -982,124 +1006,74 @@
         if (this.hungerCycle[0] === 0) { this.player.hunger--; if (this.player.hunger < 0) this.player.hunger = 0; }
         if (this.player.hunger === 0) { this.player.hp--; EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "餓死", "damage"); }
       }
-      
-      // ---------------- 敵関連 ----------------
-      // 敵の移動処理
       enemyMovementPhase(nextPlayerX, nextPlayerY, attacked=false) {
-        // 敵が占有している座標を管理するセットを作成
         let occupied = new Set();
-        // すべての敵の現在位置を occupied に追加
         this.enemies.forEach(e => occupied.add(`${e.x},${e.y}`));
-      
-        // 各敵について移動処理を行う
         this.enemies.forEach((enemy) => {
-          // 体力が0以下、または行動回数が0なら処理をスキップ
           if (enemy.hp <= 0 || enemy.action === 0) return;
-      
-          // プレイヤーとの距離を水平方向(dx)・垂直方向(dy)で算出
           let dx = Math.abs(enemy.x - this.player.x);
           let dy = Math.abs(enemy.y - this.player.y);
-      
-          // プレイヤーの隣接（上下左右）なら移動不要なので処理をスキップ
           if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) return;
-          // 斜め隣の場合、壁が間に無ければ移動しない
           else if (dx === 1 && dy === 1) {
             if (this.map.grid[this.player.y][enemy.x] !== MAP_TILE.WALL &&
                 this.map.grid[enemy.y][this.player.x] !== MAP_TILE.WALL) return;
           }
-      
-          // プレイヤーまでの最短経路を探索
           const path = this.findPath(enemy.x, enemy.y, this.player.x, this.player.y);
           if (path && path.length > 0) {
-            // 経路の最初のステップを候補位置とする
             let candidate = path[0];
-            
-            // 敵が候補位置に斜め移動する場合のチェック
             if (enemy.x !== candidate.x && enemy.y !== candidate.y) {
-              // 候補位置への水平移動が壁で塞がれているかチェック
               const horizontalBlocked = (this.map.grid[enemy.y][candidate.x] === MAP_TILE.WALL);
-              // 候補位置への垂直移動が壁で塞がれているかチェック
               const verticalBlocked = (this.map.grid[candidate.y][enemy.x] === MAP_TILE.WALL);
-              // どちらかが塞がれている場合、別の移動候補を検討する
               if (horizontalBlocked || verticalBlocked) {
                 let possibleMoves = [];
-                // 水平方向に塞がれていなければ、水平移動の候補を追加
                 if (!horizontalBlocked) possibleMoves.push({ x: candidate.x, y: enemy.y });
-                // 垂直方向に塞がれていなければ、垂直移動の候補を追加
                 if (!verticalBlocked) possibleMoves.push({ x: enemy.x, y: candidate.y });
-                // 候補を一旦クリア
                 candidate = null;
-                // 可能な移動候補から空いている場所を探す
                 for (let move of possibleMoves) {
                   if (!occupied.has(`${move.x},${move.y}`)) {
                     candidate = move;
                     break;
                   }
                 }
-                // 移動候補が見つからなければ、この敵は移動しない
                 if (!candidate) return;
               }
             }
-            // その候補位置がプレイヤーの次の移動先と一致していれば移動しない
             if (!attacked && candidate.x === nextPlayerX && candidate.y === nextPlayerY) return;
-            // 候補位置が既に他の敵に占有されている場合、移動しない
             if (occupied.has(`${candidate.x},${candidate.y}`)) return;
-            // 現在の位置を occupied から削除
             occupied.delete(`${enemy.x},${enemy.y}`);
-            // 行動回数を1減らす
             enemy.action--;
-            // 敵の座標を候補位置に更新
             enemy.x = candidate.x;
             enemy.y = candidate.y;
-            // 新しい位置を occupied に追加
             occupied.add(`${enemy.x},${enemy.y}`);
           }
         });
       }
-      
-      // 敵の攻撃処理
       enemyAttackPhase() {
-        // 各敵について攻撃処理を行う
         this.enemies.forEach((enemy) => {
-          // 体力が0以下、または行動回数が0なら攻撃を行わない
           if (enemy.hp <= 0 || enemy.action === 0) {
             this.x = this.y = -1;
             return;
           }
-      
-          // プレイヤーとの距離を水平方向(dx)・垂直方向(dy)で算出
           const dx = Math.abs(enemy.x - this.player.x);
           const dy = Math.abs(enemy.y - this.player.y);
-      
-          // プレイヤーが上下左右に隣接している場合
           if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
-            // 敵の行動回数を1減らす
             enemy.action--;
-            // 遅延を加えて攻撃エフェクトとダメージ反映の処理を行う
             this.queueTimeout(() => {
               this.player.hp -= enemy.atk;
               if (this.player.hp < 0) this.player.hp = 0;
-              // ダメージエフェクトを表示
               EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me");
             }, this.actionCount * this.actionTime);
-            // 次の攻撃タイミングのために actionCount をインクリメント
             this.actionCount++;
           }
-          // プレイヤーが斜めに隣接している場合
           else if (dx === 1 && dy === 1) {
-            // 隣接する斜め方向の移動経路に壁がなければ攻撃する
             if (this.map.grid[this.player.y][enemy.x] !== MAP_TILE.WALL &&
                 this.map.grid[enemy.y][this.player.x] !== MAP_TILE.WALL) {
-              // 敵の行動回数を1減らす
               enemy.action--;
-              // 遅延を加えて攻撃エフェクトとダメージ反映の処理を実施
               this.queueTimeout(() => {
                 this.player.hp -= enemy.atk;
                 if (this.player.hp < 0) this.player.hp = 0;
-                // ダメージエフェクトを表示
                 EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me");
               }, this.actionCount * this.actionTime);
-              // 次の攻撃タイミングのために actionCount をインクリメント
               this.actionCount++;
             }
           }
@@ -1119,12 +1093,8 @@
           this.gainExp(5);
         }
       }
-      
-      // ---------------- レンダリング ----------------
       renderMainView() {
         let html = '';
-        //// console.log(`P(${this.player.x}, ${this.player.y})`);
-        //// console.log(`MAP(${this.map.grid[this.player.y][this.player.x]})`);
         var radius = CONFIG.VIEW_RADIUS;
         const startX = this.player.x - radius;
         const startY = this.player.y - radius;
@@ -1176,21 +1146,14 @@
         this.minimapContainer.style.gridTemplateColumns = `repeat(${this.width}, 4px)`;
       }
       render() {
-        // 既存の背景色クラス設定
         document.body.classList.remove("easy-dungeon", "hard-dungeon", "deep-dungeon");
         if (this.floor < 10) document.body.classList.add("easy-dungeon");
         else if (this.floor < 50) document.body.classList.add("hard-dungeon");
         else document.body.classList.add("deep-dungeon");
         
-        // ★ 新しい背景色設定 ★
-        // 現在のフロアと難易度設定の最大フロア数に基づき、背景の明るさを線形補間で調整（浅い階層は明るく、深い階層は暗くなる）
         const maxFloor = difficultySettings[CONFIG.DIFFICULTY].maxFloor;
-        const brightness = 80 - ((this.floor - 1) / (maxFloor - 1)) * 60; // 80% から 20% へ
+        const brightness = 80 - ((this.floor - 1) / (maxFloor - 1)) * 60;
         document.body.style.backgroundColor = `hsl(0, 0%, ${brightness}%)`;
-        ////console.log(this.floor, brightness)
-        ////console.log(document.body.style.backgroundColor)
-        // ★ ここまで新しい背景色設定 ★
-
         this.renderMainView();
         this.renderMinimap();
         document.getElementById('difficulty').innerText = CONFIG.DIFFICULTY;
@@ -1218,14 +1181,20 @@
               invHtml += `<li class="${(i===this.inventorySelection) ? 'selected' : ''}">${selected}${itemName}</li>`;
             }
             invHtml += `</ul>`;
-            invHtml += `<p>u: 使用, d: 置く, Esc/e: 閉じる</p>`;
+            invHtml += `<p>u: 使用, d: 置く, x: 交換, Esc/e: 閉じる</p>`;
+          }
+          if (this.groundItem) {
+            invHtml += `<div class="ground-item-section">`;
+            invHtml += `<h3>足元のアイテム</h3>`;
+            invHtml += `<p>${this.groundItem.name}</p>`;
+            invHtml += `<p>p: 拾う, u: 使用</p>`;
+            invHtml += `</div>`;
           }
           invHtml += `</div>`;
           this.gameContainer.innerHTML += invHtml;
         }
       }
       
-      // ---------------- リザルト ----------------
       saveResult(clear=false) {
         let results = JSON.parse(localStorage.getItem("gameResult") || "[]");
         results.push({
@@ -1260,7 +1229,6 @@
         }
       }
       
-      // ---------------- ダンジョン生成 ----------------
       generateDungeon(keepHP = false) {
         const prevHP = this.player.hp;
         const prevScore = this.score;
@@ -1282,9 +1250,6 @@
           this.player.hp = prevHP;
           this.score = prevScore;
           this.floor++;
-          // ダンジョン難易度に合わせた最終フロアチェック
-          ////console.log(difficultySettings)
-          ////console.log(CONFIG.DIFFICULTY)
           if (this.floor > difficultySettings[CONFIG.DIFFICULTY].maxFloor) {
             alert("ダンジョンクリア！おめでとう！");
             this.player = new Player(0, 0, this.initialHP);
@@ -1298,7 +1263,6 @@
         this.stairs.x = lastRoom.x + 2;
         this.stairs.y = lastRoom.y + 2;
         this.map.grid[this.stairs.y][this.stairs.x] = MAP_TILE.STEPS;
-        // 敵の強さ倍率を難易度で調整
         if (CONFIG.DIFFICULTY === "hard") {
           this.minMagnification = 1.4;
           this.maxMagnification = 1.7;
@@ -1394,7 +1358,6 @@
       }
     }
 
-    // ---------------- DifficultySelector クラス ----------------
     class DifficultySelector {
       constructor() {
         this.gridWidth = 15;
@@ -1406,7 +1369,6 @@
             this.grid[y][x] = " ";
           }
         }
-        // 難易度オプションの配置（例）
         this.options = [
           { x: 3, y: 3, difficulty: "easy", tile: difficultySettings.easy.wallEmoji },
           { x: 11, y: 3, difficulty: "normal", tile: difficultySettings.normal.wallEmoji },
@@ -1417,7 +1379,6 @@
             this.grid[opt.y + pos[1]][opt.x + pos[0]] = opt.tile;
           }
         });
-        // プレイヤーの初期位置（中央）
         this.playerX = Math.floor(this.gridWidth / 2);
         this.playerY = Math.floor(this.gridHeight / 2);
         this.inSelection = true;
@@ -1453,7 +1414,6 @@
           this.playerX = newX;
           this.playerY = newY;
           this.render();
-          // 難易度オプションに到達していればゲーム開始
           for (let opt of this.options) {
             if (opt.x === this.playerX && opt.y === this.playerY) {
               this.inSelection = false;
@@ -1466,12 +1426,10 @@
       }
     }
 
-    // 難易度選択後に呼ばれる
     function startDungeonGame(difficulty) {
       CONFIG.DIFFICULTY = difficulty;
       CONFIG.REVEALLV = difficultySettings[difficulty].revealLv;
       MAP_TILE.WALL = difficultySettings[difficulty].wallEmoji;
-      // 既存のGameクラスを起動
       setTimeout(() => { 
         new Game();
       }, 300);
@@ -1482,7 +1440,6 @@
       if (modal) modal.remove();
     }
 
-    // エントリーポイント：DifficultySelectorから難易度選択させる
     new DifficultySelector();
   </script>
 </body>
