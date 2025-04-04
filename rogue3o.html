@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ローグっぽい何か（ミニマップ改修版）</title>
+  <script>
+  location.href = "./split/rogue3o.html";
+  </script>
   <style>
     /* 全体リセット */
     * { user-select: none; margin: 0; padding: 0; box-sizing: border-box; }
@@ -217,7 +220,7 @@
   
   <script>
     const difficultySettings = {
-      easy:   { name: "森レベル", wallEmoji: "🌳", maxFloor: 10, revealLv: 5 },
+      easy:   { name: "森レベル", wallEmoji: "🌳", maxFloor: 1, revealLv: 5 },
       normal: { name: "山レベル", wallEmoji: "⛰️", maxFloor: 20, revealLv: 3 },
       hard:   { name: "火山レベル", wallEmoji: "🌋", maxFloor: 99, revealLv: 2 }
     };
@@ -348,98 +351,59 @@
       }
     }
     
-    const enemyClassList = (floorRanges, ...EnemyClass) => {
-      for (var i in EnemyClass) {
-        EnemyClass[i].floorRange = floorRanges[i];
-      }
-      return EnemyClass;
-    }
     const enemyList = (floor, difficulty) => {
-      const list = [];
-      let enemyClasses;
-      switch (difficulty) {
-      case "easy":
-        enemyClasses = enemyClassList(
-          [
-            [1, 5], // いもむし
-            [3, 7], // アリ
-            [4, 10], // ザリガニ
-            [6, 10], // スライム
-          ],
-	      EnemyLarvae,
-	      EnemyAnt,
-	      EnemyCrayfish,
-	      EnemySlime
-	    );
-        enemyClasses.forEach(c => {
-          if (c.floorRange[0] <= floor && (c.floorRange[1] == null || floor <= c.floorRange[1])) {
-            list.push(c);
-          }
-        });
-        break;
-      case "normal":
-        enemyClasses = enemyClassList(
-          [
-            [1, 4], // いもむし
-            [2, 5], // アリ
-            [4, 8], // ザリガニ
-            [8, 10], // スライム
-            [12, 18], // コウモリ
-            [16, 20], // ゴブリン
-            [19, 20], // スケルトン
-          ],
-          EnemyLarvae,
-          EnemyAnt,
-          EnemyCrayfish,
-          EnemySlime,
-          EnemyBat,
-          EnemyGoblin,
-          EnemySkeleton
-        );
-        enemyClasses.forEach(c => {
-          if (c.floorRange[0] <= floor && (c.floorRange[1] == null || floor <= c.floorRange[1])) {
-            list.push(c);
-          }
-        });
-        break;
-      case "hard":
-        enemyClasses = enemyClassList(
-          [
-            [1, null], // いもむし
-            [2, null], // アリ
-            [4, null], // ザリガニ
-            [8, null], // スライム
-            [12, null], // コウモリ
-            [16, null], // ゴブリン
-            [19, null], // スケルトン
-            [24, null], // クモ
-            [30, null], // 魔法使い
-          ],
-          EnemyLarvae,
-          EnemyAnt,
-          EnemyCrayfish,
-          EnemySlime,
-          EnemyBat,
-          EnemyGoblin,
-          EnemySkeleton,
-          EnemySpider,
-          EnemyWizard
-        );
-        enemyClasses.forEach(c => {
-          if (c.floorRange[0] <= floor && (c.floorRange[1] == null || floor <= c.floorRange[1])) {
-            list.push(c);
-          }
-        });
-        break;
-      default:
-        enemyClasses = [EnemyLarvae];
-        enemyClasses.forEach(c => {
-          if (c.floorRange[0] <= floor && (c.floorRange[1] == null || floor <= c.floorRange[1])) {
-            list.push(c);
-          }
-        });
-        break;
+      class EnemyDefinition {
+        constructor(EnemyClass, floorRange) {
+          this.enemy = EnemyClass;
+          this.floorRange = floorRange;
+        }
       }
+    
+      const list = [];
+      let enemyDefinitions;
+      switch (difficulty) {
+        case "easy":
+          enemyDefinitions = [
+            new EnemyDefinition(EnemyLarvae, [1, 5]),
+            new EnemyDefinition(EnemyAnt, [3, 7]),
+            new EnemyDefinition(EnemyCrayfish, [4, 10]),
+            new EnemyDefinition(EnemySlime, [6, 10])
+          ];
+          break;
+        case "normal":
+          enemyDefinitions = [
+            new EnemyDefinition(EnemyLarvae, [1, 4]),
+            new EnemyDefinition(EnemyAnt, [2, 5]),
+            new EnemyDefinition(EnemyCrayfish, [4, 8]),
+            new EnemyDefinition(EnemySlime, [8, 10]),
+            new EnemyDefinition(EnemyBat, [12, 18]),
+            new EnemyDefinition(EnemyGoblin, [16, 20]),
+            new EnemyDefinition(EnemySkeleton, [19, 20])
+          ];
+          break;
+        case "hard":
+          enemyDefinitions = [
+            new EnemyDefinition(EnemyLarvae, [1, null]),
+            new EnemyDefinition(EnemyAnt, [2, null]),
+            new EnemyDefinition(EnemyCrayfish, [4, null]),
+            new EnemyDefinition(EnemySlime, [8, null]),
+            new EnemyDefinition(EnemyBat, [12, null]),
+            new EnemyDefinition(EnemyGoblin, [16, null]),
+            new EnemyDefinition(EnemySkeleton, [19, null]),
+            new EnemyDefinition(EnemySpider, [24, null]),
+            new EnemyDefinition(EnemyWizard, [30, null])
+          ];
+          break;
+        default:
+          enemyDefinitions = [ new EnemyDefinition(EnemyLarvae, [1, 5]) ];
+      }
+    
+      enemyDefinitions.forEach(def => {
+        if (def.floorRange[0] <= floor && (def.floorRange[1] === null || floor <= def.floorRange[1])) {
+          list.push(def.enemy);
+        }
+      });
+    
       return list;
     };
 
@@ -1314,14 +1278,16 @@
         } else {
           this.player.hp = prevHP;
           this.score = prevScore;
-          this.floor++;
-          if (this.floor > difficultySettings[CONFIG.DIFFICULTY].maxFloor) {
+          if (this.floor + 1 > difficultySettings[CONFIG.DIFFICULTY].maxFloor) {
+            this.saveResult(true);
             alert("ダンジョンクリア！おめでとう！");
             this.player = new Player(0, 0, this.initialHP);
             this.floor = 1;
             this.score = 0;
             this.generateDungeon(false);
             return;
+          } else {
+            this.floor++;
           }
         }
         const lastRoom = this.map.rooms.at(-1);
