@@ -1,6 +1,8 @@
 // Game クラス
 class Game {
   constructor() {
+    this.keyX = 0;
+    this.keyY = 0;
     this.actionCount = 0;
     this.actionTime = 400;
     this.width = CONFIG.WIDTH;
@@ -135,10 +137,10 @@ class Game {
     }
     if (this.keysDown['Shift']) {
       let hor = 0, ver = 0;
-      if (this.keysDown['ArrowLeft'] && !this.keysDown['ArrowRight']) { hor = -1; }
-      else if (this.keysDown['ArrowRight'] && !this.keysDown['ArrowLeft']) { hor = 1; }
-      if (this.keysDown['ArrowUp'] && !this.keysDown['ArrowDown']) { ver = -1; }
-      else if (this.keysDown['ArrowDown'] && !this.keysDown['ArrowUp']) { ver = 1; }
+      if (this.keysDown['ArrowLeft'] && !this.keysDown['ArrowRight']) { this.keyX = hor = -1; }
+      else if (this.keysDown['ArrowRight'] && !this.keysDown['ArrowLeft']) { this.keyX = hor = 1; }
+      if (this.keysDown['ArrowUp'] && !this.keysDown['ArrowDown']) { this.keyY = ver = -1; }
+      else if (this.keysDown['ArrowDown'] && !this.keysDown['ArrowUp']) { this.keyY = ver = 1; }
       if (hor !== 0 && ver !== 0) {
         if (this.map.grid[this.player.y][this.player.x + hor] === MAP_TILE.WALL ||
             this.map.grid[this.player.y + ver][this.player.x] === MAP_TILE.WALL) return null;
@@ -151,10 +153,10 @@ class Game {
     }
     if (event.key === 'r') { this.showResults(); return null; }
     let dx = 0, dy = 0, count = 0;
-    if (this.keysDown['ArrowLeft']) { dx = -1; count++; }
-    if (this.keysDown['ArrowRight']) { dx = 1; count++; }
-    if (this.keysDown['ArrowUp']) { dy = -1; count++; }
-    if (this.keysDown['ArrowDown']) { dy = 1; count++; }
+    if (this.keysDown['ArrowLeft']) { this.keyX = dx = -1; this.keyY = 0; count++; }
+    if (this.keysDown['ArrowRight']) { this.keyX = dx = 1; this.keyY = 0; count++; }
+    if (this.keysDown['ArrowUp']) { this.keyY = dy = -1; this.keyX = 0; count++; }
+    if (this.keysDown['ArrowDown']) { this.keyY = dy = 1; this.keyX = 0; count++; }
     if (count === 1) {
       if (this.map.grid[this.player.y + dy]?.[this.player.x + dx] === MAP_TILE.WALL) return null;
       return { tx: this.player.x + dx, ty: this.player.y + dy };
@@ -184,7 +186,6 @@ class Game {
     if (this.groundItem && this.inventorySelection === this.player.inventory.length) {
       if (event.key === 'p') {
         // 足元アイテムを拾う
-        console.log(this.player.inventory.length);
         if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
           this.player.inventory.push(this.groundItem);
           EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "GET");
@@ -479,6 +480,12 @@ class Game {
     this.enemies.forEach((enemy) => { enemy.action = enemy.maxAction; });
   }
   damageEnemy(enemy, index) {
+    var hor = this.keyX, ver = this.keyY;
+    if (this.player.weapon)
+      EffectsManager.showAttackMotionWeapon(this.gameContainer, hor, ver, this.player.weapon.tile);
+    else
+      EffectsManager.showAttackMotionNoWeapon(this.gameContainer, hor, ver);
+    
     enemy.takeDamage(this.player.attack);
     EffectsManager.showEffect(this.gameContainer, this.player, enemy.x, enemy.y, `-${this.player.attack}`, "damage");
     this.actionCount++;
@@ -713,13 +720,13 @@ class Game {
         var selection = randomInt(1, 4);
         switch (selection) {
         case 1:
-            arr.push(new MagicSpell(x, y, "火の玉", '🔥', '🔥', {damage: 10, area: 1, fallbackHeal: null}));
+            arr.push(new MagicSpell(x, y, "火の玉", '🔥', '🔥', {damage: 12, area: 1, fallbackHeal: null}));
           break;
         case 2:
-            arr.push(new MagicSpell(x, y, "たつまき", '🌪️', '🌪️', {damage: 8, area: 2, fallbackHeal: null}));
+            arr.push(new MagicSpell(x, y, "たつまき", '🌪️', '🌪️', {damage: 10, area: 2, fallbackHeal: null}));
           break;
         case 3:
-            arr.push(new MagicSpell(x, y, "大波", '🌊', '🌊', {damage: 5, area: 4, fallbackHeal: null}));
+            arr.push(new MagicSpell(x, y, "大波", '🌊', '🌊', {damage: 8, area: 4, fallbackHeal: null}));
           break;
         case 4:
             arr.push(new MagicSpell(x, y, "カミナリ", '⚡️', '⚡️', {damage: 15, area: 1, fallbackHeal: null}));

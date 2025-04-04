@@ -18,7 +18,8 @@ const CONFIG = {
   INVENTORY_MAX: 10,
   VIEW_RADIUS: 7,
   DIFFICULTY: "easy",
-  REVEALLV: 3
+  REVEALLV: 3,
+  FONT_SIZE: 28
 };
 
 const MAP_TILE = {
