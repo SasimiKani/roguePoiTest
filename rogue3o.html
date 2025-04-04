@@ -205,8 +205,9 @@
       <p>⛰️ フロア: <span id="floor">1</span>　💎 スコア: <span id="score">0</span></p>
       <p>－－－－－－－－－</p>
       <p>矢印キーで移動／敵と隣接してたら攻撃！</p>
-      <p>．で休憩（<span id="restCycle"></span>ターンごとに回復）　🔼:次のフロアへ</p>
       <p>※ Shift＋方向キーで斜め移動</p>
+      <p>※ Ctrl＋方向キーでアイテムに乗る</p>
+      <p>．で休憩（<span id="restCycle"></span>ターンごとに回復）　🔼:次のフロアへ</p>
       <p>eキーでインベントリ表示</p>
       <p>rキーで結果表示</p>
       <p>🟨プレイヤー　🟥敵　🟦アイテム</p>
@@ -701,7 +702,7 @@
           this.generateDungeon(true);
           return;
         }
-        if (!this.ctrlPressed) {
+        if (!this.ctrlPressed && this.player.inventory.length < CONFIG.INVENTORY_MAX) {
           this.items = this.items.filter(item => {
             if (item.x === this.player.x && item.y === this.player.y) {
               if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
@@ -801,20 +802,23 @@
         if (this.groundItem && this.inventorySelection === this.player.inventory.length) {
           if (event.key === 'p') {
             // 足元アイテムを拾う
+            console.log(this.player.inventory.length);
             if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
               this.player.inventory.push(this.groundItem);
+              EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "GET");
+              this.groundItem = null;
+              this.inventoryOpen = false;
             } else {
               this.items.push(this.groundItem);
             }
-            EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "GET");
-            this.groundItem = null;
-            this.inventoryOpen = false;
             this.render();
             return;
           }
           if (event.key === 'u') {
             // 足元アイテムを使用
             if (this.groundItem.use) {
+              // インベントリがマックスで足元の武器を装備できない
+              if (this.groundItem.name.match(/武器.*/g) && this.player.inventory.length >= CONFIG.INVENTORY_MAX) return;
               this.groundItem.use(this);
               // もし足元のアイテムが武器なら、使用後にインベントリへ追加
               if (this.groundItem.name.match(/武器.*/g)) {
@@ -831,19 +835,6 @@
             return;
           }
           if (event.key === 'x') {
-            // 交換の場合は、もし足元と所持品のどちらかが存在すれば交換
-            let invItem = this.player.inventory[this.inventorySelection];
-            // ここ、足元が選択されているので、交換は他の所持品との交換は無効
-            // 必要なら、交換処理は足元→インベントリの拾い扱いとする
-            if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
-              this.player.inventory.push(this.groundItem);
-            } else {
-              this.items.push(this.groundItem);
-            }
-            EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "交換");
-            this.groundItem = null;
-            this.inventoryOpen = false;
-            this.render();
             return;
           }
         } else {
@@ -868,6 +859,7 @@
             return;
           }
           if (event.key === 'd') {
+            if (this.groundItem) return;
             let item = this.player.inventory[this.inventorySelection];
             if (item) {
               if (item.name.match(/武器.*/g) && this.player.weapon === item) {
@@ -893,15 +885,19 @@
             return;
           }
           if (event.key === 'x') {
+            if (this.player.inventory.length === 0) return;
             // 交換処理（所持品内の交換など）
             let invItem = this.player.inventory[this.inventorySelection];
-            // ここでは、通常交換処理（例：選択中のアイテムと足元アイテムの交換）は
-            // groundItemが存在している場合のみ行う
+            // ここでは、通常交換処理（例：選択中のアイテムと足元アイテムの交換）はgroundItemが存在している場合のみ行う
             if (this.groundItem) {
               let temp = invItem;
               this.player.inventory[this.inventorySelection] = this.groundItem;
               this.groundItem = temp;
               EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "交換");
+              if (this.groundItem.name.match(/武器.*/g) && this.player.weapon) {
+                // インベントリの装備している武器を交換したら外す
+                this.groundItem.use(this);
+              }
             }
             this.inventoryOpen = false;
             this.render();
@@ -1196,7 +1192,7 @@
             invHtml += `<li class="${(i===this.inventorySelection) ? 'selected' : ''}">${selected}${this.player.inventory[i].tile} ${itemName}</li>`;
           }
           invHtml += `</ul>`;
-          invHtml += `<p>（U: 使用, D: 置く, X: 交換, ESC/E: 閉じる）</p>`;
+          invHtml += `<p>（U: 使用, ${!this.groundItem ? "D: 置く" : "X: 交換"}, ESC/E: 閉じる）</p>`;
           if (this.groundItem) {
             invHtml += `<hr>`;
             invHtml += `<h3>足元</h3>`;
@@ -1205,7 +1201,7 @@
             let selected = (index === this.inventorySelection) ? ">> " : "";
             invHtml += `<li class="${(index === this.inventorySelection) ? 'selected' : ''}">${selected}${this.groundItem.tile} ${this.groundItem.name}</li>`;
             invHtml += `</ul>`;
-            invHtml += `<p>（P: 拾う, U: 使用, X: 交換）</p>`;
+            invHtml += `<p>（${this.player.inventory.length < CONFIG.INVENTORY_MAX ? "P: 拾う, " : ""}U: 使用）</p>`;
           }
           invHtml += `</div>`;
           this.gameContainer.innerHTML += invHtml;
