@@ -9,7 +9,7 @@
     * { user-select: none; margin: 0; padding: 0; box-sizing: border-box; }
     /* 難易度選択用マップ */
     #game { 
-      font-size: 24px; 
+      font-size: 28px; 
       line-height: 1.2; 
       white-space: pre; 
       position: relative; 
@@ -139,7 +139,7 @@
     p { font-size: 14px; line-height: 1.4; margin-bottom: 8px; }
     /* インベントリオーバーレイ */
     .inventory-modal {
-      font-size: .7em;
+      font-size: 0.7em;
       position: absolute;
       top: 20%;
       left: 20%;
@@ -154,12 +154,6 @@
     .inventory-modal ul { list-style: none; padding: 0; }
     .inventory-modal li { padding: 4px 0; }
     .inventory-modal li.selected { background: #444; }
-    /* 足元アイテム用セクション */
-    .ground-item-section {
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid #555;
-    }
     /* ミニマップ用 */
     .minimap-container {
       margin-top: 20px;
@@ -648,6 +642,7 @@
         this.gameContainer = document.getElementById("game");
         this.minimapContainer = document.getElementById("minimap");
         this.inventoryOpen = false;
+        // inventorySelectionの範囲は、所持品＋（足元アイテムがある場合は１つ追加）
         this.inventorySelection = 0;
         this.ctrlPressed = false;
         // 足元アイテム用プロパティ
@@ -694,7 +689,6 @@
              this.groundItem.x = this.player.x;
              this.groundItem.y = this.player.y;
              this.items.push(this.groundItem);
-             //EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "足元に残す");
              this.groundItem = null;
           }
           this.player.x = tx;
@@ -785,96 +779,139 @@
         return null;
       }
       processInventoryInput(event) {
-        if (event.key === 'p') {
-          if (this.groundItem && this.player.inventory.length < CONFIG.INVENTORY_MAX) {
-            this.player.inventory.push(this.groundItem);
-            EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "GET");
-            this.groundItem = null;
-          }
-          this.inventoryOpen = false;
-          this.render();
-          return;
-        }
-        if (event.key === 'u' && this.groundItem) {
-          if (this.groundItem.use) {
-            this.groundItem.use(this);
-            if (this.groundItem.name.match(/武器.*/g) === null) {
-              this.groundItem = null;
-            }
-          }
-          this.inventoryOpen = false;
-          this.render();
-          return;
-        }
-        if (event.key === 'x' && this.groundItem) {
-          let invItem = this.player.inventory[this.inventorySelection];
-          if (invItem) {
-            let temp = invItem;
-            this.player.inventory[this.inventorySelection] = this.groundItem;
-            this.groundItem = temp;
-            EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "交換");
-          }
-          this.inventoryOpen = false;
-          this.render();
-          return;
-        }
+        // まず、選択範囲は所持品リスト＋足元アイテム（ある場合）
+        const totalOptions = this.player.inventory.length + (this.groundItem ? 1 : 0);
+        // カーソル移動
         if (event.key === 'ArrowUp') {
-          if (this.player.inventory.length > 0) {
-            this.inventorySelection = (this.inventorySelection - 1 + this.player.inventory.length) % this.player.inventory.length;
+          if (totalOptions > 0) {
+            this.inventorySelection = (this.inventorySelection - 1 + totalOptions) % totalOptions;
             this.render();
           }
           return;
         }
         if (event.key === 'ArrowDown') {
-          if (this.player.inventory.length > 0) {
-            this.inventorySelection = (this.inventorySelection + 1) % this.player.inventory.length;
+          if (totalOptions > 0) {
+            this.inventorySelection = (this.inventorySelection + 1) % totalOptions;
             this.render();
           }
           return;
         }
-        if (event.key === 'u') {
-          let item = this.player.inventory[this.inventorySelection];
-          if (item && item.use) {
-            item.use(this);
-            if (item.name.match(/武器.*/g) === null) {
+        // 以下、キーの処理
+        // もしカーソルが足元アイテム（＝インベントリリストの最後の項目）を指している場合
+        if (this.groundItem && this.inventorySelection === this.player.inventory.length) {
+          if (event.key === 'p') {
+            // 足元アイテムを拾う
+            if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
+              this.player.inventory.push(this.groundItem);
+            } else {
+              this.items.push(this.groundItem);
+            }
+            EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "GET");
+            this.groundItem = null;
+            this.inventoryOpen = false;
+            this.render();
+            return;
+          }
+          if (event.key === 'u') {
+            // 足元アイテムを使用
+            if (this.groundItem.use) {
+              this.groundItem.use(this);
+              // もし足元のアイテムが武器なら、使用後にインベントリへ追加
+              if (this.groundItem.name.match(/武器.*/g)) {
+                if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
+                  this.player.inventory.push(this.groundItem);
+                } else {
+                  this.items.push(this.groundItem);
+                }
+              }
+              this.groundItem = null;
+            }
+            this.inventoryOpen = false;
+            this.render();
+            return;
+          }
+          if (event.key === 'x') {
+            // 交換の場合は、もし足元と所持品のどちらかが存在すれば交換
+            let invItem = this.player.inventory[this.inventorySelection];
+            // ここ、足元が選択されているので、交換は他の所持品との交換は無効
+            // 必要なら、交換処理は足元→インベントリの拾い扱いとする
+            if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
+              this.player.inventory.push(this.groundItem);
+            } else {
+              this.items.push(this.groundItem);
+            }
+            EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "交換");
+            this.groundItem = null;
+            this.inventoryOpen = false;
+            this.render();
+            return;
+          }
+        } else {
+          // 通常の所持品の操作
+          if (event.key === 'u') {
+            let item = this.player.inventory[this.inventorySelection];
+            if (item && item.use) {
+              item.use(this);
+              if (item.name.match(/武器.*/g) === null) {
+                this.player.inventory.splice(this.inventorySelection, 1);
+                if (this.inventorySelection >= this.player.inventory.length) {
+                  this.inventorySelection = this.player.inventory.length - 1;
+                }
+              }
+              this.advanceTurn();
+              this.enemyMovementPhase(this.player.x, this.player.y);
+              this.enemyAttackPhase();
+              this.checkCollisions();
+            }
+            this.inventoryOpen = false;
+            this.render();
+            return;
+          }
+          if (event.key === 'd') {
+            let item = this.player.inventory[this.inventorySelection];
+            if (item) {
+              if (item.name.match(/武器.*/g) && this.player.weapon === item) {
+                this.player.attack -= this.player.weapon.bonus;
+                this.player.weapon = null;
+                EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `装備解除-${item.bonus}`, "heal");
+              }
+              // ここ、アイテムを置く場合は足元に設置する
+              if (!this.groundItem) {
+                this.groundItem = item;
+              } else {
+                item.x = this.player.x;
+                item.y = this.player.y;
+                this.items.push(item);
+              }
               this.player.inventory.splice(this.inventorySelection, 1);
               if (this.inventorySelection >= this.player.inventory.length) {
                 this.inventorySelection = this.player.inventory.length - 1;
               }
             }
-            this.advanceTurn();
-            this.enemyMovementPhase(this.player.x, this.player.y);
-            this.enemyAttackPhase();
-            this.checkCollisions();
+            this.inventoryOpen = false;
+            this.render();
+            return;
           }
-          this.inventoryOpen = false;
-          this.render();
-          return;
-        }
-        if (event.key === 'd') {
-          let item = this.player.inventory[this.inventorySelection];
-          if (item) {
-            if (item.name.match(/武器.*/g) && this.player.weapon === item) {
-              this.player.attack -= this.player.weapon.bonus;
-              this.player.weapon = null;
-              EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `装備解除-${item.bonus}`, "heal");
+          if (event.key === 'x') {
+            // 交換処理（所持品内の交換など）
+            let invItem = this.player.inventory[this.inventorySelection];
+            // ここでは、通常交換処理（例：選択中のアイテムと足元アイテムの交換）は
+            // groundItemが存在している場合のみ行う
+            if (this.groundItem) {
+              let temp = invItem;
+              this.player.inventory[this.inventorySelection] = this.groundItem;
+              this.groundItem = temp;
+              EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "交換");
             }
-            item.x = this.player.x;
-            item.y = this.player.y;
-            this.items.push(item);
-            this.player.inventory.splice(this.inventorySelection, 1);
-            if (this.inventorySelection >= this.player.inventory.length) {
-              this.inventorySelection = this.player.inventory.length - 1;
-            }
+            this.inventoryOpen = false;
+            this.render();
+            return;
           }
-          this.inventoryOpen = false;
-          this.render();
-          return;
-        }
-        if (event.key === 'Escape' || event.key === 'e') {
-          this.inventoryOpen = false;
-          this.render();
-          return;
+          if (event.key === 'Escape' || event.key === 'e') {
+            this.inventoryOpen = false;
+            this.render();
+            return;
+          }
         }
       }
       processInput(event) {
@@ -882,7 +919,8 @@
         this.ctrlPressed = event.ctrlKey;
         if (event.key === 'e') {
           this.inventoryOpen = !this.inventoryOpen;
-          if (this.inventoryOpen) this.inventorySelection = 0;
+          // カーソル初期値は0
+          this.inventorySelection = 0;
           this.render();
           return;
         }
@@ -1148,26 +1186,26 @@
         this.uiManager.update(this.player);
         if (this.inventoryOpen) {
           let invHtml = `<div class="inventory-modal">`;
-          invHtml += `<h3>所持品 (${this.player.inventory.length}/${CONFIG.INVENTORY_MAX})</h3>`;
-          if (this.player.inventory.length === 0) invHtml += `<p>(なし)</p>`;
-          else {
-            invHtml += `<ul>`;
-            for (let i = 0; i < this.player.inventory.length; i++) {
-              let selected = (i === this.inventorySelection) ? ">> " : "";
-              let itemName = this.player.inventory[i].name || "アイテム";
-              if (this.player.inventory[i].name.match(/武器.*/g) && this.player.weapon === this.player.inventory[i])
-                itemName += " (装備中)";
-              invHtml += `<li class="${(i===this.inventorySelection) ? 'selected' : ''}">${selected}${itemName}</li>`;
-            }
-            invHtml += `</ul>`;
-            invHtml += `<p>u: 使用, d: 置く, x: 交換, Esc/e: 閉じる</p>`;
+          invHtml += `<h3>所持品 (${this.player.inventory.length + (this.groundItem ? 1 : 0)}/${CONFIG.INVENTORY_MAX})</h3>`;
+          invHtml += `<ul style="min-height:20px;">`;
+          for (let i = 0; i < this.player.inventory.length; i++) {
+            let selected = (i === this.inventorySelection) ? ">> " : "";
+            let itemName = this.player.inventory[i].name || "アイテム";
+            if (this.player.inventory[i].name.match(/武器.*/g) && this.player.weapon === this.player.inventory[i])
+              itemName += " (装備中)";
+            invHtml += `<li class="${(i===this.inventorySelection) ? 'selected' : ''}">${selected}${this.player.inventory[i].tile} ${itemName}</li>`;
           }
+          invHtml += `</ul>`;
+          invHtml += `<p>（U: 使用, D: 置く, X: 交換, ESC/E: 閉じる）</p>`;
           if (this.groundItem) {
-            invHtml += `<div class="ground-item-section">`;
-            invHtml += `<h3>足元のアイテム</h3>`;
-            invHtml += `<p>${this.groundItem.name}</p>`;
-            invHtml += `<p>p: 拾う, u: 使用</p>`;
-            invHtml += `</div>`;
+            invHtml += `<hr>`;
+            invHtml += `<h3>足元</h3>`;
+            invHtml += `<ul style="min-height:20px;">`;
+            let index = this.player.inventory.length;
+            let selected = (index === this.inventorySelection) ? ">> " : "";
+            invHtml += `<li class="${(index === this.inventorySelection) ? 'selected' : ''}">${selected}${this.groundItem.tile} ${this.groundItem.name}</li>`;
+            invHtml += `</ul>`;
+            invHtml += `<p>（P: 拾う, U: 使用, X: 交換）</p>`;
           }
           invHtml += `</div>`;
           this.gameContainer.innerHTML += invHtml;
