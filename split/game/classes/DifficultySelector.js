@@ -1,4 +1,4 @@
-// DifficultySelector クラス
+// DifficultySelector クラス（修正版）
 class DifficultySelector {
   constructor() {
     this.gridWidth = 15;
@@ -43,6 +43,11 @@ class DifficultySelector {
   }
   handleKeyDown(e) {
     if (!this.inSelection) return;
+    // rキーで結果表示（難易度選択時のみ有効）
+    if (e.key === 'r') {
+      displayResults();
+      return;
+    }
     let dx = 0, dy = 0;
     if (e.key === "ArrowLeft") dx = -1;
     else if (e.key === "ArrowRight") dx = 1;
@@ -65,4 +70,69 @@ class DifficultySelector {
       }
     }
   }
+}
+
+// グローバル関数としてリザルト表示処理を定義
+function displayResults() {
+  let results = JSON.parse(localStorage.getItem("gameResult") || "[]");
+  
+  // リザルトを日付の降順にする
+  results = results.sort((a, b) => {
+    const dateA = a.date;
+    const dateB = b.date;
+    return dateB.localeCompare(dateA);
+  });
+  
+  let modalHtml = '<div class="results-modal" id="resultsModal">';
+  modalHtml += '<h3>記録された結果</h3>';
+  if (results.length === 0) {
+    modalHtml += '<p>記録がありません。</p>';
+  } else {
+    // 同じcolgroupを両テーブルに挿入してカラム幅を揃える
+    const colgroupHtml = '<colgroup>' +
+      '<col style="width: 16.66%;">' +
+      '<col style="width: 16.66%;">' +
+      '<col style="width: 16.66%;">' +
+      '<col style="width: 16.66%;">' +
+      '<col style="width: 16.66%;">' +
+      '<col style="width: 16.66%;">' +
+      '</colgroup>';
+      
+    // ヘッダー用テーブル（table-layout: fixed）
+    modalHtml += '<div class="results-modal-table">';
+    modalHtml += '<table style="table-layout: fixed; width: 100%;">' +
+      colgroupHtml +
+      '<thead><tr><th>日付</th><th>難易度</th><th>フロア</th><th>結果</th><th>レベル</th><th>スコア</th></tr></thead>' +
+      '</table>';
+    modalHtml += '</div>';
+    
+    // データ部分を囲むスクロール領域
+    modalHtml += '<div class="results-modal-table">';
+    modalHtml += '<table style="table-layout: fixed; width: 100%;">' +
+      colgroupHtml +
+      '<tbody>';
+    results.forEach(r => {
+      modalHtml += `<tr><td>${new Date(r.date).toLocaleString()}</td>` +
+        `<td>${r.dungeonLv == undefined ? "-" : r.dungeonLv}</td>` +
+        `<td>${r.floor}</td>` +
+        `<td>${r.clear ? "クリア" : "ゲームオーバー"}</td>` +
+        `<td>${r.lv}</td>` +
+        `<td>${r.score}</td></tr>`;
+    });
+    modalHtml += '</tbody></table>';
+    modalHtml += '</div>';
+  }
+  modalHtml += '<button onclick="closeResults()">閉じる</button>';
+  modalHtml += '</div>';
+  
+  if (!document.getElementById("resultsModal")) {
+    const modalDiv = document.createElement("div");
+    modalDiv.innerHTML = modalHtml;
+    document.body.appendChild(modalDiv);
+  }
+}
+
+function closeResults() {
+  const modal = document.getElementById("resultsModal");
+  if (modal) modal.remove();
 }

@@ -72,14 +72,16 @@ function enemyList(floor, difficulty) {
       ];
       break;
     default:
-      enemyDefinitions = [ new EnemyDefinition(EnemyLarvae, [1, 5]) ];
+      enemyDefinitions = [ new EnemyDefinition(EnemyLarvae, [1, null]) ];
   }
-
+  
   enemyDefinitions.forEach(def => {
     if (def.floorRange[0] <= floor && (def.floorRange[1] === null || floor <= def.floorRange[1])) {
       list.push(def.enemy);
     }
   });
+
+  if (list.length === 0) list.push( EnemyLarvae );
 
   return list;
 }

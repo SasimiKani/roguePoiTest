@@ -1,6 +1,7 @@
 // Game クラス
 class Game {
   constructor() {
+    this.isPlay = true;
     this.keyX = 0;
     this.keyY = 0;
     this.actionCount = 0;
@@ -151,7 +152,7 @@ class Game {
     if (event.key === '.') {
       return { tx: this.player.x, ty: this.player.y };
     }
-    if (event.key === 'r') { this.showResults(); return null; }
+    //if (event.key === 'r') { this.showResults(); return null; }
     let dx = 0, dy = 0, count = 0;
     if (this.keysDown['ArrowLeft']) { this.keyX = dx = -1; this.keyY = 0; count++; }
     if (this.keysDown['ArrowRight']) { this.keyX = dx = 1; this.keyY = 0; count++; }
@@ -166,6 +167,23 @@ class Game {
   processInventoryInput(event) {
     // まず、選択範囲は所持品リスト＋足元アイテム（ある場合）
     const totalOptions = this.player.inventory.length + (this.groundItem ? 1 : 0);
+    
+    // デバッグ用コマンド： 'w' キーで階段ワープ
+    /*if (event.key === 'w') {
+      // プレイヤーを階段の位置にワープ
+      this.player.x = this.stairs.x;
+      this.player.y = this.stairs.y;
+      // マップの視界を更新（階段周辺を見えるようにする）
+      this.map.revealRoom(this.player.x, this.player.y);
+      this.map.revealAround(this.player.x, this.player.y);
+      // エフェクトを表示してデバッグ感を出す（例：WARP 表示）
+      EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "WARP", "heal");
+      // ターンを進めたり、レンダリングを更新
+      this.advanceTurn();
+      this.render();
+      return;
+    }*/
+    
     // カーソル移動
     if (event.key === 'ArrowUp') {
       if (totalOptions > 0) {
@@ -294,6 +312,7 @@ class Game {
     }
   }
   processInput(event) {
+    if (!this.isPlay) return;
     if (this.isGameOver || !this.acceptingInput) return;
     this.ctrlPressed = event.ctrlKey;
     if (event.key === 'e') {
@@ -346,6 +365,29 @@ class Game {
     }
     return null;
   }
+
+  /**
+   * Game インスタンスの終了・解放処理
+   */
+  destroy() {
+    // タイマーを全て解除
+    this.timeoutQueue.forEach(id => clearTimeout(id));
+    this.timeoutQueue = [];
+    // イベントリスナを解除
+    document.removeEventListener('keydown', this.inputHandler);
+    // もし他にも登録しているイベントがあれば解除する
+    // 例: document.removeEventListener('keyup', this.someOtherHandler);
+    
+    // 必要であれば、gameContainer などの UI 要素の参照もクリア
+    // これによりガベージコレクションが働き、インスタンスが解放される
+    this.gameContainer = null;
+    this.minimapContainer = null;
+    this.isPlay = false;
+    
+    // 難易度選択マップに戻る
+    new DifficultySelector();
+  }
+  
   checkCollisions() {
     this.gems = this.gems.filter(gem => {
       if (gem.x === this.player.x && gem.y === this.player.y) {
@@ -367,8 +409,8 @@ class Game {
         this.generateEnemyCycle[0] = 0;
         this.hungerCycle[0] = 0;
         alert("倒れてしまった！");
-        new DifficultySelector();
-        delete(this);
+        // ゲームオーバー時に終了処理を実行
+        this.destroy();
       }
     }, this.actionCount * this.actionTime);
   }
@@ -549,6 +591,7 @@ class Game {
     this.minimapContainer.style.gridTemplateColumns = `repeat(${this.width}, 4px)`;
   }
   render() {
+    if (!this.isPlay) return;
     document.body.classList.remove("easy-dungeon", "hard-dungeon", "deep-dungeon");
     if (this.floor < 10) document.body.classList.add("easy-dungeon");
     else if (this.floor < 50) document.body.classList.add("hard-dungeon");
@@ -649,16 +692,14 @@ class Game {
     } else {
       this.player.hp = prevHP;
       this.score = prevScore;
-      if (this.floor + 1 > difficultySettings[CONFIG.DIFFICULTY].maxFloor) {
+      this.floor++;
+      
+      if (this.floor > difficultySettings[CONFIG.DIFFICULTY].maxFloor) {
         this.saveResult(true);
         alert("ダンジョンクリア！おめでとう！");
-        this.player = new Player(0, 0, this.initialHP);
-        this.floor = 1;
-        this.score = 0;
-        this.generateDungeon(false);
+        // ゲームクリア時にも終了処理を実行
+        this.destroy();
         return;
-      } else {
-        this.floor++;
       }
     }
     const lastRoom = this.map.rooms.at(-1);
@@ -714,8 +755,18 @@ class Game {
           EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+6", "heal");
         }));
       } else if (type === "weapon") {
-        const bonus = randomInt(1, 3);
-        arr.push(new WeaponItem(x, y, `武器 (+${bonus})`, '🗡️', bonus));
+        var selection = randomInt(1, 2);
+        let bonus = randomInt(1, 3);
+        switch (selection) {
+        case 1:
+          bonus = randomInt(1, 3);
+          arr.push(new WeaponItem(x, y, `武器-剣 (+${bonus})`, '🗡️', bonus));
+          break;
+        case 2:
+          bonus = randomInt(2, 5);
+          arr.push(new WeaponItem(x, y, `武器-斧 (+${bonus})`, '🪓', bonus));
+          break;
+        }
       } else if (type === "magic") {
         var selection = randomInt(1, 4);
         switch (selection) {
