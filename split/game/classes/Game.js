@@ -805,21 +805,15 @@ class Game {
           break;
         }
       } else if (type === "magic") {
-        var selection = randomInt(1, 4);
-        switch (selection) {
-        case 1:
-            arr.push(new MagicSpell(x, y, "火の玉", '🔥', '🔥', {damage: 12, area: 1, fallbackHeal: null}));
-          break;
-        case 2:
-            arr.push(new MagicSpell(x, y, "たつまき", '🌪️', '🌪️', {damage: 10, area: 2, fallbackHeal: null}));
-          break;
-        case 3:
-            arr.push(new MagicSpell(x, y, "大波", '🌊', '🌊', {damage: 8, area: 4, fallbackHeal: null}));
-          break;
-        case 4:
-            arr.push(new MagicSpell(x, y, "カミナリ", '⚡️', '⚡️', {damage: 15, area: 1, fallbackHeal: null}));
-          break;
-        }
+        const weightedMagics = [
+          ...Array(30).fill({name: "火の玉", tile: '🔥', damage: 20, area: 1, fallbackHeal: null}),
+          ...Array(20).fill({name: "たつまき", tile: '🌪️', damage: 15, area: 2, fallbackHeal: null}),
+          ...Array(10).fill({name: "大波", tile: '🌊', damage: 25, area: 4, fallbackHeal: null}),
+          ...Array(5).fill({name: "カミナリ", tile: '⚡️', damage: 30, area: 1, fallbackHeal: null}),
+        ];
+        let magic = weightedMagics.splice(randomInt(1, weightedMagics.length - 1), 1)[0];
+        arr.push(new MagicSpell(x, y, magic.name, magic.tile, magic.tile, {damage: magic.damage, area: magic.area, fallbackHeal: magic.fallbackHeal}));
+        console.log(arr);
       } else if (type === "entity") {
         arr.push(new BaseEntity(x, y));
       } else if (type === "enemy") {
