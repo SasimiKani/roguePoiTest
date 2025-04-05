@@ -19,6 +19,7 @@ class Game {
     this.acceptingInput = true;
     this.keysDown = {};
     this.items = [];
+    this.boxSelected = null;
     this.gems = [];
     this.enemies = [];
     this.stairs = { x: 0, y: 0 };
@@ -28,6 +29,7 @@ class Game {
     this.gameContainer = document.getElementById("game");
     this.minimapContainer = document.getElementById("minimap");
     this.inventoryOpen = false;
+    this.boxOverlayActive = false;
     // inventorySelectionの範囲は、所持品＋（足元アイテムがある場合は１つ追加）
     this.inventorySelection = 0;
     this.ctrlPressed = false;
@@ -218,7 +220,7 @@ class Game {
     }
     // 以下、キーの処理
     // もしカーソルが足元アイテム（＝インベントリリストの最後の項目）を指している場合
-    if (this.groundItem && this.inventorySelection === this.player.inventory.length) {
+    if (this.groundItem && this.inventorySelection === this.player.inventory.length && !this.boxSelected) {
       if (event.key === 'p') {
         if (this.groundItem.tile === '🔼') return; // 足元が階段なら何もしない
         // 足元アイテムを拾う
@@ -249,14 +251,17 @@ class Game {
           if (this.groundItem.name.match(/武器.*/g) && this.player.inventory.length >= CONFIG.INVENTORY_MAX) return;
           this.groundItem.use(this);
           // もし足元のアイテムが武器なら、使用後にインベントリへ追加
-          if (this.groundItem.name.match(/武器.*/g)) {
+          if (this.groundItem.name.match(/(武器.*)/g)) {
             if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
               this.player.inventory.push(this.groundItem);
             } else {
               this.items.push(this.groundItem);
             }
           }
-          this.groundItem = null;
+          // 箱は消費しない
+          if (!this.groundItem.name.match(/箱.*/g)) {
+            this.groundItem = null;
+          }
         }
         this.inventoryOpen = false;
         this.render();
@@ -267,13 +272,13 @@ class Game {
       }
     } else {
       // 通常の所持品の操作
-      if (event.key === 'u') {
+      if (event.key === 'u' && !this.boxSelected) {
         let item = this.player.inventory[this.inventorySelection];
         this.inventoryOpen = false;
         if (item && item.use) {
           this.render();
           await item.use(this);
-          if (item.name.match(/武器.*/g) === null) {
+          if (item.name.match(/(武器|箱).*/g) === null) {
             this.player.inventory.splice(this.inventorySelection, 1);
             if (this.inventorySelection >= this.player.inventory.length) {
               this.inventorySelection = this.player.inventory.length - 1;
@@ -287,7 +292,7 @@ class Game {
         this.render();
         return;
       }
-      if (event.key === 'd') {
+      if (event.key === 'd' && !this.boxSelected) {
         if (this.groundItem) return;
         let item = this.player.inventory[this.inventorySelection];
         if (item) {
@@ -313,7 +318,7 @@ class Game {
         this.render();
         return;
       }
-      if (event.key === 'x') {
+      if (event.key === 'x' && !this.boxSelected) {
         if (this.groundItem.tile === '🔼') return; // 足元が階段なら何もしない
         if (this.player.inventory.length === 0) return;
         // 交換処理（所持品内の交換など）
@@ -333,8 +338,33 @@ class Game {
         this.render();
         return;
       }
+      if (event.key === 'i') { // 入れる操作
+        const selectedItem = this.player.inventory[this.inventorySelection];
+        // 仮に、別途箱用の選択状態（this.boxSelected）があれば、その箱に入れる
+        if (this.boxSelected && !(selectedItem instanceof BoxItem)) {
+          if (selectedItem instanceof WeaponItem) {
+            // 箱に入れたので、装備を解除
+            selectedItem.use(this);
+          }
+          if (this.boxSelected.insertItem(selectedItem)) {
+            // 箱に入れたので、インベントリから削除
+            this.player.inventory.splice(this.inventorySelection, 1);
+            this.boxSelected.updateName();
+            this.render();
+            return;
+          } else {
+            EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "容量オーバー", "damage");
+          }
+        } else if (this.boxSelected === selectedItem) {
+          this.boxSelected = null;
+        } else if (selectedItem instanceof BoxItem) {
+          this.boxSelected = selectedItem;
+        }
+        this.render();
+      }
       if (event.key === 'Escape' || event.key === 'e') {
         this.inventoryOpen = false;
+        this.boxSelected = null;
         this.render();
         return;
       }
@@ -342,7 +372,7 @@ class Game {
   }
   processInput(event) {
     if (!this.isPlay) return;
-    if (this.isGameOver || !this.acceptingInput) return;
+    if (this.isGameOver || !this.acceptingInput || this.boxOverlayActive) return;
     this.ctrlPressed = event.ctrlKey;
     if (event.key === 'e') {
       this.inventoryOpen = !this.inventoryOpen;
@@ -654,10 +684,62 @@ class Game {
         let itemName = this.player.inventory[i].name || "アイテム";
         if (this.player.inventory[i].name.match(/武器.*/g) && this.player.weapon === this.player.inventory[i])
           itemName += " (装備中)";
-        invHtml += `<li class="${(i===this.inventorySelection) ? 'selected' : ''}">${selected}${this.player.inventory[i].tile} ${itemName}</li>`;
+        if (this.player.inventory[i] === this.boxSelected)
+          itemName += "（この箱に入れる）";
+        invHtml += `<li class="${(i === this.inventorySelection) ? 'selected' : ''} ${this.player.inventory[i] === this.boxSelected ? 'boxSelected' : ''}">${selected}${this.player.inventory[i].tile} ${itemName}</li>`;
       }
       invHtml += `</ul>`;
-      invHtml += `<p>（U: 使用, ${!this.groundItem ? "D: 置く" : "X: 交換"}, ESC/E: 閉じる）</p>`;
+    
+      // コマンド表示用の配列（インベントリ側）
+      let invCommands = [];
+      
+      // 選択中のアイテム
+      let selectedItem = this.player.inventory[this.inventorySelection];
+      
+      if (this.boxSelected) {
+        if (selectedItem === this.boxSelected) {
+          // 選択中の箱が選択されている場合は「I: 入れる」を表示
+          invCommands.push("I: キャンセル");
+        } else {
+          // 箱が選択されている場合は「I: 入れる」を表示
+          invCommands.push("I: 入れる");
+        }
+      }
+      
+      // クラスごとのコマンド
+      if (selectedItem instanceof BoxItem && !this.boxSelected) {
+        // 箱の場合は「」を表示
+        invCommands.push("I: 箱に入れる");
+        invCommands.push("U: 見る");
+      }
+      else if (selectedItem instanceof MagicSpell) {
+        // 魔法の場合は「」を表示
+        invCommands.push("U: 唱える");
+      }
+      else if (selectedItem instanceof WeaponItem) {
+        // 武器の場合の場合は「」を表示
+        if (this.player.weapon === selectedItem) {
+          invCommands.push("U: 外す");
+        } else {
+          invCommands.push("U: 装備");
+        }
+      }
+      else {
+        invCommands.push("U: 使う");
+      }
+      
+      if (this.groundItem) {
+        invCommands.push("X: 交換");
+      } else {
+        invCommands.push("D: 置く");
+      }
+      
+      // それ以外の基本コマンド
+      invCommands.push("ESC/E: 閉じる")
+    
+      invHtml += `<p>（${invCommands.join(", ")}）</p>`;
+    
+      // 足元アイテムの表示
       if (this.groundItem) {
         invHtml += `<hr>`;
         invHtml += `<h3>足元</h3>`;
@@ -666,16 +748,158 @@ class Game {
         let selected = (index === this.inventorySelection) ? ">> " : "";
         invHtml += `<li class="${(index === this.inventorySelection) ? 'selected' : ''}">${selected}${this.groundItem.tile} ${this.groundItem.tile === '🔼' ? "階段" : this.groundItem.name}</li>`;
         invHtml += `</ul>`;
+        // コマンド表示用の配列（足元）
+        let grdCommands = [];
         if (this.groundItem.tile === '🔼') {
-          invHtml += `<p>（U: 降りる）</p>`;
+          grdCommands.push("U: 降りる");
         } else {
-          invHtml += `<p>（${this.player.inventory.length < CONFIG.INVENTORY_MAX ? "P: 拾う, " : ""}U: 使用）</p>`;
+          if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
+            grdCommands.push("P: 拾う");
+          }
+          
+          // クラスごとのコマンド
+          if (this.groundItem instanceof MagicSpell) {
+            // 魔法の場合は「」を表示
+            grdCommands.push("U: 唱える");
+          }
+          else if (this.groundItem instanceof WeaponItem) {
+            grdCommands.push("U: 装備");
+          }
+          else {
+            grdCommands.push("U: 使う");
+          }
         }
+        invHtml += `<p>（${grdCommands.join(", ")}）</p>`;
       }
       invHtml += `</div>`;
       this.gameContainer.innerHTML += invHtml;
     }
   }
+  openBox(box) {
+    // 箱オーバーレイ中は通常操作を停止
+    this.boxOverlayActive = true;
+    let selectionIndex = 0; // 現在選択中の箱内アイテムのインデックス
+  
+    // オーバーレイ要素の生成
+    const overlay = document.createElement("div");
+    overlay.className = "box-overlay";
+  
+    // タイトル：箱内のアイテム数と容量を表示
+    const title = document.createElement("h3");
+    title.textContent = `箱の中身 (${box.contents.length}/${box.capacity})`;
+    overlay.appendChild(title);
+  
+    // アイテム一覧表示用コンテナ（スクロール可能）
+    const listContainer = document.createElement("div");
+    listContainer.className = "box-item-list-container";
+    const list = document.createElement("ul");
+    list.className = "box-item-list";
+    listContainer.appendChild(list);
+    overlay.appendChild(listContainer);
+  
+    // 操作方法の説明
+    const instructions = document.createElement("p");
+    instructions.textContent = "↑/↓: 選択  D: 出す  U: 使う  X: 置く  Esc: 閉じる";
+    overlay.appendChild(instructions);
+  
+    document.body.appendChild(overlay);
+  
+    // オーバーレイ内のリストを描画
+    function renderList() {
+      title.textContent = `箱の中身 (${box.contents.length}/${box.capacity})`;
+      list.innerHTML = "";
+      box.contents.forEach((item, index) => {
+        const li = document.createElement("li");
+        li.textContent = `${item.tile} ${item.name}`;
+        // カーソル位置の場合は背景色を変更
+        if (index === selectionIndex) {
+          li.style.backgroundColor = "#444";
+          li.style.color = "#fff";
+        }
+        list.appendChild(li);
+      });
+    }
+    renderList();
+  
+    // キーボード入力ハンドラ
+    function onKeyDown(e) {
+      if (!this.boxOverlayActive) return;
+      // ↑/↓でカーソル移動
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (box.contents.length > 0) {
+          selectionIndex = (selectionIndex - 1 + box.contents.length) % box.contents.length;
+          renderList();
+        }
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (box.contents.length > 0) {
+          selectionIndex = (selectionIndex + 1) % box.contents.length;
+          renderList();
+        }
+      }
+      // 出す：箱内の選択アイテムを取り出してインベントリへ
+      else if (e.key.toLowerCase() === "d") {
+        e.preventDefault();
+        if (box.contents.length > 0) {
+          const item = box.removeItem(selectionIndex);
+          this.player.inventory.push(item);
+          if (selectionIndex >= box.contents.length) {
+            selectionIndex = Math.max(0, box.contents.length - 1);
+          }
+          renderList();
+        }
+      }
+      // 使う：箱内の選択アイテムを使用
+      else if (e.key.toLowerCase() === "u") {
+        e.preventDefault();
+        if (box.contents.length > 0) {
+          const item = box.contents[selectionIndex];
+          if (item.use) item.use(this);
+          // 使用後、アイテムが消費されるなら削除する
+          box.contents.splice(selectionIndex, 1);
+          if (selectionIndex >= box.contents.length) {
+            selectionIndex = Math.max(0, box.contents.length - 1);
+          }
+          renderList();
+        }
+      }
+      // 置く：箱内の選択アイテムを取り出して地面に設置
+      else if (e.key.toLowerCase() === "x") {
+        e.preventDefault();
+        if (box.contents.length > 0) {
+          const item = box.removeItem(selectionIndex);
+          item.x = this.player.x;
+          item.y = this.player.y;
+          this.items.push(item);
+          if (selectionIndex >= box.contents.length) {
+            selectionIndex = Math.max(0, box.contents.length - 1);
+          }
+          renderList();
+        }
+      }
+      // Esc でオーバーレイを閉じる
+      else if (e.key === "Escape") {
+        e.preventDefault();
+        cleanup();
+      }
+      box.updateName();
+    }
+    // bind して Game インスタンスの this を保持
+    const boundOnKeyDown = onKeyDown.bind(this);
+    document.addEventListener("keydown", boundOnKeyDown);
+  
+    const cleanup = () => {
+      this.boxOverlayActive = false;
+      document.removeEventListener("keydown", boundOnKeyDown);
+      overlay.remove();
+      box.updateName();
+      this.boxSelected = null;
+      // オーバーレイ終了後、ゲームの再描画
+      this.render();
+    };
+  };
+  
   saveResult(clear = false) {
     let results = JSON.parse(localStorage.getItem("gameResult") || "[]");
     results.push({
@@ -755,11 +979,12 @@ class Game {
     this.placeEntities(this.gems, randomInt(1, 2), "entity");
     const maxItems = randomInt(3, 5);
     const weightedTypes = [
-      ...Array(2).fill("food"),
-      ...Array(2).fill("sushi"),
-      ...Array(1).fill("magic"),
-      ...Array(1).fill("niku"),
-      ...Array(1).fill("weapon")
+      ...Array(4).fill("food"),
+      ...Array(4).fill("sushi"),
+      ...Array(2).fill("magic"),
+      ...Array(2).fill("niku"),
+      ...Array(2).fill("weapon"),
+      ...Array(1).fill("box")
     ];
     for (let i = 0; i < maxItems; i++) {
       const type = weightedTypes.splice(randomInt(0, weightedTypes.length - 1), 1)[0];
@@ -839,6 +1064,8 @@ class Game {
             EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+50", "food");
           }));
         }
+      } else if (type === "box") {
+        arr.push(new BoxItem(x, y, 5));
       }
     }
   }

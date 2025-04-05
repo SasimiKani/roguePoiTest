@@ -124,7 +124,6 @@ class EnemyDragon extends Enemy {
   }
 }
 
-
 // InventoryItem クラス
 class InventoryItem extends BaseEntity {
   constructor(x, y, name, tile, useFunction) {
@@ -133,6 +132,42 @@ class InventoryItem extends BaseEntity {
     this.use = useFunction;
   }
 }
+
+class BoxItem extends InventoryItem {
+  constructor(x, y, capacity) {
+    // 箱を使うときは、箱の中身を確認するオーバーレイを開く
+    super(x, y, "箱", '📦', (game) => {
+      game.openBox(this);
+    });
+    // 容量は5～10程度。未指定ならランダムに決定
+    this.capacity = capacity || randomInt(5, 10);
+    this.contents = [];
+    this.name = `箱（${this.contents.length}/${this.capacity}）`
+  }
+  
+  updateName() {
+    this.name = `箱（${this.contents.length}/${this.capacity}）`
+  }
+
+  // 箱にアイテムを入れる（箱同士の入れ子は不可）
+  insertItem(item) {
+    if (item instanceof BoxItem) return false; // 箱は入れない
+    if (this.contents.length < this.capacity) {
+      this.contents.push(item);
+      return true;
+    }
+    return false;
+  }
+
+  // 箱からアイテムを取り出す（指定したインデックスのアイテムを削除して返す）
+  removeItem(index) {
+    if (index >= 0 && index < this.contents.length) {
+      return this.contents.splice(index, 1)[0];
+    }
+    return null;
+  }
+}
+
 // MagicSpell クラス
 class MagicSpell extends InventoryItem {
   constructor(x, y, name, tile, emoji, options) {

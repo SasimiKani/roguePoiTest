@@ -241,3 +241,38 @@ body.deep-dungeon { background-color: #000; }
 .stair-option.cancel {
   background-color: #d75d5d;
 }
+
+/* 箱オーバーレイ */
+.box-overlay {
+  position: fixed;
+  top: 20%;
+  left: 20%;
+  width: 60%;
+  max-height: 60vh;
+  background: rgba(0, 0, 0, 0.95);
+  color: #eee;
+  padding: 20px;
+  border: 2px solid white;
+  z-index: 2000;
+}
+.box-overlay h3 {
+  margin-top: 0;
+}
+.box-overlay ul.box-item-list {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0;
+  max-height: 40vh;
+  overflow-y: scroll;
+}
+.box-overlay ul.box-item-list li {
+  padding: 5px;
+  border-bottom: 1px solid #555;
+}
+.box-overlay p {
+  margin: 10px 0 0;
+}
+.boxSelected {
+  border-bottom: 2px solid #280;
+  background-color: #5a4;
+}
