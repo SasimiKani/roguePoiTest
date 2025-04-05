@@ -126,7 +126,8 @@ class MagicSpell extends InventoryItem {
   constructor(x, y, name, tile, emoji, options) {
     super(x, y, name, tile, (game) => {
       let affected = false;
-      EffectsManager.showMagicEffect(game.gameContainer, game.player, game.player.x, game.player.y, this.area, this.emoji || "✨");
+      //EffectsManager.showMagicEffect(game.gameContainer, game.player, game.player.x, game.player.y, this.area, this.emoji || "✨");
+      EffectsManager.showMagicEffectCircle(game.gameContainer, game.player, game.player.x, game.player.y, this.area, this.emoji || "✨");
       for (let i = game.enemies.length - 1; i >= 0; i--) {
         let enemy = game.enemies[i];
         if (Math.abs(enemy.x - game.player.x) <= this.area &&
