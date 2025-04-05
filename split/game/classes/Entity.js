@@ -113,6 +113,18 @@ class EnemyWizard extends Enemy {
     this.magicDamage = 2;
   }
 }
+
+class EnemyDragon extends Enemy {
+  static floorRange = [10, null];
+  constructor(x, y, hp) {
+    super(x, y, hp + 30, 50, 10, '🐉');
+    this.magicDamage = 2;
+    this.action = 1;
+    this.maxAction = 1;
+  }
+}
+
+
 // InventoryItem クラス
 class InventoryItem extends BaseEntity {
   constructor(x, y, name, tile, useFunction) {
