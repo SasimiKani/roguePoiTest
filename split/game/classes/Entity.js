@@ -234,3 +234,114 @@ class WeaponItem extends InventoryItem {
     EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `装備解除-${weapon.bonus}`, "damage-me");
   }
 }
+// 遠距離射撃武器クラス
+class ShootingItem extends InventoryItem {
+  /**
+   * @param {number} x - 生成位置X
+   * @param {number} y - 生成位置Y
+   * @param {string} name - アイテム名（例："射撃キット"）
+   * @param {string} tile - 表示用絵文字（例："🔫"）
+   * @param {number} damage - 射撃時のダメージ
+   * @param {number} range - 射程（タイル数）
+   * @param {string} projectileEmoji - 射撃エフェクト用絵文字
+   */
+  constructor(x, y, name, tile, damage, range, projectileEmoji) {
+    // use() の動作を独自に定義するため、InventoryItem の use 関数を上書きする
+    super(x, y, name, tile, async (game) => {
+      await this.prepareShooting(game);
+    });
+    this.damage = damage;
+    this.range = range || 5;
+    this.projectileEmoji = projectileEmoji || '●';
+  }
+  
+  /**
+   * 射撃準備モードに入り、方向キーで射撃方向を決定させる
+   * @param {Game} game - ゲームインスタンス
+   */
+  async prepareShooting(game) {
+    // 射撃準備モードに入った旨を画面に表示（例: EffectsManager の独自プロンプトなど）
+    EffectsManager.showShootingPrompt(game.gameContainer);
+    // ゲーム側で射撃中は入力を制限するためのフラグを設定
+    game.isAwaitingShootingDirection = true;
+    // 入力待ち（Promiseで方向キー入力を待機）
+    const direction = await this.waitForDirectionInput();
+    // 入力完了後、フラグを解除し、プロンプトを隠す
+    game.isAwaitingShootingDirection = false;
+    EffectsManager.hideShootingPrompt();
+    // 射撃実行
+    this.shoot(game, direction);
+  }
+  
+  /**
+   * キー入力で射撃方向を取得する
+   * ArrowUp/Down/Left/Right のいずれかが押されるまで待機
+   * @returns {Promise<{dx:number, dy:number}>}
+   */
+  waitForDirectionInput() {
+    return new Promise(resolve => {
+      function onKey(e) {
+        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+          let dx = 0, dy = 0;
+          if (e.key === "ArrowUp") { dy = -1; }
+          else if (e.key === "ArrowDown") { dy = 1; }
+          else if (e.key === "ArrowLeft") { dx = -1; }
+          else if (e.key === "ArrowRight") { dx = 1; }
+          document.removeEventListener("keydown", onKey);
+          resolve({ dx, dy });
+        }
+      }
+      document.addEventListener("keydown", onKey);
+    });
+  }
+  
+  /**
+   * 射撃エフェクトを表示し、射程内の直線上にいる敵にダメージを与える
+   * @param {Game} game - ゲームインスタンス
+   * @param {{dx:number, dy:number}} direction - 射撃方向
+   */
+  shoot(game, direction) {
+    // 射撃エフェクト
+    EffectsManager.showShootingLineEffect(
+      game.gameContainer,
+      game.player,
+      direction,
+      this.range,
+      this.projectileEmoji,
+      { factor: null, duration: 0.2 }
+    );
+    
+    // 敵の中から、射撃方向上にある敵を探す（簡易的な直線判定）
+    let hitEnemy = null;
+    let minDist = Infinity;
+    for (let enemy of game.enemies) {
+      const relX = enemy.x - game.player.x;
+      const relY = enemy.y - game.player.y;
+      const dot = relX * direction.dx + relY * direction.dy;
+      if (dot > 0 && dot <= this.range) {
+        const perp = Math.abs(relX * direction.dy - relY * direction.dx);
+        if (perp < 0.5) { // 0.5タイル以内なら直線上とみなす
+          if (dot < minDist) {
+            minDist = dot;
+            hitEnemy = enemy;
+          }
+        }
+      }
+    }
+    
+    // もし射程内に直線上の敵が存在すればダメージを与える
+    if (hitEnemy) {
+      hitEnemy.hp -= this.damage;
+      EffectsManager.showEffect(game.gameContainer, game.player, hitEnemy.x, hitEnemy.y, `-${this.damage}`, "damage");
+      if (hitEnemy.hp <= 0) {
+        EffectsManager.showEffect(game.gameContainer, game.player, hitEnemy.x, hitEnemy.y, "💥", "explosion");
+        const idx = game.enemies.indexOf(hitEnemy);
+        if (idx >= 0) {
+          game.enemies.splice(idx, 1);
+          game.score += 50;
+          game.gainExp(5);
+        }
+      }
+    }
+  }
+}

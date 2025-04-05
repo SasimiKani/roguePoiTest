@@ -28,7 +28,8 @@ class Game {
     this.stairs = { x: 0, y: 0 };
     this.player = new Player(0, 0, this.initialHP);
     this.player.tile = myIcon;
-    //this.player.inventory.push(new BoxItem(0, 0, 5));
+    // x, y, name, tile, damage, range, projectileEmoji
+    //this.player.inventory.push(new ShootingItem(0, 0, "射撃-銃", '🔫', 10, 8));
     this.uiManager = new UIManager();
     this.map = new DungeonMap(this.width, this.height);
     this.gameContainer = document.getElementById("game");
@@ -105,7 +106,7 @@ class Game {
   // ゲーム中のキー入力を処理し、通常の移動や攻撃、インベントリ表示などを分岐します。
   processInput(event) {
     if (!this.isPlay) return;
-    if (this.isGameOver || !this.acceptingInput || this.boxOverlayActive) return;
+    if (this.isGameOver || !this.acceptingInput || this.boxOverlayActive || this.isAwaitingShootingDirection) return;
     this.ctrlPressed = event.ctrlKey;
     if (event.key === 'e') {
       this.inventoryOpen = !this.inventoryOpen;
@@ -222,15 +223,16 @@ class Game {
           this.render();
           // アイテムを使う
           await item.use(this);
-          // 武器・箱じゃなければ消費する
-          if (item.name.match(/(武器|箱).*/g) === null) {
+          // 武器・箱・射撃じゃなければ消費する
+          if (!(item instanceof WeaponItem) && !(item instanceof BoxItem) && !(item instanceof ShootingItem)) {
             this.player.inventory.splice(this.inventorySelection, 1);
             if (this.inventorySelection >= this.player.inventory.length) {
               this.inventorySelection = this.player.inventory.length - 1;
             }
           }
           // 箱を見る以外ならターンを進める
-          if (!item instanceof BoxItem) {
+          if (!(item instanceof BoxItem)) {
+            this.enemyActionRefresh();
             this.advanceTurn();
             this.enemyMovementPhase(this.player.x, this.player.y);
             this.enemyAttackPhase();
@@ -299,7 +301,6 @@ class Game {
             this.player.inventory.splice(this.inventorySelection, 1);
             
             // インベントリの参照を修正する
-            console.log(this.player.inventory.length, this.inventorySelection);
             if (this.player.inventory.length <= this.inventorySelection) {
               this.inventorySelection--;
             }
