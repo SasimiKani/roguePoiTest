@@ -28,6 +28,7 @@ class Game {
     this.stairs = { x: 0, y: 0 };
     this.player = new Player(0, 0, this.initialHP);
     this.player.tile = myIcon;
+    //this.player.inventory.push(new BoxItem(0, 0, 5));
     this.uiManager = new UIManager();
     this.map = new DungeonMap(this.width, this.height);
     this.gameContainer = document.getElementById("game");
@@ -219,17 +220,22 @@ class Game {
         this.inventoryOpen = false;
         if (item && item.use) {
           this.render();
+          // アイテムを使う
           await item.use(this);
+          // 武器・箱じゃなければ消費する
           if (item.name.match(/(武器|箱).*/g) === null) {
             this.player.inventory.splice(this.inventorySelection, 1);
             if (this.inventorySelection >= this.player.inventory.length) {
               this.inventorySelection = this.player.inventory.length - 1;
             }
           }
-          this.advanceTurn();
-          this.enemyMovementPhase(this.player.x, this.player.y);
-          this.enemyAttackPhase();
-          this.checkCollisions();
+          // 箱を見る以外ならターンを進める
+          if (!item instanceof BoxItem) {
+            this.advanceTurn();
+            this.enemyMovementPhase(this.player.x, this.player.y);
+            this.enemyAttackPhase();
+            this.checkCollisions();
+          }
         }
         this.render();
         return;
@@ -284,13 +290,19 @@ class Game {
         const selectedItem = this.player.inventory[this.inventorySelection];
         // 仮に、別途箱用の選択状態（this.boxSelected）があれば、その箱に入れる
         if (this.boxSelected && !(selectedItem instanceof BoxItem)) {
-          if (selectedItem instanceof WeaponItem) {
-            // 箱に入れたので、装備を解除
-            selectedItem.use(this);
-          }
           if (this.boxSelected.insertItem(selectedItem)) {
+            if (selectedItem instanceof WeaponItem) {
+              // 箱に入れたので、装備を解除
+              selectedItem.use(this);
+            }
             // 箱に入れたので、インベントリから削除
             this.player.inventory.splice(this.inventorySelection, 1);
+            
+            // インベントリの参照を修正する
+            console.log(this.player.inventory.length, this.inventorySelection);
+            if (this.player.inventory.length <= this.inventorySelection) {
+              this.inventorySelection--;
+            }
             this.boxSelected.updateName();
             this.render();
             return;
@@ -1072,7 +1084,10 @@ class Game {
           if (selectionIndex >= box.contents.length) {
             selectionIndex = Math.max(0, box.contents.length - 1);
           }
+          // 使ったら箱を閉じてターンを進める
+          cleanup();
           renderList();
+          turn();
         }
       }
       // 置く：箱内の選択アイテムを取り出して地面に設置
@@ -1086,7 +1101,10 @@ class Game {
           if (selectionIndex >= box.contents.length) {
             selectionIndex = Math.max(0, box.contents.length - 1);
           }
+          // 置いたら箱を閉じてターンを進める
+          cleanup();
           renderList();
+          turn();
         }
       }
       // Esc でオーバーレイを閉じる
@@ -1109,6 +1127,22 @@ class Game {
       // オーバーレイ終了後、ゲームの再描画
       this.render();
     };
+    
+    const turn = () => {
+      const syncTimeout = (time) => {
+        return new Promise((resolve) => {
+          setTimeout(() => { resolve("ok"); }, time);
+        });
+      }
+      // 待ってからターンを進める
+      syncTimeout(400).then(() => {
+        this.advanceTurn();
+        this.enemyMovementPhase(this.player.x, this.player.y);
+        this.enemyAttackPhase();
+        this.checkCollisions();
+        this.render();
+      });
+    }
   };
   
 }
