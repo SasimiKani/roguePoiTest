@@ -564,7 +564,10 @@ class Game {
       EffectsManager.showEffect(this.gameContainer, this.player, enemy.x, enemy.y, "💥", "explosion");
       this.enemies.splice(index, 1);
       this.score += 50;
-      this.gainExp(5);
+      this.gainExp(enemy.exp);
+      setTimeout(() => {
+      	EffectsManager.showEffect(this.gameContainer, this.player, enemy.x, enemy.y, `+${enemy.exp} EXP`, "heal");
+      }, 300)
     }
   }
   renderMainView() {
@@ -778,15 +781,15 @@ class Game {
       } while (this.map.grid[y][x] !== ' ' || (x === this.player.x && y === this.player.y));
       if (type === "sushi") {
         arr.push(new InventoryItem(x, y, "すし", '🍣', function(game) {
-          game.player.hp += 3;
+          game.player.hp += 5;
           if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
-          EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+3", "heal");
+          EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+5", "heal");
         }));
       } else if (type === "niku") {
         arr.push(new InventoryItem(x, y, "お肉", '🍖', function(game) {
-          game.player.hp += 6;
+          game.player.hp += 10;
           if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
-          EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+6", "heal");
+          EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+10", "heal");
         }));
       } else if (type === "weapon") {
         var selection = randomInt(1, 2);
