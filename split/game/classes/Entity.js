@@ -77,7 +77,7 @@ class EnemySlime extends Enemy {
 class EnemyBat extends Enemy {
   static floorRange = [7, 12];
   constructor(x, y, hp) {
-    super(x, y, hp, 2, 10, '🦇');
+    super(x, y, hp, 10, 2, '🦇');
     this.evasion = 0.3;
   }
 }

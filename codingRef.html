@@ -74,7 +74,7 @@
 <body>
   <h1>ローグっぽい何か コード解説ドキュメント（最新版・UI改善反映）</h1>
   <p>
-    本解説書は、最新版のソースコード「インベントリ統合版・修正済み」を基に、基本機能、応用処理、インベントリ統合、UI改善、さらに新たに追加された魔法（MagicSpell）・武器（WeaponItem）機能について詳しく解説しています。新UIでは、ダークテーマ、サイドバー、ミニマップの導入により、プレイヤーの状況把握や操作性が大幅に向上しました。
+    本解説書は、最新版のソースコード「インベントリ統合版・修正済み」を基に、基本機能、応用処理、インベントリ統合、UI改善、そして新たに追加された魔法（MagicSpell）・武器（WeaponItem）機能について詳しく解説しています。新UIでは、ダークテーマ、サイドバー、ミニマップの導入により、プレイヤーの状況把握や操作性が大幅に向上しました。
   </p>
   
   <!-- 1. 基本 -->
@@ -135,7 +135,7 @@ class Player extends BaseEntity {
   }
 }
 
-// InventoryItem: アイテム定義
+// InventoryItem: アイテムの定義
 class InventoryItem extends BaseEntity {
   constructor(x, y, name, tile, useFunction) {
     super(x, y, tile);
@@ -149,7 +149,7 @@ class InventoryItem extends BaseEntity {
   <div class="section">
     <h2>2. 応用</h2>
     <p>
-      応用的な処理として、<code>DungeonMap</code> によるランダムダンジョン生成、敵の攻撃フェーズと移動フェーズの分離、非同期処理によるターン進行などが実装されています。
+      応用的な処理として、<code>DungeonMap</code> によるランダムダンジョン生成、敵の攻撃フェーズと移動フェーズの分離、非同期処理によるターン進行などが実装されています。敵はBFSによる経路探索を利用してプレイヤーへ移動します。
     </p>
     
     <h3>2.1 ダンジョン生成</h3>
@@ -168,7 +168,7 @@ class InventoryItem extends BaseEntity {
     
     <h3>2.2 敵の行動フェーズ</h3>
     <p>
-      敵は「攻撃フェーズ」と「移動フェーズ」に分かれ、各敵に設定された行動回数で動作を管理します。非同期処理でタイミングを調整するため、<code>queueTimeout()</code> を利用しています。また、BFSによる経路探索を用いた移動ロジックも導入されています。
+      敵は「攻撃フェーズ」と「移動フェーズ」に分かれ、各敵に設定された行動回数で動作を管理します。非同期処理（<code>queueTimeout()</code>）とBFS経路探索により、より戦略的な移動が実現されています。
     </p>
     <pre><code>// 敵の攻撃フェーズ
 enemyAttackPhase() {
@@ -187,10 +187,10 @@ enemyAttackPhase() {
   });
 }
 
-// 敵の移動フェーズ（BFS経路探索を利用）
+// 敵の移動フェーズ（BFSによる経路探索）
 enemyMovementPhase(nextPlayerX, nextPlayerY) {
-  // BFSで最短経路を算出し、次の１マスへ移動
-  // 詳細はfindPath() 関数内で実装
+  // BFSを利用して最短経路を求め、次の１マスへ移動
+  // findPath() 関数で経路探索を実施
   ...
 }</code></pre>
   </div>
@@ -238,22 +238,22 @@ if (this.inventoryOpen) {
   <div class="section">
     <h2>4. UIの改善</h2>
     <p>
-      今回のUI改善では、従来のシンプルなレイアウトから、以下の点を強化しました。
+      今回のUI改善では、以下の点が強化されています。
     </p>
     <ul>
-      <li><strong>全体レイアウト：</strong> Flexboxを利用して、ゲーム画面とUIサイドバーを横並びに配置。背景はダークテーマ採用で視認性向上。</li>
-      <li><strong>UIサイドバー：</strong> HP、満腹度、攻撃力、レベル、EXP、スコアなどの各種ステータスバーを分かりやすく表示。進捗に応じた色分け（緑→オレンジ→赤）を実装。</li>
-      <li><strong>ミニマップ：</strong> ゲーム全体のマップを小さなセルでグリッド表示。プレイヤー、敵、アイテム、階段の位置をひと目で把握可能。</li>
-      <li><strong>インベントリ表示：</strong> オーバーレイ形式で所持品を表示し、直感的なアイテム管理を実現（上下キーで選択、使用・ドロップ操作）。</li>
+      <li><strong>全体レイアウト：</strong> Flexbox を利用して、ゲーム画面とUIサイドバーを横並びに配置。背景はダークテーマ採用により視認性を向上。</li>
+      <li><strong>UIサイドバー：</strong> HP、満腹度、攻撃力、レベル、EXP、スコアなどの各種ステータスバーを分かりやすく表示し、進捗に応じた色分け（緑→オレンジ→赤）を実装。</li>
+      <li><strong>ミニマップ：</strong> ゲーム全体のマップをグリッドレイアウトで小さなセルとして表示し、プレイヤー、敵、アイテム、階段の位置をひと目で把握可能に。</li>
+      <li><strong>インベントリ表示：</strong> オーバーレイ形式で所持品を表示し、直感的なアイテム管理を実現（上下キーで選択、使用やドロップ操作）。</li>
     </ul>
     <pre><code>// rogue3o.html（UI改善版）の特徴
 // ・Flexboxでゲーム画面とUIサイドバーを横並びに配置
-// ・ダークテーマを採用し、ミニマップを追加
-// ・各種ステータスバーを視認性の高いデザインに改善
+// ・ダークテーマとミニマップの導入
+// ・各種ステータスバーを分かりやすく表示
 </code></pre>
     <div class="note">
       <p>
-        新UIにより、プレイヤーは自分の状況を瞬時に把握でき、操作性も向上しています。
+        新UIにより、プレイヤーは自分の状況を瞬時に把握でき、操作性も大幅に向上しています。
       </p>
     </div>
   </div>
@@ -262,7 +262,7 @@ if (this.inventoryOpen) {
   <div class="section">
     <h2>5. 敵の種類と拡張</h2>
     <p>
-      多彩な敵キャラクター（スライム、コウモリ、ゴブリン、クモ、魔法使いなど）が実装され、各敵は出現可能フロア範囲や特殊能力（再生、回避、毒付与など）を持っています。現在のフロアに応じた敵リストからランダムに選択され、戦略性が向上しています。
+      多彩な敵キャラクター（スライム、コウモリ、ゴブリン、クモ、魔法使いなど）が実装され、各敵には出現可能フロアの範囲や特殊能力（再生、回避、毒付与など）が設定されています。現在のフロアに応じた敵リストからランダムに選択され、戦略性が向上しています。
     </p>
     <pre><code>// 例：EnemySlime（攻撃後に自己再生）
 class EnemySlime extends Enemy {
@@ -303,9 +303,9 @@ const enemyList = (floor) => {
   <div class="section">
     <h2>6. 魔法と武器</h2>
     <p>
-      新たに追加された <code>MagicSpell</code> クラスと <code>WeaponItem</code> クラスは、魔法攻撃と装備による攻撃力アップを実現します。魔法は一定範囲内の敵にダメージを与え、場合によってはプレイヤーを回復します。武器は装備状態となると消費されず、攻撃力の増加効果が永続的に反映されます。
+      新たに追加された <code>MagicSpell</code> クラスと <code>WeaponItem</code> クラスにより、魔法攻撃と武器装備が実現されます。魔法は範囲内の敵にダメージを与え、場合によってはプレイヤーを回復します。武器は装備状態となると消費されず、攻撃力の増加効果が永続的に反映されます。
     </p>
-    <pre><code>// MagicSpell クラス：魔法攻撃（範囲攻撃＋回復効果）
+    <pre><code>// MagicSpell クラス：魔法攻撃＋回復効果
 class MagicSpell extends InventoryItem {
   constructor(x, y, name, tile, emoji, options) {
     super(x, y, name, tile, (game) => {
@@ -316,10 +316,10 @@ class MagicSpell extends InventoryItem {
         if (Math.abs(enemy.x - game.player.x) <= this.area &&
             Math.abs(enemy.y - game.player.y) <= this.area) {
           enemy.hp -= this.damage;
-          EffectsManager.showEffect(game.gameContainer, game.player, enemy.x, enemy.y, `-${this.damage}`, "damage");
+          EffectsManager.showEffect(game.gameContainer, game.player.x, enemy.y, `-${this.damage}`, "damage");
           affected = true;
           if (enemy.hp <= 0) {
-            EffectsManager.showEffect(game.gameContainer, game.player, enemy.x, enemy.y, "💥", "explosion");
+            EffectsManager.showEffect(game.gameContainer, enemy.x, enemy.y, "💥", "explosion");
             game.enemies.splice(i, 1);
             game.score += 50;
             game.gainExp(5);
@@ -329,7 +329,7 @@ class MagicSpell extends InventoryItem {
       if (this.fallbackHeal && !affected) {
         game.player.hp += this.fallbackHeal;
         if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
-        EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${this.fallbackHeal}`, "heal");
+        EffectsManager.showEffect(game.gameContainer, game.player.x, game.player.y, `+${this.fallbackHeal}`, "heal");
       }
     });
     this.emoji = emoji;
@@ -339,18 +339,18 @@ class MagicSpell extends InventoryItem {
   }
 }
 
-// WeaponItem クラス：武器装備（攻撃力アップ、装備中は消費されない）
+// WeaponItem クラス：武器装備（永続的な攻撃力アップ）
 class WeaponItem extends InventoryItem {
   constructor(x, y, name, tile, bonus) {
     super(x, y, name, tile, (game) => {
       if (game.player.weapon) {
         game.player.attack -= game.player.weapon.bonus;
         game.player.weapon = null;
-        EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `装備解除-${bonus}`, "heal");
+        EffectsManager.showEffect(game.gameContainer, game.player.x, game.player.y, `装備解除-${bonus}`, "heal");
       } else {
         game.player.weapon = this;
         game.player.attack += this.bonus;
-        EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `武器装備+${this.bonus}`, "heal");
+        EffectsManager.showEffect(game.gameContainer, game.player.x, game.player.y, `武器装備+${this.bonus}`, "heal");
       }
     });
     this.bonus = bonus;
@@ -362,7 +362,7 @@ class WeaponItem extends InventoryItem {
   <!-- 7. まとめとバージョン比較 -->
   <h2>まとめ</h2>
   <p>
-    この最新版のゲームソースコードは、基本的なローグライク要素に加え、多彩な敵キャラクター、非同期処理による行動フェーズ制御、インベントリ統合、そしてUI改善と新たな魔法・武器機能を実現しています。各セクションのサンプルコードと解説を参考に、さらなる機能追加や戦略的なゲームデザインに挑戦してください。楽しいコードライフを！
+    この最新版のゲームソースコードは、基本的なローグライク要素に加え、多彩な敵キャラクター、非同期処理による行動フェーズ制御、インベントリ統合、UI改善、そして新たな魔法・武器機能を実現しています。各セクションのサンプルコードと解説を参考に、さらなる機能追加や戦略的なゲームデザインに挑戦してください。楽しいコードライフを！
   </p>
   
   <div class="note">
