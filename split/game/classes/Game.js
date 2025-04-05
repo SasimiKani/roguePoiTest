@@ -72,7 +72,7 @@ class Game {
       }
     }
     // 移動前に、もし足元にアイテムがあれば、プレイヤーの現在位置に残す
-    if (!attacked && this.map.grid[ty]?.[tx] !== MAP_TILE.WALL &&
+    if (!attacked && (this.keyX || this.keyY) && this.map.grid[ty]?.[tx] !== MAP_TILE.WALL &&
         !this.enemies.some(e => e.x === tx && e.y === ty)) {
       if (this.groundItem) {
          this.groundItem.x = this.player.x;
@@ -86,10 +86,20 @@ class Game {
       this.map.revealRoom(tx, ty);
       this.map.revealAround(tx, ty);
     }
-    if (this.player.x === this.stairs.x && this.player.y === this.stairs.y) {
-      this.generateDungeon(true);
-      
-      EffectsManager.showFloorOverlay(this.gameContainer, this.floor);
+    if (!attacked && (this.keyX || this.keyY) && this.player.x === this.stairs.x && this.player.y === this.stairs.y) {
+      // ここで選択肢のオーバーレイを表示
+      EffectsManager.showStairConfirmationKeyboard(() => {
+        // 「降りる」を選んだ場合
+        this.generateDungeon(true);
+        this.render();
+        EffectsManager.showFloorOverlay(this.gameContainer, this.floor);
+      }, () => {
+        // 「キャンセル」を選んだ場合、必要に応じてプレイヤー位置を戻すなどの処理
+        this.groundItem = new BaseEntity(tx, ty, '🔼');
+        
+        // 例: 現在の位置から少しずらす（ここは実装に合わせて調整）
+        this.render();
+      });
       
       return;
     }
@@ -156,6 +166,7 @@ class Game {
       return null;
     }
     if (event.key === '.') {
+      this.keyX = this.keyY = 0;
       return { tx: this.player.x, ty: this.player.y };
     }
     //if (event.key === 'r') { this.showResults(); return null; }
@@ -209,6 +220,7 @@ class Game {
     // もしカーソルが足元アイテム（＝インベントリリストの最後の項目）を指している場合
     if (this.groundItem && this.inventorySelection === this.player.inventory.length) {
       if (event.key === 'p') {
+        if (this.groundItem.tile === '🔼') return; // 足元が階段なら何もしない
         // 足元アイテムを拾う
         if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
           this.player.inventory.push(this.groundItem);
@@ -222,8 +234,17 @@ class Game {
         return;
       }
       if (event.key === 'u') {
+        // 足元が階段なら降りる
+        if (this.groundItem.tile === '🔼') {
+          this.inventoryOpen = false;
+          this.groundItem = null;
+          this.generateDungeon(true);
+          this.render();
+          EffectsManager.showFloorOverlay(this.gameContainer, this.floor);
+          return;
+        }
         // 足元アイテムを使用
-        if (this.groundItem.use) {
+        else if (this.groundItem.use) {
           // インベントリがマックスで足元の武器を装備できない
           if (this.groundItem.name.match(/武器.*/g) && this.player.inventory.length >= CONFIG.INVENTORY_MAX) return;
           this.groundItem.use(this);
@@ -292,6 +313,7 @@ class Game {
         return;
       }
       if (event.key === 'x') {
+        if (this.groundItem.tile === '🔼') return; // 足元が階段なら何もしない
         if (this.player.inventory.length === 0) return;
         // 交換処理（所持品内の交換など）
         let invItem = this.player.inventory[this.inventorySelection];
@@ -332,6 +354,7 @@ class Game {
       this.processInventoryInput(event);
       return;
     }
+    if (window.overlayActive) return;
     const inputResult = this.computeInput(event);
     if (!inputResult) return;
     this.advanceTurn();
@@ -637,9 +660,13 @@ class Game {
         invHtml += `<ul style="min-height:20px;">`;
         let index = this.player.inventory.length;
         let selected = (index === this.inventorySelection) ? ">> " : "";
-        invHtml += `<li class="${(index === this.inventorySelection) ? 'selected' : ''}">${selected}${this.groundItem.tile} ${this.groundItem.name}</li>`;
+        invHtml += `<li class="${(index === this.inventorySelection) ? 'selected' : ''}">${selected}${this.groundItem.tile} ${this.groundItem.tile === '🔼' ? "階段" : this.groundItem.name}</li>`;
         invHtml += `</ul>`;
-        invHtml += `<p>（${this.player.inventory.length < CONFIG.INVENTORY_MAX ? "P: 拾う, " : ""}U: 使用）</p>`;
+        if (this.groundItem.tile === '🔼') {
+          invHtml += `<p>（U: 降りる）</p>`;
+        } else {
+          invHtml += `<p>（${this.player.inventory.length < CONFIG.INVENTORY_MAX ? "P: 拾う, " : ""}U: 使用）</p>`;
+        }
       }
       invHtml += `</div>`;
       this.gameContainer.innerHTML += invHtml;

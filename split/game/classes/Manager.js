@@ -181,6 +181,76 @@ class EffectsManager {
       overlay.remove();
     }, 3500);
   }
+  /**
+   * 階段降り確認用オーバーレイをキーボード操作で表示する
+   * オーバーレイ中はグローバルフラグでゲーム操作を停止する（インベントリ表示時と同様）
+   * @param {Function} onConfirm - 「降りる」を選んだ場合のコールバック
+   * @param {Function} onCancel - 「キャンセル」を選んだ場合のコールバック
+   */
+  static showStairConfirmationKeyboard(onConfirm, onCancel) {
+    window.overlayActive = true;
+
+    // 全画面を覆うオーバーレイ
+    const overlay = document.createElement("div");
+    overlay.className = "stair-confirm-overlay";
+
+    // ダイアログボックス（中央に配置、縦並びレイアウト）
+    const dialog = document.createElement("div");
+    dialog.className = "stair-confirm-dialog";
+
+    // メッセージ
+    const message = document.createElement("p");
+    message.textContent = "この階段を降りる？";
+    dialog.appendChild(message);
+
+    // 選択肢用コンテナ
+    const optionsContainer = document.createElement("div");
+    optionsContainer.className = "stair-options";
+
+    // 降りるオプション
+    const confirmOption = document.createElement("div");
+    confirmOption.className = "stair-option confirm";
+    confirmOption.textContent = "Enter: 降りる";
+    confirmOption.addEventListener("click", () => {
+      cleanup();
+      if (typeof onConfirm === "function") onConfirm();
+    });
+
+    // キャンセルオプション
+    const cancelOption = document.createElement("div");
+    cancelOption.className = "stair-option cancel";
+    cancelOption.textContent = "Esc: キャンセル";
+    cancelOption.addEventListener("click", () => {
+      cleanup();
+      if (typeof onCancel === "function") onCancel();
+    });
+
+    optionsContainer.appendChild(confirmOption);
+    optionsContainer.appendChild(cancelOption);
+    dialog.appendChild(optionsContainer);
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+
+    function onKeyDown(e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        cleanup();
+        if (typeof onConfirm === "function") onConfirm();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        cleanup();
+        if (typeof onCancel === "function") onCancel();
+      }
+    }
+
+    function cleanup() {
+      window.overlayActive = false;
+      document.removeEventListener("keydown", onKeyDown);
+      overlay.remove();
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+  }
 }
 // InputManager クラス
 class InputManager {
