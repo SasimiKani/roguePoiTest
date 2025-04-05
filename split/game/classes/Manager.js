@@ -103,9 +103,9 @@ class EffectsManager {
   static showAttackMotionNoWeapon(container, dx, dy) {
     // ゲーム画面の中央位置を計算（以前の centerIndex の代わり）
     const rect = container.getBoundingClientRect();
-    const fontSize = CONFIG.FONT_SIZE;
+    const fontSize = window.getComputedStyle(container).fontSize.replace("px", "") - 0;
     const centerX = rect.left + rect.width / 2 - (fontSize / 2) /*font-size*/ + (dx * fontSize) /*方向*/;
-    const centerY = rect.top + rect.height / 2 - (fontSize * 2) /*font-size*/ + (dy * fontSize) /*方向*/;
+    const centerY = rect.top + rect.height / 2 - (fontSize * 3) /*font-size*/ + (dy * fontSize) /*方向*/;
     
     // オーバーレイ用のエフェクト要素を作成
     const effect = document.createElement("div");
@@ -145,7 +145,7 @@ class EffectsManager {
     const rect = container.getBoundingClientRect();
     const fontSize = CONFIG.FONT_SIZE;
     const centerX = rect.left + rect.width / 2 - (fontSize / 2) /*font-size*/ + (dx * fontSize) /*方向*/;
-    const centerY = rect.top + rect.height / 2 - (fontSize * 2) /*font-size*/ + (dy * fontSize) /*方向*/;
+    const centerY = rect.top + rect.height / 2 - (fontSize * 3) /*font-size*/ + (dy * fontSize) /*方向*/;
     
     // 武器の振るエフェクト要素を作成
     const weaponEffect = document.createElement("div");

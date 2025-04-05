@@ -1,5 +1,7 @@
 // Game クラス
 class Game {
+  /* 1. 初期化・セットアップ */
+  // ゲームの初期状態（マップ、プレイヤー、UI、タイマー、キー入力管理など）をセットアップし、各種オブジェクトの初期化とイベント登録を行います。
   constructor(myIcon) {
     this.myIcon = myIcon;
     this.isPlay = true;
@@ -47,7 +49,7 @@ class Game {
       new InputManager(this);
     }, 300);
   }
-  
+  // ターン進行中の非同期処理（タイマー）の管理を行い、指定した遅延で処理を実行します。
   queueTimeout(callback, delay) {
     this.acceptingInput = false;
     const id = setTimeout(() => {
@@ -59,94 +61,8 @@ class Game {
     this.timeoutQueue.push(id);
   }
   
-  advanceTurn() {
-    this.generateEnemyCycle[0] = (this.generateEnemyCycle[0] + 1) % this.generateEnemyCycle[1];
-    this.hungerCycle[0] = (this.hungerCycle[0] + 1) % this.hungerCycle[1];
-  }
-  updateData(inputResult) {
-    if (!inputResult) return;
-    this.actionCount = 0;
-    const { tx, ty } = inputResult;
-    let attacked = false;
-    for (let i = 0; i < this.enemies.length; i++) {
-      if (this.enemies[i].x === tx && this.enemies[i].y === ty) {
-        attacked = true;
-        this.damageEnemy(this.enemies[i], i);
-        break;
-      }
-    }
-    // 移動前に、もし足元にアイテムがあれば、プレイヤーの現在位置に残す
-    if (!attacked && (this.keyX || this.keyY) && this.map.grid[ty]?.[tx] !== MAP_TILE.WALL &&
-        !this.enemies.some(e => e.x === tx && e.y === ty)) {
-      if (this.groundItem) {
-         this.groundItem.x = this.player.x;
-         this.groundItem.y = this.player.y;
-         this.items.push(this.groundItem);
-         this.groundItem = null;
-      }
-      this.player.x = tx;
-      this.player.y = ty;
-      this.map.visible[ty][tx] = true;
-      this.map.revealRoom(tx, ty);
-      this.map.revealAround(tx, ty);
-    }
-    if (!attacked && (this.keyX || this.keyY) && this.player.x === this.stairs.x && this.player.y === this.stairs.y) {
-      // ここで選択肢のオーバーレイを表示
-      EffectsManager.showStairConfirmationKeyboard(() => {
-        // 「降りる」を選んだ場合
-        this.generateDungeon(true);
-        this.render();
-        EffectsManager.showFloorOverlay(this.gameContainer, this.floor);
-      }, () => {
-        // 「キャンセル」を選んだ場合、必要に応じてプレイヤー位置を戻すなどの処理
-        this.groundItem = new BaseEntity(tx, ty, '🔼');
-        
-        // 例: 現在の位置から少しずらす（ここは実装に合わせて調整）
-        this.render();
-      });
-      
-      return;
-    }
-    if (!this.ctrlPressed && this.player.inventory.length < CONFIG.INVENTORY_MAX) {
-      this.items = this.items.filter(item => {
-        if (item.x === this.player.x && item.y === this.player.y) {
-          if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
-            this.player.inventory.push(item);
-            EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "GET");
-            return false;
-          }
-        }
-        return true;
-      });
-    } else {
-      for (let i = 0; i < this.items.length; i++) {
-        if (this.items[i].x === this.player.x && this.items[i].y === this.player.y) {
-          if (!this.groundItem) {
-            this.groundItem = this.items[i];
-            EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `${this.groundItem.name}に乗った`);
-            this.items.splice(i, 1);
-          }
-          break;
-        }
-      }
-    }
-    this.checkHunger();
-    if (attacked) {
-      this.enemyAttackPhase();
-      this.queueTimeout(() => {
-        this.enemyMovementPhase(tx, ty, attacked);
-        this.enemyActionRefresh();
-      }, (this.actionCount + 1) * this.actionTime);
-    } else {
-      this.enemyMovementPhase(tx, ty);
-      this.enemyAttackPhase();
-      this.queueTimeout(() => { this.enemyActionRefresh(); }, this.actionCount * this.actionTime);
-    }
-    this.checkCollisions();
-    if (this.generateEnemyCycle[0] === 0) {
-      this.placeEntities(this.enemies, randomInt(1, 3), "enemy");
-    }
-  }
+  /* 2. 入力処理 */
+  // キー入力からプレイヤーの移動や休憩といった基本動作を算出します。
   computeInput(event) {
     if (this.keysDown['ArrowLeft'] ||
         this.keysDown['ArrowRight'] ||
@@ -185,6 +101,30 @@ class Game {
     }
     return null;
   }
+  // ゲーム中のキー入力を処理し、通常の移動や攻撃、インベントリ表示などを分岐します。
+  processInput(event) {
+    if (!this.isPlay) return;
+    if (this.isGameOver || !this.acceptingInput || this.boxOverlayActive) return;
+    this.ctrlPressed = event.ctrlKey;
+    if (event.key === 'e') {
+      this.inventoryOpen = !this.inventoryOpen;
+      // カーソル初期値は0
+      this.inventorySelection = 0;
+      this.render();
+      return;
+    }
+    if (this.inventoryOpen) {
+      this.processInventoryInput(event);
+      return;
+    }
+    if (window.overlayActive) return;
+    const inputResult = this.computeInput(event);
+    if (!inputResult) return;
+    this.advanceTurn();
+    this.updateData(inputResult);
+    this.render();
+  }
+  // インベントリが開いている場合の入力（カーソル移動、使用、置く、交換、入れるなど）を処理します。
   async processInventoryInput(event) {
     // まず、選択範囲は所持品リスト＋足元アイテム（ある場合）
     const totalOptions = this.player.inventory.length + (this.groundItem ? 1 : 0);
@@ -372,29 +312,132 @@ class Game {
       }
     }
   }
-  processInput(event) {
-    if (!this.isPlay) return;
-    if (this.isGameOver || !this.acceptingInput || this.boxOverlayActive) return;
-    this.ctrlPressed = event.ctrlKey;
-    if (event.key === 'e') {
-      this.inventoryOpen = !this.inventoryOpen;
-      // カーソル初期値は0
-      this.inventorySelection = 0;
-      this.render();
-      return;
-    }
-    if (this.inventoryOpen) {
-      this.processInventoryInput(event);
-      return;
-    }
-    if (window.overlayActive) return;
-    const inputResult = this.computeInput(event);
-    if (!inputResult) return;
-    this.advanceTurn();
-    this.updateData(inputResult);
-    this.render();
-  }
   
+  /* 3. ターン進行・ゲームロジック */
+  // ターン毎のカウンター（敵生成、飢餓、休憩回復など）の進行処理を行います。
+  advanceTurn() {
+    this.generateEnemyCycle[0] = (this.generateEnemyCycle[0] + 1) % this.generateEnemyCycle[1];
+    this.hungerCycle[0] = (this.hungerCycle[0] + 1) % this.hungerCycle[1];
+  }
+  // プレイヤーの移動や攻撃後のゲーム状態（敵へのダメージ、アイテム取得、マップの視界更新など）を更新します。
+  updateData(inputResult) {
+    if (!inputResult) return;
+    this.actionCount = 0;
+    const { tx, ty } = inputResult;
+    let attacked = false;
+    for (let i = 0; i < this.enemies.length; i++) {
+      if (this.enemies[i].x === tx && this.enemies[i].y === ty) {
+        attacked = true;
+        this.damageEnemy(this.enemies[i], i);
+        break;
+      }
+    }
+    // 移動前に、もし足元にアイテムがあれば、プレイヤーの現在位置に残す
+    if (!attacked && (this.keyX || this.keyY) && this.map.grid[ty]?.[tx] !== MAP_TILE.WALL &&
+        !this.enemies.some(e => e.x === tx && e.y === ty)) {
+      if (this.groundItem) {
+         this.groundItem.x = this.player.x;
+         this.groundItem.y = this.player.y;
+         this.items.push(this.groundItem);
+         this.groundItem = null;
+      }
+      this.player.x = tx;
+      this.player.y = ty;
+      this.map.visible[ty][tx] = true;
+      this.map.revealRoom(tx, ty);
+      this.map.revealAround(tx, ty);
+    }
+    if (!attacked && (this.keyX || this.keyY) && this.player.x === this.stairs.x && this.player.y === this.stairs.y) {
+      // ここで選択肢のオーバーレイを表示
+      EffectsManager.showStairConfirmationKeyboard(() => {
+        // 「降りる」を選んだ場合
+        this.generateDungeon(true);
+        this.render();
+        EffectsManager.showFloorOverlay(this.gameContainer, this.floor);
+      }, () => {
+        // 「キャンセル」を選んだ場合、必要に応じてプレイヤー位置を戻すなどの処理
+        this.groundItem = new BaseEntity(tx, ty, '🔼');
+        
+        // 例: 現在の位置から少しずらす（ここは実装に合わせて調整）
+        this.render();
+      });
+      
+      return;
+    }
+    if (!this.ctrlPressed && this.player.inventory.length < CONFIG.INVENTORY_MAX) {
+      this.items = this.items.filter(item => {
+        if (item.x === this.player.x && item.y === this.player.y) {
+          if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
+            this.player.inventory.push(item);
+            EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "GET");
+            return false;
+          }
+        }
+        return true;
+      });
+    } else {
+      for (let i = 0; i < this.items.length; i++) {
+        if (this.items[i].x === this.player.x && this.items[i].y === this.player.y) {
+          if (!this.groundItem) {
+            this.groundItem = this.items[i];
+            EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `${this.groundItem.name}に乗った`);
+            this.items.splice(i, 1);
+          }
+          break;
+        }
+      }
+    }
+    this.checkHunger();
+    if (attacked) {
+      this.enemyAttackPhase();
+      this.queueTimeout(() => {
+        this.enemyMovementPhase(tx, ty, attacked);
+        this.enemyActionRefresh();
+      }, (this.actionCount + 1) * this.actionTime);
+    } else {
+      this.enemyMovementPhase(tx, ty);
+      this.enemyAttackPhase();
+      this.queueTimeout(() => { this.enemyActionRefresh(); }, this.actionCount * this.actionTime);
+    }
+    this.checkCollisions();
+    if (this.generateEnemyCycle[0] === 0) {
+      this.placeEntities(this.enemies, randomInt(1, 3), "enemy");
+    }
+  }
+  // プレイヤーの飢餓状態を管理し、一定タイミングで飢えによるダメージなどを適用します。
+  checkHunger() {
+    this.hungerCycle[0] = (this.hungerCycle[0] + 1) % this.hungerCycle[1];
+    if (this.hungerCycle[0] === 0) { this.player.hunger--; if (this.player.hunger < 0) this.player.hunger = 0; }
+    if (this.player.hunger === 0) { this.player.hp--; EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "餓死", "damage"); }
+  }
+  // プレイヤーと他エンティティとの衝突判定を行い、スコア加算やゲームオーバー処理などに反映させます。
+  checkCollisions() {
+    this.gems = this.gems.filter(gem => {
+      if (gem.x === this.player.x && gem.y === this.player.y) {
+        this.score += 100;
+        EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "+100");
+        return false;
+      }
+      return true;
+    });
+    setTimeout(() => {
+      if (this.player.hp <= 0) {
+        this.saveResult();
+        this.player = new Player(0, 0, this.initialHP);
+        this.isGameOver = true;
+        this.timeoutQueue.forEach(id => clearTimeout(id));
+        this.timeoutQueue = [];
+        this.acceptingInput = true;
+        this.restCycle[0] = 0;
+        this.generateEnemyCycle[0] = 0;
+        this.hungerCycle[0] = 0;
+        alert("倒れてしまった！");
+        // ゲームオーバー時に終了処理を実行
+        this.destroy();
+      }
+    }, this.actionCount * this.actionTime);
+  }
+  // 敵の移動のために、プレイヤーまでの経路を探索します（経路探索アルゴリズム）。
   findPath(startX, startY, targetX, targetY) {
     let queue = [];
     queue.push({ x: startX, y: startY, path: [] });
@@ -427,86 +470,7 @@ class Game {
     }
     return null;
   }
-
-  /**
-   * Game インスタンスの終了・解放処理
-   */
-  destroy() {
-    // タイマーを全て解除
-    this.timeoutQueue.forEach(id => clearTimeout(id));
-    this.timeoutQueue = [];
-    // イベントリスナを解除
-    document.removeEventListener('keydown', this.inputHandler);
-    // もし他にも登録しているイベントがあれば解除する
-    // 例: document.removeEventListener('keyup', this.someOtherHandler);
-    
-    // 必要であれば、gameContainer などの UI 要素の参照もクリア
-    // これによりガベージコレクションが働き、インスタンスが解放される
-    this.gameContainer = null;
-    this.minimapContainer = null;
-    this.isPlay = false;
-    
-    // 難易度選択マップに戻る
-    selector = new DifficultySelector(this.myIcon);
-  }
-  
-  checkCollisions() {
-    this.gems = this.gems.filter(gem => {
-      if (gem.x === this.player.x && gem.y === this.player.y) {
-        this.score += 100;
-        EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "+100");
-        return false;
-      }
-      return true;
-    });
-    setTimeout(() => {
-      if (this.player.hp <= 0) {
-        this.saveResult();
-        this.player = new Player(0, 0, this.initialHP);
-        this.isGameOver = true;
-        this.timeoutQueue.forEach(id => clearTimeout(id));
-        this.timeoutQueue = [];
-        this.acceptingInput = true;
-        this.restCycle[0] = 0;
-        this.generateEnemyCycle[0] = 0;
-        this.hungerCycle[0] = 0;
-        alert("倒れてしまった！");
-        // ゲームオーバー時に終了処理を実行
-        this.destroy();
-      }
-    }, this.actionCount * this.actionTime);
-  }
-  onHeal() {
-    this.player.hp += this.player.healAmount;
-    if (this.player.hp > this.player.maxHp) this.player.hp = this.player.maxHp;
-    EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `+${this.player.healAmount}`, "heal");
-  }
-  gainExp(amount) {
-    this.player.exp += amount;
-    const expToNext = this.player.level * 10;
-    if (this.player.exp >= expToNext) {
-      let upAtk, upHp;
-      this.player.exp -= expToNext;
-      this.player.level++;
-      this.player.attack += (upAtk = randomInt(1, 2));
-      this.player.maxHp += (upHp = randomInt(2, 3));
-      this.player.healAmount++;
-      this.player.hp = this.player.maxHp;
-      EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "LEVEL UP!", "heal");
-      this.queueTimeout(() => { EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `HP +${upHp}`, "heal"); }, 500);
-      this.queueTimeout(() => { EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `攻撃力 +${upAtk}`, "heal"); }, 1000);
-    }
-  }
-  playerEat(amount) {
-    this.player.hunger += amount;
-    if (this.player.hunger > this.player.maxHunger) this.player.hunger = this.player.maxHunger;
-    EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `+${amount}`, "food");
-  }
-  checkHunger() {
-    this.hungerCycle[0] = (this.hungerCycle[0] + 1) % this.hungerCycle[1];
-    if (this.hungerCycle[0] === 0) { this.player.hunger--; if (this.player.hunger < 0) this.player.hunger = 0; }
-    if (this.player.hunger === 0) { this.player.hp--; EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "餓死", "damage"); }
-  }
+  // 敵の移動処理を行い、プレイヤーとの距離や障害物を考慮して移動先を決定します。
   enemyMovementPhase(nextPlayerX, nextPlayerY, attacked = false) {
     let occupied = new Set();
     this.enemies.forEach(e => occupied.add(`${e.x},${e.y}`));
@@ -549,6 +513,7 @@ class Game {
       }
     });
   }
+  // プレイヤーに隣接している敵が攻撃を仕掛ける処理を実行します。
   enemyAttackPhase() {
     this.enemies.forEach((enemy) => {
       if (enemy.hp <= 0 || enemy.action === 0) {
@@ -580,9 +545,11 @@ class Game {
       }
     });
   }
+  // 各敵の行動回数などのリセットを行い、次ターンへの準備をします。
   enemyActionRefresh() {
     this.enemies.forEach((enemy) => { enemy.action = enemy.maxAction; });
   }
+  // プレイヤーの攻撃により、敵にダメージを与え、敵の体力がゼロになった場合の処理（スコア加算、EXP獲得、エフェクト表示など）を実施します。
   damageEnemy(enemy, index) {
     var hor = this.keyX, ver = this.keyY;
     if (this.player.weapon)
@@ -603,6 +570,9 @@ class Game {
       }, 300)
     }
   }
+  
+  /* 4. レンダリング・UI更新 */
+  // ゲーム画面（マップ、敵、アイテム、プレイヤーなど）のメインビューを描画します。
   renderMainView() {
     let html = '';
     var radius = CONFIG.VIEW_RADIUS;
@@ -637,6 +607,7 @@ class Game {
     }
     this.gameContainer.innerHTML = html;
   }
+  // ミニマップを生成し、現在の視界状態や各エンティティの位置を反映します。
   renderMinimap() {
     let html = '';
     for (let y = 0; y < this.height; y++) {
@@ -655,6 +626,7 @@ class Game {
     this.minimapContainer.innerHTML = html;
     this.minimapContainer.style.gridTemplateColumns = `repeat(${this.width}, 4px)`;
   }
+  // 上記のメインビューとミニマップの更新、及びインベントリオーバーレイなどのUI要素の再描画を統合的に行います。
   render() {
     if (!this.isPlay) return;
     document.body.classList.remove("easy-dungeon", "hard-dungeon", "deep-dungeon");
@@ -676,6 +648,7 @@ class Game {
     document.getElementById('score').innerText = this.score;
     document.getElementById('hunger').innerText = this.player.hunger;
     document.getElementById('maxhunger').innerText = this.player.maxHunger;
+    // プレイヤーのHPや満腹度などのステータスバーを更新します。
     this.uiManager.update(this.player);
     if (this.inventoryOpen) {
       let invHtml = `<div class="inventory-modal">`;
@@ -777,6 +750,242 @@ class Game {
       this.gameContainer.innerHTML += invHtml;
     }
   }
+  // プレイヤーのHPや満腹度などのステータスバーを更新します。
+  
+  /* 5. ダンジョン生成・レベル管理 */
+  // 新しいダンジョン（または階層）の生成を行い、プレイヤー位置、エンティティ配置、階段設定などを更新します。
+  generateDungeon(keepHP = false) {
+    const prevHP = this.player.hp;
+    const prevScore = this.score;
+    this.map.generate();
+    this.enemies = [];
+    this.items = [];
+    this.gems = [];
+    const firstRoom = this.map.rooms[0];
+    this.player.x = firstRoom.x + 1;
+    this.player.y = firstRoom.y + 1;
+    this.map.revealRoom(this.player.x, this.player.y);
+    this.map.revealAround(this.player.x, this.player.y);
+    if (!keepHP) {
+      this.player.hp = this.initialHP;
+      this.score = 0;
+      this.floor = 1;
+      this.player.hunger = this.player.maxHunger;
+    } else {
+      this.player.hp = prevHP;
+      this.score = prevScore;
+      this.floor++;
+      
+      if (this.floor > difficultySettings[CONFIG.DIFFICULTY].maxFloor) {
+        this.saveResult(true);
+        alert("ダンジョンクリア！おめでとう！");
+        // ゲームクリア時にも終了処理を実行
+        this.destroy();
+        return;
+      }
+    }
+    
+    const lastRoom = this.map.rooms.at(-1);
+    this.stairs.x = lastRoom.x + 2;
+    this.stairs.y = lastRoom.y + 2;
+    this.map.grid[this.stairs.y][this.stairs.x] = MAP_TILE.STEPS;
+    if (CONFIG.DIFFICULTY === "hard") {
+      this.minMagnification = 1.4;
+      this.maxMagnification = 1.7;
+    } else {
+      this.minMagnification = CONFIG.MIN_ENEMY_MULTIPLIER;
+      this.maxMagnification = CONFIG.MAX_ENEMY_MULTIPLIER;
+    }
+    this.placeEntities(this.enemies, randomInt(2, 4), "enemy");
+    this.placeEntities(this.gems, randomInt(1, 2), "entity");
+    const maxItems = randomInt(3, 5);
+    const weightedTypes = [
+      ...Array(4).fill("food"),
+      ...Array(4).fill("sushi"),
+      ...Array(2).fill("magic"),
+      ...Array(2).fill("niku"),
+      ...Array(2).fill("weapon"),
+      ...Array(1).fill("box")
+    ];
+    for (let i = 0; i < maxItems; i++) {
+      const type = weightedTypes.splice(randomInt(0, weightedTypes.length - 1), 1)[0];
+      this.placeEntities(this.items, 1, type);
+    }
+  }
+  // 敵やアイテムなどのエンティティをマップ上にランダム配置する処理です。
+  placeEntities(arr, count, type) {
+    for (let i = 0; i < count; i++) {
+      let x, y, hp;
+      do {
+        const room = this.map.rooms[randomInt(0, this.map.rooms.length - 1)];
+        x = randomInt(room.x + 1, room.x + room.w - 2);
+        y = randomInt(room.y + 1, room.y + room.h - 2);
+        if (type === "enemy") {
+          hp = randomInt(
+            Math.round(Math.pow(this.floor, this.minMagnification)),
+            Math.round(Math.pow(this.floor, this.maxMagnification))
+          );
+        }
+      } while (this.map.grid[y][x] !== ' ' || (x === this.player.x && y === this.player.y));
+      if (type === "sushi") {
+        arr.push(new InventoryItem(x, y, "すし", '🍣', function(game) {
+          game.player.hp += 5;
+          if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
+          EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+5", "heal");
+        }));
+      } else if (type === "niku") {
+        arr.push(new InventoryItem(x, y, "お肉", '🍖', function(game) {
+          game.player.hp += 10;
+          if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
+          EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+10", "heal");
+        }));
+      } else if (type === "weapon") {
+        var selection = randomInt(1, 2);
+        let bonus = randomInt(1, 3);
+        switch (selection) {
+        case 1:
+          bonus = randomInt(1, 3);
+          arr.push(new WeaponItem(x, y, `武器-剣 (+${bonus})`, '🗡️', bonus));
+          break;
+        case 2:
+          bonus = randomInt(2, 5);
+          arr.push(new WeaponItem(x, y, `武器-斧 (+${bonus})`, '🪓', bonus));
+          break;
+        }
+      } else if (type === "magic") {
+        const weightedMagics = [
+        //// 攻撃魔法
+          ...Array(30).fill({name: "火の玉", tile: '🔥', damage: 20, area: 1, fallbackHeal: null}),
+          ...Array(20).fill({name: "たつまき", tile: '🌪️', damage: 15, area: 2, fallbackHeal: null}),
+          ...Array(10).fill({name: "大波", tile: '🌊', damage: 25, area: 4, fallbackHeal: null}),
+          ...Array(5).fill({name: "カミナリ", tile: '⚡️', damage: 30, area: 1, fallbackHeal: null}),
+          ...Array(1).fill({name: "エクスプロージョン", tile: '💥', damage: 50, area: 3, fallbackHeal: null}),
+          ...Array(1).fill({name: "メテオ", tile: '🌠', damage: 30, area: 5, fallbackHeal: null}),
+        //// 回復魔法
+          ...Array(10).fill({name: "リカバーオール", tile: '✨️', damage: null, area: null, fallbackHeal: 100}),
+        ];
+        let magic = weightedMagics.splice(randomInt(1, weightedMagics.length - 1), 1)[0];
+        arr.push(new MagicSpell(x, y, magic.name, magic.tile, magic.tile, {damage: magic.damage, area: magic.area, fallbackHeal: magic.fallbackHeal}));
+      } else if (type === "entity") {
+        arr.push(new BaseEntity(x, y));
+      } else if (type === "enemy") {
+        const enemys = enemyList(this.floor, CONFIG.DIFFICULTY);
+        const EnemyClass = enemys[randomInt(0, enemys.length - 1)];
+        arr.push(new EnemyClass(x, y, hp));
+      } else if (type === "food") {
+        if (Math.random() > 0.7) {
+          arr.push(new InventoryItem(x, y, "パン", '🥖', function(game) {
+            game.player.hunger += 20;
+            if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger;
+            EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+20", "food");
+          }));
+        } else {
+          arr.push(new InventoryItem(x, y, "大きなパン", '🍞', function(game) {
+            game.player.hunger += 50;
+            if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger;
+            EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+50", "food");
+          }));
+        }
+      } else if (type === "box") {
+        arr.push(new BoxItem(x, y, 5));
+      }
+    }
+  }
+  
+  /* 6. プレイヤー・敵の相互作用 */
+  // 敵を倒した際に、経験値を加算し、レベルアップ条件に応じた能力向上を処理します。
+  gainExp(amount) {
+    this.player.exp += amount;
+    const expToNext = this.player.level * 10;
+    if (this.player.exp >= expToNext) {
+      let upAtk, upHp;
+      this.player.exp -= expToNext;
+      this.player.level++;
+      this.player.attack += (upAtk = randomInt(1, 2));
+      this.player.maxHp += (upHp = randomInt(2, 3));
+      this.player.healAmount++;
+      this.player.hp = this.player.maxHp;
+      EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "LEVEL UP!", "heal");
+      this.queueTimeout(() => { EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `HP +${upHp}`, "heal"); }, 500);
+      this.queueTimeout(() => { EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `攻撃力 +${upAtk}`, "heal"); }, 1000);
+    }
+  }
+  // プレイヤーがアイテムを食べた際の飢餓回復処理を行います。
+  playerEat(amount) {
+    this.player.hunger += amount;
+    if (this.player.hunger > this.player.maxHunger) this.player.hunger = this.player.maxHunger;
+    EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `+${amount}`, "food");
+  }
+  // プレイヤーが回復アイテムなどでHPを回復する処理です。
+  onHeal() {
+    this.player.hp += this.player.healAmount;
+    if (this.player.hp > this.player.maxHp) this.player.hp = this.player.maxHp;
+    EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `+${this.player.healAmount}`, "heal");
+  }
+  
+  /* 7. 結果・スコアの管理 */
+  // ゲームオーバーやクリア時に、ゲーム結果（日時、難易度、フロア、レベル、スコアなど）を localStorage に保存します。
+  saveResult(clear = false) {
+    let results = JSON.parse(localStorage.getItem("gameResult") || "[]");
+    results.push({
+      date: new Date().toISOString(),
+      dungeonLv: CONFIG.DIFFICULTY,
+      floor: this.floor,
+      clear: clear,
+      lv: this.player.level,
+      score: this.score
+    });
+    localStorage.setItem("gameResult", JSON.stringify(results));
+  }
+  // 保存された結果をモーダル画面で表示します。
+  showResults() {
+    let results = JSON.parse(localStorage.getItem("gameResult") || "[]");
+    let modalHtml = '<div class="results-modal" id="resultsModal">';
+    modalHtml += '<h3>記録された結果</h3>';
+    if (results.length === 0) modalHtml += '<p>記録がありません。</p>';
+    else {
+      modalHtml += '<table><tr><th>日付</th><th>難易度</th><th>フロア</th><th>結果</th><th>レベル</th><th>スコア</th></tr>';
+      results.forEach(r => {
+        modalHtml += `<tr><td>${new Date(r.date).toLocaleString()}</td><td>${r.dungeonLv == undefined ? "-" : r.dungeonLv}</td><td>${r.floor}</td><td>${r.clear ? "クリア" : "ゲームオーバー"}</td><td>${r.lv}</td><td>${r.score}</td></tr>`;
+      });
+      modalHtml += '</table>';
+    }
+    modalHtml += '<button onclick="closeResults()">閉じる</button>';
+    modalHtml += '</div>';
+    const existingModal = document.getElementById("resultsModal");
+    if (!existingModal) {
+      const modalDiv = document.createElement("div");
+      modalDiv.innerHTML = modalHtml;
+      document.body.appendChild(modalDiv);
+    }
+  }
+  
+  /* 8. ゲーム終了・リソース解放 */
+  // ゲームオーバーまたはクリア時に、登録済みのタイマーやイベントリスナーを解除して、Game インスタンスのリソースを解放します。
+  destroy() {
+    // タイマーを全て解除
+    this.timeoutQueue.forEach(id => clearTimeout(id));
+    this.timeoutQueue = [];
+    // イベントリスナを解除
+    document.removeEventListener('keydown', this.inputHandler);
+    // もし他にも登録しているイベントがあれば解除する
+    // 例: document.removeEventListener('keyup', this.someOtherHandler);
+    
+    // 必要であれば、gameContainer などの UI 要素の参照もクリア
+    // これによりガベージコレクションが働き、インスタンスが解放される
+    this.gameContainer = null;
+    this.minimapContainer = null;
+    this.isPlay = false;
+    
+    // 難易度選択マップに戻る
+    selector = new DifficultySelector(this.myIcon);
+  }
+  
+  /* 9. 箱操作（入れ子アイテムの操作） */
+  // 箱アイテムの use 操作として呼ばれ、箱内に入れたアイテム一覧をオーバーレイ表示して、以下の操作を可能にします。
+  // ・出す：箱からアイテムを取り出しインベントリに戻す。
+  // ・使う：箱内のアイテムを使用する。
+  // ・置く：箱内のアイテムを取り出して地面に配置する。
   openBox(box) {
     // 箱オーバーレイ中は通常操作を停止
     this.boxOverlayActive = true;
@@ -902,173 +1111,4 @@ class Game {
     };
   };
   
-  saveResult(clear = false) {
-    let results = JSON.parse(localStorage.getItem("gameResult") || "[]");
-    results.push({
-      date: new Date().toISOString(),
-      dungeonLv: CONFIG.DIFFICULTY,
-      floor: this.floor,
-      clear: clear,
-      lv: this.player.level,
-      score: this.score
-    });
-    localStorage.setItem("gameResult", JSON.stringify(results));
-  }
-  showResults() {
-    let results = JSON.parse(localStorage.getItem("gameResult") || "[]");
-    let modalHtml = '<div class="results-modal" id="resultsModal">';
-    modalHtml += '<h3>記録された結果</h3>';
-    if (results.length === 0) modalHtml += '<p>記録がありません。</p>';
-    else {
-      modalHtml += '<table><tr><th>日付</th><th>難易度</th><th>フロア</th><th>結果</th><th>レベル</th><th>スコア</th></tr>';
-      results.forEach(r => {
-        modalHtml += `<tr><td>${new Date(r.date).toLocaleString()}</td><td>${r.dungeonLv == undefined ? "-" : r.dungeonLv}</td><td>${r.floor}</td><td>${r.clear ? "クリア" : "ゲームオーバー"}</td><td>${r.lv}</td><td>${r.score}</td></tr>`;
-      });
-      modalHtml += '</table>';
-    }
-    modalHtml += '<button onclick="closeResults()">閉じる</button>';
-    modalHtml += '</div>';
-    const existingModal = document.getElementById("resultsModal");
-    if (!existingModal) {
-      const modalDiv = document.createElement("div");
-      modalDiv.innerHTML = modalHtml;
-      document.body.appendChild(modalDiv);
-    }
-  }
-  generateDungeon(keepHP = false) {
-    const prevHP = this.player.hp;
-    const prevScore = this.score;
-    this.map.generate();
-    this.enemies = [];
-    this.items = [];
-    this.gems = [];
-    const firstRoom = this.map.rooms[0];
-    this.player.x = firstRoom.x + 1;
-    this.player.y = firstRoom.y + 1;
-    this.map.revealRoom(this.player.x, this.player.y);
-    this.map.revealAround(this.player.x, this.player.y);
-    if (!keepHP) {
-      this.player.hp = this.initialHP;
-      this.score = 0;
-      this.floor = 1;
-      this.player.hunger = this.player.maxHunger;
-    } else {
-      this.player.hp = prevHP;
-      this.score = prevScore;
-      this.floor++;
-      
-      if (this.floor > difficultySettings[CONFIG.DIFFICULTY].maxFloor) {
-        this.saveResult(true);
-        alert("ダンジョンクリア！おめでとう！");
-        // ゲームクリア時にも終了処理を実行
-        this.destroy();
-        return;
-      }
-    }
-    
-    const lastRoom = this.map.rooms.at(-1);
-    this.stairs.x = lastRoom.x + 2;
-    this.stairs.y = lastRoom.y + 2;
-    this.map.grid[this.stairs.y][this.stairs.x] = MAP_TILE.STEPS;
-    if (CONFIG.DIFFICULTY === "hard") {
-      this.minMagnification = 1.4;
-      this.maxMagnification = 1.7;
-    } else {
-      this.minMagnification = CONFIG.MIN_ENEMY_MULTIPLIER;
-      this.maxMagnification = CONFIG.MAX_ENEMY_MULTIPLIER;
-    }
-    this.placeEntities(this.enemies, randomInt(2, 4), "enemy");
-    this.placeEntities(this.gems, randomInt(1, 2), "entity");
-    const maxItems = randomInt(3, 5);
-    const weightedTypes = [
-      ...Array(4).fill("food"),
-      ...Array(4).fill("sushi"),
-      ...Array(2).fill("magic"),
-      ...Array(2).fill("niku"),
-      ...Array(2).fill("weapon"),
-      ...Array(1).fill("box")
-    ];
-    for (let i = 0; i < maxItems; i++) {
-      const type = weightedTypes.splice(randomInt(0, weightedTypes.length - 1), 1)[0];
-      this.placeEntities(this.items, 1, type);
-    }
-  }
-  placeEntities(arr, count, type) {
-    for (let i = 0; i < count; i++) {
-      let x, y, hp;
-      do {
-        const room = this.map.rooms[randomInt(0, this.map.rooms.length - 1)];
-        x = randomInt(room.x + 1, room.x + room.w - 2);
-        y = randomInt(room.y + 1, room.y + room.h - 2);
-        if (type === "enemy") {
-          hp = randomInt(
-            Math.round(Math.pow(this.floor, this.minMagnification)),
-            Math.round(Math.pow(this.floor, this.maxMagnification))
-          );
-        }
-      } while (this.map.grid[y][x] !== ' ' || (x === this.player.x && y === this.player.y));
-      if (type === "sushi") {
-        arr.push(new InventoryItem(x, y, "すし", '🍣', function(game) {
-          game.player.hp += 5;
-          if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
-          EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+5", "heal");
-        }));
-      } else if (type === "niku") {
-        arr.push(new InventoryItem(x, y, "お肉", '🍖', function(game) {
-          game.player.hp += 10;
-          if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
-          EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+10", "heal");
-        }));
-      } else if (type === "weapon") {
-        var selection = randomInt(1, 2);
-        let bonus = randomInt(1, 3);
-        switch (selection) {
-        case 1:
-          bonus = randomInt(1, 3);
-          arr.push(new WeaponItem(x, y, `武器-剣 (+${bonus})`, '🗡️', bonus));
-          break;
-        case 2:
-          bonus = randomInt(2, 5);
-          arr.push(new WeaponItem(x, y, `武器-斧 (+${bonus})`, '🪓', bonus));
-          break;
-        }
-      } else if (type === "magic") {
-        const weightedMagics = [
-        //// 攻撃魔法
-          ...Array(30).fill({name: "火の玉", tile: '🔥', damage: 20, area: 1, fallbackHeal: null}),
-          ...Array(20).fill({name: "たつまき", tile: '🌪️', damage: 15, area: 2, fallbackHeal: null}),
-          ...Array(10).fill({name: "大波", tile: '🌊', damage: 25, area: 4, fallbackHeal: null}),
-          ...Array(5).fill({name: "カミナリ", tile: '⚡️', damage: 30, area: 1, fallbackHeal: null}),
-          ...Array(1).fill({name: "エクスプロージョン", tile: '💥', damage: 50, area: 3, fallbackHeal: null}),
-          ...Array(1).fill({name: "メテオ", tile: '🌠', damage: 30, area: 5, fallbackHeal: null}),
-        //// 回復魔法
-          ...Array(10).fill({name: "リカバーオール", tile: '✨️', damage: null, area: null, fallbackHeal: 100}),
-        ];
-        let magic = weightedMagics.splice(randomInt(1, weightedMagics.length - 1), 1)[0];
-        arr.push(new MagicSpell(x, y, magic.name, magic.tile, magic.tile, {damage: magic.damage, area: magic.area, fallbackHeal: magic.fallbackHeal}));
-      } else if (type === "entity") {
-        arr.push(new BaseEntity(x, y));
-      } else if (type === "enemy") {
-        const enemys = enemyList(this.floor, CONFIG.DIFFICULTY);
-        const EnemyClass = enemys[randomInt(0, enemys.length - 1)];
-        arr.push(new EnemyClass(x, y, hp));
-      } else if (type === "food") {
-        if (Math.random() > 0.7) {
-          arr.push(new InventoryItem(x, y, "パン", '🥖', function(game) {
-            game.player.hunger += 20;
-            if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger;
-            EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+20", "food");
-          }));
-        } else {
-          arr.push(new InventoryItem(x, y, "大きなパン", '🍞', function(game) {
-            game.player.hunger += 50;
-            if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger;
-            EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+50", "food");
-          }));
-        }
-      } else if (type === "box") {
-        arr.push(new BoxItem(x, y, 5));
-      }
-    }
-  }
 }
