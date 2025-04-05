@@ -486,8 +486,10 @@ class Game {
   enemyMovementPhase(nextPlayerX, nextPlayerY, attacked = false) {
     let occupied = new Set();
     this.enemies.forEach(e => occupied.add(`${e.x},${e.y}`));
+    
     this.enemies.forEach((enemy) => {
       if (enemy.hp <= 0 || enemy.action === 0) return;
+      
       let dx = Math.abs(enemy.x - this.player.x);
       let dy = Math.abs(enemy.y - this.player.y);
       if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) return;
@@ -495,9 +497,23 @@ class Game {
         if (this.map.grid[this.player.y][enemy.x] !== MAP_TILE.WALL &&
             this.map.grid[enemy.y][this.player.x] !== MAP_TILE.WALL) return;
       }
-      const path = this.findPath(enemy.x, enemy.y, this.player.x, this.player.y);
+      
+      let path = this.findPath(enemy.x, enemy.y, this.player.x, this.player.y);
       if (path && path.length > 0) {
         let candidate = path[0];
+        // もし候補セルが既に occupied に含まれている場合
+        if (occupied.has(`${candidate.x},${candidate.y}`)) {
+          // そのセルを壁として扱い、再計算する
+          let altPath = this.findPathWithExtraBlocker(enemy.x, enemy.y, this.player.x, this.player.y, candidate);
+          if (altPath && altPath.length > 0) {
+            candidate = altPath[0];
+            path = altPath;
+          } else {
+            // 再計算でも通れなければ、この敵は動かさない
+            return;
+          }
+        }
+        
         if (enemy.x !== candidate.x && enemy.y !== candidate.y) {
           const horizontalBlocked = (this.map.grid[enemy.y][candidate.x] === MAP_TILE.WALL);
           const verticalBlocked = (this.map.grid[candidate.y][enemy.x] === MAP_TILE.WALL);
@@ -515,8 +531,10 @@ class Game {
             if (!candidate) return;
           }
         }
+        
         if (!attacked && candidate.x === nextPlayerX && candidate.y === nextPlayerY) return;
         if (occupied.has(`${candidate.x},${candidate.y}`)) return;
+        
         occupied.delete(`${enemy.x},${enemy.y}`);
         enemy.action--;
         enemy.x = candidate.x;
@@ -524,6 +542,17 @@ class Game {
         occupied.add(`${enemy.x},${enemy.y}`);
       }
     });
+  }
+  // 補助メソッド：指定したブロッカーセルを壁として扱い再計算する
+  findPathWithExtraBlocker(startX, startY, targetX, targetY, blocker) {
+    // map.grid をコピーして、ブロッカーセルを壁に設定
+    const tempGrid = this.map.grid.map(row => row.slice());
+    tempGrid[blocker.y][blocker.x] = MAP_TILE.WALL;
+    const originalGrid = this.map.grid;
+    this.map.grid = tempGrid;
+    const path = this.findPath(startX, startY, targetX, targetY);
+    this.map.grid = originalGrid;
+    return path;
   }
   // プレイヤーに隣接している敵が攻撃を仕掛ける処理を実行します。
   enemyAttackPhase() {
