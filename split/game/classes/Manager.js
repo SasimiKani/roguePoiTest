@@ -124,6 +124,63 @@ class EffectsManager {
       weaponEffect.remove();
     }, 350);
   }
+  
+  /**
+   * フロアオーバーレイを表示する
+   * @param {HTMLElement} container ゲーム画面のコンテナ要素
+   * @param {number} floor 現在のフロア
+   */
+  static showFloorOverlay(container, floor) {
+    // overlay要素を作成
+    const overlay = document.createElement("div");
+    overlay.className = "floor-overlay";
+    overlay.textContent = `${floor} F`;
+    
+    // ゲーム画面の左上付近に配置（コンテナの位置を取得）
+    const rect = container.getBoundingClientRect();
+    overlay.style.position = "absolute";
+    // container内の左上に10pxオフセット
+    overlay.style.left = `${rect.left + CONFIG.FONT_SIZE}px`;
+    overlay.style.top = `${rect.top + CONFIG.FONT_SIZE}px`;
+    
+    // フォント設定：大きめサイズ、白抜き（黒縁）にする
+    overlay.style.fontSize = `${CONFIG.FONT_SIZE * 2}px`;
+    overlay.style.fontWeight = "bold";
+    overlay.style.color = "white";
+    overlay.style.webkitTextStroke = "2px black";
+    
+    // 色々つける
+    overlay.style.border = "5px solid white";
+    overlay.style.borderRadius = "20px";
+    overlay.style.backgroundColor = window.getComputedStyle(container.children[0]).backgroundColor;
+    overlay.style.padding = "5px 30px";
+    
+    // アニメーション用スタイル
+    overlay.style.opacity = "0";
+    overlay.style.transform = "translateY(-20px) scale(0.8)";
+    overlay.style.transition = "opacity 0.5s ease-out, transform 0.5s ease-out";
+    overlay.style.zIndex = "2000";
+    
+    // bodyに追加（gameContainerの再描画に左右されないよう）
+    document.body.appendChild(overlay);
+    
+    // 少し待ってからフェードイン＆元の位置に移動する
+    setTimeout(() => {
+      overlay.style.opacity = "1";
+      overlay.style.transform = "translateY(0) scale(1)";
+    }, 10);
+    
+    // 表示を1.5秒程度保持後にフェードアウト
+    setTimeout(() => {
+      overlay.style.opacity = "0";
+      overlay.style.transform = "translateY(-20px) scale(0.8)";
+    }, 3000);
+    
+    // アニメーション終了後、要素を削除
+    setTimeout(() => {
+      overlay.remove();
+    }, 3500);
+  }
 }
 // InputManager クラス
 class InputManager {

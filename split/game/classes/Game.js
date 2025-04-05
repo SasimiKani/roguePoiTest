@@ -36,6 +36,9 @@ class Game {
     document.getElementById("restCycle").innerText = CONFIG.REST_CYCLE;
     this.generateDungeon(false);
     this.render();
+    
+    EffectsManager.showFloorOverlay(this.gameContainer, this.floor);
+    
     setTimeout(() => {
       new InputManager(this);
     }, 300);
@@ -85,6 +88,9 @@ class Game {
     }
     if (this.player.x === this.stairs.x && this.player.y === this.stairs.y) {
       this.generateDungeon(true);
+      
+      EffectsManager.showFloorOverlay(this.gameContainer, this.floor);
+      
       return;
     }
     if (!this.ctrlPressed && this.player.inventory.length < CONFIG.INVENTORY_MAX) {
@@ -702,6 +708,7 @@ class Game {
         return;
       }
     }
+    
     const lastRoom = this.map.rooms.at(-1);
     this.stairs.x = lastRoom.x + 2;
     this.stairs.y = lastRoom.y + 2;
