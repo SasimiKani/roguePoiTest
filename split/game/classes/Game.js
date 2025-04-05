@@ -1,6 +1,7 @@
 // Game クラス
 class Game {
-  constructor() {
+  constructor(myIcon) {
+    this.myIcon = myIcon;
     this.isPlay = true;
     this.keyX = 0;
     this.keyY = 0;
@@ -24,6 +25,7 @@ class Game {
     this.enemies = [];
     this.stairs = { x: 0, y: 0 };
     this.player = new Player(0, 0, this.initialHP);
+    this.player.tile = myIcon;
     this.uiManager = new UIManager();
     this.map = new DungeonMap(this.width, this.height);
     this.gameContainer = document.getElementById("game");
@@ -445,7 +447,7 @@ class Game {
     this.isPlay = false;
     
     // 難易度選択マップに戻る
-    new DifficultySelector();
+    selector = new DifficultySelector(this.myIcon);
   }
   
   checkCollisions() {

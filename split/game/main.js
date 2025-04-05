@@ -86,12 +86,13 @@ function enemyList(floor, difficulty) {
   return list;
 }
 
-function startDungeonGame(difficulty) {
+function startDungeonGame(difficulty, myIcon="😊") {
   CONFIG.DIFFICULTY = difficulty;
   CONFIG.REVEALLV = difficultySettings[difficulty].revealLv;
   MAP_TILE.WALL = difficultySettings[difficulty].wallEmoji;
-  setTimeout(() => { 
-    new Game();
+  setTimeout(() => {
+    document.querySelector("button#change-icon").style.display = "none";
+    new Game(myIcon);
   }, 300);
 }
 
@@ -100,5 +101,37 @@ function closeResults() {
   if (modal) modal.remove();
 }
 
+// アイコンを設定
+const myIcon = document.querySelector("input[name=my-icon]");
+const spanIcon  = document.querySelector("span.icon");
+spanIcon.textContent = myIcon.value;
+
+document.querySelector("button#change-icon").addEventListener("click", () => {
+  const modal = document.createElement("div");
+  const inputIcon = document.createElement("input");
+  const confirmIcon = document.createElement("button");
+  
+  modal.className = "change-icon-modal";
+  inputIcon.className = "change-icon-modal-input";
+  inputIcon.value = myIcon.value;
+  inputIcon.size = 1;
+  confirmIcon.className = "change-icon-modal-button";
+  
+  confirmIcon.textContent = "決定";
+  confirmIcon.addEventListener("click", () => {
+    /*if (inputIcon.value.length != 1) {
+      alert("アイコンは1文字にしてね");
+      return;
+    }*/
+    spanIcon.textContent = myIcon.value = inputIcon.value;
+    selector.changeIcon(myIcon.value);
+    modal.remove();
+  });
+  
+  modal.appendChild(inputIcon);
+  modal.appendChild(confirmIcon);
+  document.body.appendChild(modal);
+});
+
 // ゲーム開始のための難易度選択を開始
-new DifficultySelector();
+let selector = new DifficultySelector(myIcon.value);

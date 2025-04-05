@@ -1,9 +1,10 @@
 // DifficultySelector クラス（修正版）
 class DifficultySelector {
-  constructor() {
+  constructor(myIcon="😊") {
     this.gridWidth = 15;
     this.gridHeight = 15;
     this.grid = [];
+    this.myIcon = myIcon;
     for (let y = 0; y < this.gridHeight; y++) {
       this.grid[y] = [];
       for (let x = 0; x < this.gridWidth; x++) {
@@ -26,13 +27,14 @@ class DifficultySelector {
     this.render();
     this.handleKeyDown = this.handleKeyDown.bind(this);
     document.addEventListener('keydown', this.handleKeyDown);
+    document.querySelector("button#change-icon").style.display = "inline";
   }
   render() {
     let html = "";
     for (let y = 0; y < this.gridHeight; y++) {
       for (let x = 0; x < this.gridWidth; x++) {
         if (x === this.playerX && y === this.playerY) {
-          html += "<span>😊</span>";
+          html += `<span>${this.myIcon}</span>`;
         } else {
           html += `<span>${this.grid[y][x]}</span>`;
         }
@@ -64,11 +66,16 @@ class DifficultySelector {
         if (opt.x === this.playerX && opt.y === this.playerY) {
           this.inSelection = false;
           document.removeEventListener('keydown', this.handleKeyDown);
-          startDungeonGame(opt.difficulty);
+          startDungeonGame(opt.difficulty, this.myIcon);
           break;
         }
       }
     }
+  }
+  
+  changeIcon(myIcon) {
+    this.myIcon = myIcon;
+    this.render();
   }
 }
 
