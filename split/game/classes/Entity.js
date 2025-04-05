@@ -124,10 +124,12 @@ class InventoryItem extends BaseEntity {
 // MagicSpell クラス
 class MagicSpell extends InventoryItem {
   constructor(x, y, name, tile, emoji, options) {
-    super(x, y, name, tile, (game) => {
+    super(x, y, name, tile, async (game) => {
       let affected = false;
       //EffectsManager.showMagicEffect(game.gameContainer, game.player, game.player.x, game.player.y, this.area, this.emoji || "✨");
-      EffectsManager.showMagicEffectCircle(game.gameContainer, game.player, game.player.x, game.player.y, this.area, this.emoji || "✨");
+      ///// console.log("showMagicEffectCircle Start");
+      await EffectsManager.showMagicEffectCircle(game.gameContainer, game.player, game.player.x, game.player.y, this.area, this.emoji || "✨");
+      ///// console.log("showMagicEffectCircle End");
       for (let i = game.enemies.length - 1; i >= 0; i--) {
         let enemy = game.enemies[i];
         if (Math.abs(enemy.x - game.player.x) <= this.area &&
@@ -158,7 +160,7 @@ class MagicSpell extends InventoryItem {
 // WeaponItem クラス
 class WeaponItem extends InventoryItem {
   constructor(x, y, name, tile, bonus) {
-    super(x, y, name, tile, (game) => {
+    super(x, y, name, tile, async (game) => {
       if (game.player.weapon === this) {
         this.unEquip(game);
       } else if (game.player.weapon) {

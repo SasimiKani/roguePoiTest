@@ -181,7 +181,7 @@ class Game {
     }
     return null;
   }
-  processInventoryInput(event) {
+  async processInventoryInput(event) {
     // まず、選択範囲は所持品リスト＋足元アイテム（ある場合）
     const totalOptions = this.player.inventory.length + (this.groundItem ? 1 : 0);
     
@@ -269,8 +269,10 @@ class Game {
       // 通常の所持品の操作
       if (event.key === 'u') {
         let item = this.player.inventory[this.inventorySelection];
+        this.inventoryOpen = false;
         if (item && item.use) {
-          item.use(this);
+          this.render();
+          await item.use(this);
           if (item.name.match(/武器.*/g) === null) {
             this.player.inventory.splice(this.inventorySelection, 1);
             if (this.inventorySelection >= this.player.inventory.length) {
@@ -282,7 +284,6 @@ class Game {
           this.enemyAttackPhase();
           this.checkCollisions();
         }
-        this.inventoryOpen = false;
         this.render();
         return;
       }

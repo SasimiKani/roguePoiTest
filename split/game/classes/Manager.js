@@ -44,49 +44,52 @@ class EffectsManager {
     }
   }
   
-  static showMagicEffectCircle(container, player, centerX, centerY, area, emoji) {
-    // 生成するパーティクル数（エリアや演出に合わせて調整可能）
-    const numParticles = 20;
-    // エリア（タイル単位）をピクセル変換する係数。ここでは例として8px/タイルを使用
-    const factor = CONFIG.FONT_SIZE;
-    
-    // container の中央位置を算出（gameContainer ではなく、中央表示が前提の位置）
-    const spans = container.children;
-    const index = 7 * 16 + 7;
-    if (!spans[index]) return;
-    const rect = spans[index].getBoundingClientRect();
-    
-    for (let i = 0; i < numParticles; i++) {
-      const angle = Math.random() * 2 * Math.PI; // 0～2πの角度
-      const distance = Math.random() * area * factor + CONFIG.FONT_SIZE; // 0～area*factor ピクセルの距離
-      const dx = Math.cos((i * 360 / numParticles) * Math.PI / 180) * distance - CONFIG.FONT_SIZE / 2;
-      const dy = Math.sin((i * 360 / numParticles) * Math.PI / 180) * distance - CONFIG.FONT_SIZE / 2;
+  static async showMagicEffectCircle(container, player, centerX, centerY, area, emoji) {
+    return new Promise((resolve) => {
+      // 生成するパーティクル数（エリアや演出に合わせて調整可能）
+      const numParticles = 20;
+      // エリア（タイル単位）をピクセル変換する係数。ここでは例として8px/タイルを使用
+      const factor = CONFIG.FONT_SIZE;
       
-      const particle = document.createElement("div");
-      particle.className = "magic-particle";
-      particle.textContent = emoji;
+      // container の中央位置を算出（gameContainer ではなく、中央表示が前提の位置）
+      const spans = container.children;
+      const index = 7 * 16 + 7;
+      if (!spans[index]) return;
+      const rect = spans[index].getBoundingClientRect();
       
-      // 初期状態：中央に表示、スケール1、透明度1
-      particle.style.position = "absolute";
-      particle.style.left = `${rect.left + rect.width / 2 + window.scrollX + dx}px`;
-      particle.style.top = `${rect.top + rect.height / 2 + window.scrollY + dy}px`;
-      particle.style.transform = "translate(0, 0) scale(1)";
-      particle.style.opacity = "1";
-      particle.style.transition = "transform 0.8s ease-out, opacity 0.8s ease-out";
-      particle.style.pointerEvents = "none";
-      document.body.appendChild(particle);
-      
-      // 少し待ってから、指定方向へ移動＆縮小・フェードアウト
-      setTimeout(() => {
-        particle.style.transform = `translate(${dx}px, ${dy}px) scale(0)`;
-        particle.style.opacity = "0";
-      }, 10);
-      
-      // アニメーション完了後、パーティクルを削除
-      setTimeout(() => {
-        particle.remove();
-      }, 810);
-    }
+      for (let i = 0; i < numParticles; i++) {
+        const angle = Math.random() * 2 * Math.PI; // 0～2πの角度
+        const distance = Math.random() * area * factor + CONFIG.FONT_SIZE; // 0～area*factor ピクセルの距離
+        const dx = Math.cos((i * 360 / numParticles) * Math.PI / 180) * distance - CONFIG.FONT_SIZE / 2;
+        const dy = Math.sin((i * 360 / numParticles) * Math.PI / 180) * distance - CONFIG.FONT_SIZE / 2;
+        
+        const particle = document.createElement("div");
+        particle.className = "magic-particle";
+        particle.textContent = emoji;
+        
+        // 初期状態：中央に表示、スケール1、透明度1
+        particle.style.position = "absolute";
+        particle.style.left = `${rect.left + rect.width / 2 + window.scrollX + dx}px`;
+        particle.style.top = `${rect.top + rect.height / 2 + window.scrollY + dy}px`;
+        particle.style.transform = "translate(0, 0) scale(1)";
+        particle.style.opacity = "1";
+        particle.style.transition = "transform 0.8s ease-out, opacity 0.8s ease-out";
+        particle.style.pointerEvents = "none";
+        document.body.appendChild(particle);
+        
+        // 少し待ってから、指定方向へ移動＆縮小・フェードアウト
+        setTimeout(() => {
+          particle.style.transform = `translate(${dx}px, ${dy}px) scale(0)`;
+          particle.style.opacity = "0";
+        }, 10);
+        
+        // アニメーション完了後、パーティクルを削除
+        setTimeout(() => {
+          particle.remove();
+          resolve("OK");
+        }, 610);
+      }
+    });
   }
   
   /**
