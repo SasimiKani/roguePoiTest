@@ -134,7 +134,7 @@ class Game {
     const totalOptions = this.player.inventory.length + (this.groundItem ? 1 : 0);
     
     // デバッグ用コマンド： 'w' キーで階段ワープ
-    if (event.key === 'w') {
+    /*if (event.key === 'w') {
       // プレイヤーを階段の位置にワープ
       this.player.x = this.stairs.x;
       this.player.y = this.stairs.y;
@@ -147,7 +147,7 @@ class Game {
       this.advanceTurn();
       this.render();
       return;
-    }
+    }*/
     
     // カーソル移動
     if (event.key === 'ArrowUp') {
@@ -379,27 +379,21 @@ class Game {
       
       return;
     }
-    if (!this.ctrlPressed) {
-      this.items = this.items.filter(item => {
-        if (item.x === this.player.x && item.y === this.player.y) {
-          // アイテムを拾う
-          pickupItem(this, item);
-          return false;
-        }
-        return true;
-      });
-    } else {
-      for (let i = 0; i < this.items.length; i++) {
-        if (this.items[i].x === this.player.x && this.items[i].y === this.player.y) {
+    this.items = this.items.filter(item => {
+      if (item.x === this.player.x && item.y === this.player.y) {
+        // アイテムを拾う
+        if (!this.ctrlPressed && !pickupItem(this, item)) return false; // マップ上から削除
+        else {
+          // 拾わなかった場合の処理
           if (!this.groundItem) {
-            this.groundItem = this.items[i];
+            this.groundItem = item;
             EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `${this.groundItem.name}に乗った`);
-            this.items.splice(i, 1);
+            return false; // マップ上から削除
           }
-          break;
         }
       }
-    }
+      return true; // マップ上に残す
+    });
     this.checkHunger();
     if (attacked) {
       this.enemyAttackPhase();
@@ -832,8 +826,8 @@ class Game {
     this.stairs.y = lastRoom.y + 2;
     this.map.grid[this.stairs.y][this.stairs.x] = MAP_TILE.STEPS;
     if (CONFIG.DIFFICULTY === "hard") {
-      this.minMagnification = 1.4;
-      this.maxMagnification = 1.7;
+      this.minMagnification = 1.3;
+      this.maxMagnification = 1.4;
     } else {
       this.minMagnification = CONFIG.MIN_ENEMY_MULTIPLIER;
       this.maxMagnification = CONFIG.MAX_ENEMY_MULTIPLIER;
@@ -847,7 +841,7 @@ class Game {
       ...Array(2).fill("magic"),
       ...Array(2).fill("niku"),
       ...Array(2).fill("weapon"),
-      ...Array(1).fill("shooting"),
+      ...Array(2).fill("shooting"),
       ...Array(1).fill("box")
     ];
     for (let i = 0; i < maxItems; i++) {

@@ -29,7 +29,12 @@ function pickupItem(game, pickupItem) {
           EffectsManager.showEffect(
             game.gameContainer, player, player.x, player.y, "GET"
           );
-          break;
+          // 足元アイテムがあればクリアして、インベントリオープンを解除
+          if (game.groundItem) {
+            game.groundItem = null;
+            game.inventoryOpen = false;
+          }
+          return false;
         }
       }
     } else {
@@ -39,8 +44,15 @@ function pickupItem(game, pickupItem) {
         EffectsManager.showEffect(
           game.gameContainer, player, player.x, player.y, "GET"
         );
+        // 足元アイテムがあればクリアして、インベントリオープンを解除
+        console.log(game.groundItem);
+        if (game.groundItem) {
+          game.groundItem = null;
+          game.inventoryOpen = false;
+        }
+        return false;
       } else {
-        return; // インベントリ満杯なら何もせず終了
+        return true; // インベントリ満杯なら何もせず終了
       }
     }
   } else {
@@ -50,15 +62,15 @@ function pickupItem(game, pickupItem) {
       EffectsManager.showEffect(
         game.gameContainer, player, player.x, player.y, "GET"
       );
+      // 足元アイテムがあればクリアして、インベントリオープンを解除
+      if (game.groundItem) {
+        game.groundItem = null;
+        game.inventoryOpen = false;
+      }
+      return false;
     } else {
-      return;
+      return true;
     }
-  }
-  
-  // 足元アイテムがあればクリアして、インベントリオープンを解除
-  if (game.groundItem) {
-    game.groundItem = null;
-    game.inventoryOpen = false;
   }
 }
 
