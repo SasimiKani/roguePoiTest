@@ -134,7 +134,7 @@ class Game {
     const totalOptions = this.player.inventory.length + (this.groundItem ? 1 : 0);
     
     // デバッグ用コマンド： 'w' キーで階段ワープ
-    /*if (event.key === 'w') {
+    if (event.key === 'w') {
       // プレイヤーを階段の位置にワープ
       this.player.x = this.stairs.x;
       this.player.y = this.stairs.y;
@@ -147,7 +147,7 @@ class Game {
       this.advanceTurn();
       this.render();
       return;
-    }*/
+    }
     
     // カーソル移動
     if (event.key === 'ArrowUp') {
