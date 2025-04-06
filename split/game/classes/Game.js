@@ -29,7 +29,9 @@ class Game {
     this.player = new Player(0, 0, this.initialHP);
     this.player.tile = myIcon;
     // x, y, name, tile, damage, range, projectileEmoji
-    //this.player.inventory.push(new ShootingItem(0, 0, "射撃-銃", '🔫', 10, 8));
+    ////this.player.inventory.push(new ShootingItem(0, 0, "射撃-銃", '🔫', 10, 8));
+    ////this.player.inventory.push(new BoxItem());
+    ////this.player.inventory.push(new MagicSpell(0, 0, "炎", "🔥", "🔥", {damage: 20, area: 1, fallbackHeal: null}));
     this.uiManager = new UIManager();
     this.map = new DungeonMap(this.width, this.height);
     this.gameContainer = document.getElementById("game");
@@ -184,21 +186,24 @@ class Game {
         }
         // 足元アイテムを使用
         else if (this.groundItem.use) {
+          this.inventoryOpen = false;
+          this.render();
           // インベントリがマックスで足元の武器を装備できない
           if (this.groundItem.name.match(/武器.*/g) && this.player.inventory.length >= CONFIG.INVENTORY_MAX) return;
-          this.groundItem.use(this);
-          // もし足元のアイテムが武器なら、使用後にインベントリへ追加
-          if (this.groundItem.name.match(/(武器.*)/g)) {
-            if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
-              this.player.inventory.push(this.groundItem);
-            } else {
-              this.items.push(this.groundItem);
+          this.groundItem.use(this).then(()  => {
+            // もし足元のアイテムが武器なら、使用後にインベントリへ追加
+            if (this.groundItem.name.match(/(武器.*)/g)) {
+              if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
+                this.player.inventory.push(this.groundItem);
+              } else {
+                this.items.push(this.groundItem);
+              }
             }
-          }
-          // 箱は消費しない
-          if (!this.groundItem.name.match(/箱.*/g)) {
-            this.groundItem = null;
-          }
+            // 箱は消費しない
+            if (!this.groundItem.name.match(/箱.*/g)) {
+              this.groundItem = null;
+            }
+          });
         }
         this.inventoryOpen = false;
         this.render();
@@ -1107,16 +1112,17 @@ class Game {
         e.preventDefault();
         if (box.contents.length > 0) {
           const item = box.contents[selectionIndex];
-          if (item.use) item.use(this);
-          // 使用後、アイテムが消費されるなら削除する
-          box.contents.splice(selectionIndex, 1);
-          if (selectionIndex >= box.contents.length) {
-            selectionIndex = Math.max(0, box.contents.length - 1);
-          }
-          // 使ったら箱を閉じてターンを進める
           cleanup();
           renderList();
-          turn();
+          if (item.use) item.use(this).then(() => {
+            // 使用後、アイテムが消費されるなら削除する
+            box.contents.splice(selectionIndex, 1);
+            if (selectionIndex >= box.contents.length) {
+              selectionIndex = Math.max(0, box.contents.length - 1);
+            }
+            // 使ったら箱を閉じてターンを進める
+            turn();
+          });
         }
       }
       // 置く：箱内の選択アイテムを取り出して地面に設置
