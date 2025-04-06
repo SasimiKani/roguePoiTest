@@ -379,7 +379,7 @@ class Game {
       
       return;
     }
-    if (!this.ctrlPressed && this.player.inventory.length < CONFIG.INVENTORY_MAX) {
+    if (!this.ctrlPressed) {
       this.items = this.items.filter(item => {
         if (item.x === this.player.x && item.y === this.player.y) {
           // アイテムを拾う

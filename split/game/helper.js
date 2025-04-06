@@ -8,26 +8,54 @@ function randomInt(min, max) {
 }
 
 function pickupItem(game, pickupItem) {
-  if (game.player.inventory.length === CONFIG.INVENTORY_MAX) return;
-  // 足元アイテムを拾う
-  if (game.player.inventory.length < CONFIG.INVENTORY_MAX && !(pickupItem instanceof ShootingItem && game.player.inventory.map(i => i.constructor.name).includes( pickupItem.constructor.name ))) {
-    game.player.inventory.push(pickupItem);
-    EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "GET");
-    if (game.groundItem) {
-      pickupItem = null;
-      game.inventoryOpen = false;
-    }
-  } else if (pickupItem instanceof ShootingItem && game.player.inventory.map(i => i.constructor.name).includes( pickupItem.constructor.name )) {
-    /// 射撃装備はスタック可能
-    for (const i of game.player.inventory) {
-      if (i.constructor.name === pickupItem.constructor.name) {
-        i.stack += pickupItem.stack;
-        i.updateName();
-        break;
+  const player = game.player;
+  const maxInventory = CONFIG.INVENTORY_MAX;
+  const isShooting = pickupItem instanceof ShootingItem;
+  // 同じ型の射撃アイテムが既にインベントリにあるか
+  const inventoryHasSameType = player.inventory.some(
+    i => i.constructor.name === pickupItem.constructor.name
+  );
+
+  if (isShooting) {
+    // 射撃アイテムの場合
+    if (inventoryHasSameType) {
+      // 既に同じ射撃アイテムがあれば、スタック処理
+      for (const i of player.inventory) {
+        if (i.constructor.name === pickupItem.constructor.name) {
+          i.stack += pickupItem.stack; // 例：stackプロパティで管理
+          if (typeof i.updateName === "function") {
+            i.updateName(); // 表示名にスタック数を反映
+          }
+          EffectsManager.showEffect(
+            game.gameContainer, player, player.x, player.y, "GET"
+          );
+          break;
+        }
+      }
+    } else {
+      // 同じ射撃アイテムが存在しない場合
+      if (player.inventory.length < maxInventory) {
+        player.inventory.push(pickupItem);
+        EffectsManager.showEffect(
+          game.gameContainer, player, player.x, player.y, "GET"
+        );
+      } else {
+        return; // インベントリ満杯なら何もせず終了
       }
     }
-    EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "GET");
+  } else {
+    // 射撃アイテム以外の場合は、単純に空きがあれば拾う
+    if (player.inventory.length < maxInventory) {
+      player.inventory.push(pickupItem);
+      EffectsManager.showEffect(
+        game.gameContainer, player, player.x, player.y, "GET"
+      );
+    } else {
+      return;
+    }
   }
+  
+  // 足元アイテムがあればクリアして、インベントリオープンを解除
   if (game.groundItem) {
     game.groundItem = null;
     game.inventoryOpen = false;
