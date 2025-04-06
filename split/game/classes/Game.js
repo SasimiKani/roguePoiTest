@@ -168,14 +168,7 @@ class Game {
       if (event.key === 'p') {
         if (this.groundItem.tile === '🔼') return; // 足元が階段なら何もしない
         // 足元アイテムを拾う
-        if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
-          this.player.inventory.push(this.groundItem);
-          EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "GET");
-          this.groundItem = null;
-          this.inventoryOpen = false;
-        } else {
-          this.items.push(this.groundItem);
-        }
+        pickupItem(this, this.groundItem);
         this.render();
         return;
       }
@@ -384,11 +377,9 @@ class Game {
     if (!this.ctrlPressed && this.player.inventory.length < CONFIG.INVENTORY_MAX) {
       this.items = this.items.filter(item => {
         if (item.x === this.player.x && item.y === this.player.y) {
-          if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
-            this.player.inventory.push(item);
-            EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "GET");
-            return false;
-          }
+          // アイテムを拾う
+          pickupItem(this, item);
+          return false;
         }
         return true;
       });
