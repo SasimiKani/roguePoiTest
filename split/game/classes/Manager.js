@@ -400,12 +400,22 @@ class InputManager {
 	}
 	init() {
 		document.addEventListener('keydown', (e) => {
-			console.log(this.inputLocked)
+			// 行動キー
+			let isShift = this.game.keysDown['Shift']
+			let isAction = this.game.keysDown['ArrowLeft'] ||
+				this.game.keysDown['ArrowRight'] ||
+				this.game.keysDown['ArrowUp'] ||
+				this.game.keysDown['ArrowDown'] ||
+				this.game.keysDown['.']
+			
 			// すでに処理中なら無視する
 			if (this.inputLocked) return;
 
 			// 入力処理を開始するのでフラグを立てる
-			this.inputLocked = true;
+			if (isAction) {
+				console.log("lock");
+				this.inputLocked = true;
+			}
 			
 			// シフトを押したらグリッド表示
 			switchGrid(this.game.gameContainer, e.shiftKey)
@@ -414,9 +424,11 @@ class InputManager {
 			this.game.processInput(e)
 
 			// 一定期間後にフラグを解除（ここでは100ms）
-			setTimeout(() => {
-				this.inputLocked = false;
-			}, 200);
+			if (isAction) {
+				setTimeout(() => {
+					this.inputLocked = false;
+				}, 200);
+			}
 		})
 		document.addEventListener('keyup', (e) => {
 			// シフトを押したらグリッド表示
