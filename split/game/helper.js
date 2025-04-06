@@ -8,6 +8,7 @@ function randomInt(min, max) {
 }
 
 function pickupItem(game, pickupItem) {
+  if (game.player.inventory.length === CONFIG.INVENTORY_MAX) return;
   // 足元アイテムを拾う
   if (game.player.inventory.length < CONFIG.INVENTORY_MAX && !(pickupItem instanceof ShootingItem && game.player.inventory.map(i => i.constructor.name).includes( pickupItem.constructor.name ))) {
     game.player.inventory.push(pickupItem);
@@ -26,11 +27,9 @@ function pickupItem(game, pickupItem) {
       }
     }
     EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "GET");
-    if (game.groundItem) {
-      game.groundItem = null;
-      game.inventoryOpen = false;
-    }
-  } else if (game.groundItem) {
-    game.items.push(game.groundItem);
+  }
+  if (game.groundItem) {
+    game.groundItem = null;
+    game.inventoryOpen = false;
   }
 }

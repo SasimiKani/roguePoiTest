@@ -199,7 +199,6 @@ class Game {
                 this.items.push(this.groundItem);
               }
             }
-            console.log(this.groundItem.name);
             // 箱は消費しない
             if (!this.groundItem.name.match(/箱.*/g)) {
               this.groundItem = null;
