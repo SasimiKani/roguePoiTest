@@ -1,48 +1,48 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ローグっぽい何か（ミニマップ改修版）</title>
-  <link rel="stylesheet" href="./css/rogue3o.css">
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+	<title>ローグっぽい何か（ミニマップ改修版）</title>
+	<link rel="stylesheet" href="./css/rogue3o.css">
 </head>
 <body>
-  <div class="container">
-    <div class="game-container" id="game"></div>
-    <div class="ui-container">
-      <div id="my-icon">
-        <input type="hidden" value="😊" name="my-icon">
-        <span class="icon"></span>
-        <button id="change-icon">アイコンを変更</button>
-      </div>
-      <div id="difficulty-container">難易度： <span id="difficulty"></span></div>
-      ❤️ 体力: <div class="bar-container"><div id="hp-bar" class="bar hp"></div></div>
-      🍗 満腹度: <div class="bar-container"><div id="hunger-bar" class="bar hunger"></div></div>
-      <p style="display:none;">❤️ 体力: <span id="hp">*</span> / <span id="maxhp">*</span>　🍗 満腹度: <span id="hunger">*</span> / <span id="maxhunger">*</span></p>
-      <p>🔪 攻撃力: <span id="atk">*</span>　🎓 Lv: <span id="lv">1</span>　✨ EXP: <span id="exp">0</span></p>
-      <p>⛰️ フロア: <span id="floor">1</span>　💎 スコア: <span id="score">0</span></p>
-      <p>－－－－－－－－－</p>
-      <p>矢印キーで移動／敵と隣接してたら攻撃！</p>
-      <p>※ Shiftキーでグリッド表示</p>
-      <p>※ Shift＋方向キーで斜め移動</p>
-      <p>※ Ctrl＋方向キーでアイテムに乗る</p>
-      <p>．で休憩（<span id="restCycle"></span>ターンごとに回復）　🔼:次のフロアへ</p>
-      <p>Eキーでインベントリ表示</p>
-      <p>ホームマップのみ、Rキーで結果表示</p>
-      <p>🟨プレイヤー　🟥敵　🟦アイテム</p>
-      <div id="minimap" class="minimap-container"></div>
-    </div>
-  </div>
-  
-  <!-- 各スクリプトは ./game/ 以下の外部ファイルとして読み込み -->
-  <script src="./game/helper.js"></script>
-  
-  <script src="./game/classes/Entity.js"></script>
-  <script src="./game/classes/DungeonMap.js"></script>
-  <script src="./game/classes/Manager.js"></script>
-  <script src="./game/classes/Game.js"></script>
-  <script src="./game/classes/DifficultySelector.js"></script>
-  
-  <script src="./game/main.js"></script>
+	<div class="container">
+		<div class="game-container" id="game"></div>
+		<div class="ui-container">
+			<div id="my-icon">
+				<input type="hidden" value="😊" name="my-icon">
+				<span class="icon"></span>
+				<button id="change-icon">アイコンを変更</button>
+			</div>
+			<div id="difficulty-container">難易度： <span id="difficulty"></span></div>
+			❤️ 体力: <div class="bar-container"><div id="hp-bar" class="bar hp"></div></div>
+			🍗 満腹度: <div class="bar-container"><div id="hunger-bar" class="bar hunger"></div></div>
+			<p style="display:none;">❤️ 体力: <span id="hp">*</span> / <span id="maxhp">*</span>　🍗 満腹度: <span id="hunger">*</span> / <span id="maxhunger">*</span></p>
+			<p>🔪 攻撃力: <span id="atk">*</span>　🎓 Lv: <span id="lv">1</span>　✨ EXP: <span id="exp">0</span></p>
+			<p>⛰️ フロア: <span id="floor">1</span>　💎 スコア: <span id="score">0</span></p>
+			<p>－－－－－－－－－</p>
+			<p>矢印キーで移動／敵と隣接してたら攻撃！</p>
+			<p>※ Shiftキーでグリッド表示</p>
+			<p>※ Shift＋方向キーで斜め移動</p>
+			<p>※ Ctrl＋方向キーでアイテムに乗る</p>
+			<p>．で休憩（<span id="restCycle"></span>ターンごとに回復）　🔼:次のフロアへ</p>
+			<p>Eキーでインベントリ表示</p>
+			<p>ホームマップのみ、Rキーで結果表示</p>
+			<p>🟨プレイヤー　🟥敵　🟦アイテム</p>
+			<div id="minimap" class="minimap-container"></div>
+		</div>
+	</div>
+	
+	<!-- 各スクリプトは ./game/ 以下の外部ファイルとして読み込み -->
+	<script src="./game/helper.js"></script>
+	
+	<script src="./game/classes/Entity.js"></script>
+	<script src="./game/classes/DungeonMap.js"></script>
+	<script src="./game/classes/Manager.js"></script>
+	<script src="./game/classes/Game.js"></script>
+	<script src="./game/classes/DifficultySelector.js"></script>
+	
+	<script src="./game/main.js"></script>
 </body>
 </html>
