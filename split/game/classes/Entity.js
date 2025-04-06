@@ -245,14 +245,23 @@ class ShootingItem extends InventoryItem {
    * @param {number} range - 射程（タイル数）
    * @param {string} projectileEmoji - 射撃エフェクト用絵文字
    */
-  constructor(x, y, name, tile, damage, range, projectileEmoji) {
+  constructor(x, y, name, tile, stack, damage, range, projectileEmoji) {
     // use() の動作を独自に定義するため、InventoryItem の use 関数を上書きする
     super(x, y, name, tile, async (game) => {
       await this.prepareShooting(game);
+      this.stack--; // 使ったら数を減らす
+      this.updateName(); // 名前の残数を更新
     });
+    this.originalName = name;
+    this.stack = stack;
+    this.updateName();
     this.damage = damage;
     this.range = range || 5;
     this.projectileEmoji = projectileEmoji || '●';
+  }
+  
+  updateName() {
+    this.name = `${this.originalName} x${this.stack}`;
   }
   
   /**
@@ -268,7 +277,7 @@ class ShootingItem extends InventoryItem {
     const direction = await this.waitForDirectionInput();
     // 入力完了後、フラグを解除し、プロンプトを隠す
     game.isAwaitingShootingDirection = false;
-    EffectsManager.hideShootingPrompt();
+    EffectsManager.hideShootingPrompt(game.gameContainer);
     // 射撃実行
     this.shoot(game, direction);
   }
@@ -280,18 +289,42 @@ class ShootingItem extends InventoryItem {
    */
   waitForDirectionInput() {
     return new Promise(resolve => {
-      function onKey(e) {
+      // 押下状態を保持するオブジェクト
+      let keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+      let timeoutId;
+  
+      // 現在のキー状態から方向を算出する
+      function updateDirection() {
+        let dx = 0, dy = 0;
+        if (keys.ArrowLeft) { dx -= 1; }
+        if (keys.ArrowRight) { dx += 1; }
+        if (keys.ArrowUp) { dy -= 1; }
+        if (keys.ArrowDown) { dy += 1; }
+        return { dx, dy };
+      }
+  
+      function onKeyDown(e) {
         if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
-          let dx = 0, dy = 0;
-          if (e.key === "ArrowUp") { dy = -1; }
-          else if (e.key === "ArrowDown") { dy = 1; }
-          else if (e.key === "ArrowLeft") { dx = -1; }
-          else if (e.key === "ArrowRight") { dx = 1; }
-          document.removeEventListener("keydown", onKey);
-          resolve({ dx, dy });
+          keys[e.key] = true;
+          // 入力があればタイマーをリセット
+          if (timeoutId) clearTimeout(timeoutId);
+          timeoutId = setTimeout(() => {
+            const direction = updateDirection();
+            document.removeEventListener("keydown", onKeyDown);
+            document.removeEventListener("keyup", onKeyUp);
+            resolve(direction);
+          }, 50);
         }
       }
-      document.addEventListener("keydown", onKey);
+  
+      function onKeyUp(e) {
+        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+          keys[e.key] = false;
+        }
+      }
+  
+      document.addEventListener("keydown", onKeyDown);
+      document.addEventListener("keyup", onKeyUp);
     });
   }
   

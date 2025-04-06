@@ -223,8 +223,12 @@ class Game {
           this.render();
           // アイテムを使う
           await item.use(this);
-          // 武器・箱・射撃じゃなければ消費する
-          if (!(item instanceof WeaponItem) && !(item instanceof BoxItem) && !(item instanceof ShootingItem)) {
+          // 武器・箱じゃなければ消費する
+          if (!(item instanceof WeaponItem) && !(item instanceof BoxItem) &&
+              // 射撃じゃなければ消費、射撃でも数が0なら消費する
+              /// item = ShootingItem && item.stack === 0
+              /// !(item = ShootingItem)
+              (!(item instanceof ShootingItem) || item.stack === 0)) {
             this.player.inventory.splice(this.inventorySelection, 1);
             if (this.inventorySelection >= this.player.inventory.length) {
               this.inventorySelection = this.player.inventory.length - 1;
@@ -847,6 +851,7 @@ class Game {
       ...Array(2).fill("magic"),
       ...Array(2).fill("niku"),
       ...Array(2).fill("weapon"),
+      ...Array(1).fill("shooting"),
       ...Array(1).fill("box")
     ];
     for (let i = 0; i < maxItems; i++) {
@@ -894,6 +899,9 @@ class Game {
           arr.push(new WeaponItem(x, y, `武器-斧 (+${bonus})`, '🪓', bonus));
           break;
         }
+      } else if (type === "shooting") {
+        //// 射撃武器
+        arr.push(new ShootingItem(x, y, "射撃-弓矢", '🏹', /* 数 */ 5, /* ダメージ */ 10, /* 距離 */ 8, "↑"));
       } else if (type === "magic") {
         const weightedMagics = [
         //// 攻撃魔法

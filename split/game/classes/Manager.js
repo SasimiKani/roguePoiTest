@@ -103,9 +103,9 @@ class EffectsManager {
   static showAttackMotionNoWeapon(container, dx, dy) {
     // ゲーム画面の中央位置を計算（以前の centerIndex の代わり）
     const rect = container.getBoundingClientRect();
-    const fontSize = window.getComputedStyle(container).fontSize.replace("px", "") - 0;
+    const fontSize = CONFIG.FONT_SIZE;
     const centerX = rect.left + rect.width / 2 - (fontSize / 2) /*font-size*/ + (dx * fontSize) /*方向*/;
-    const centerY = rect.top + rect.height / 2 - (fontSize * 3) /*font-size*/ + (dy * fontSize) /*方向*/;
+    const centerY = rect.top + rect.height / 2 - (fontSize * 7/3) /*font-size*/ + (dy * fontSize) /*方向*/;
     
     // オーバーレイ用のエフェクト要素を作成
     const effect = document.createElement("div");
@@ -145,7 +145,7 @@ class EffectsManager {
     const rect = container.getBoundingClientRect();
     const fontSize = CONFIG.FONT_SIZE;
     const centerX = rect.left + rect.width / 2 - (fontSize / 2) /*font-size*/ + (dx * fontSize) /*方向*/;
-    const centerY = rect.top + rect.height / 2 - (fontSize * 3) /*font-size*/ + (dy * fontSize) /*方向*/;
+    const centerY = rect.top + rect.height / 2 - (fontSize * 7/3) /*font-size*/ + (dy * fontSize) /*方向*/;
     
     // 武器の振るエフェクト要素を作成
     const weaponEffect = document.createElement("div");
@@ -181,6 +181,9 @@ class EffectsManager {
     // 既にプロンプトが存在していれば何もしない
     if (document.querySelector(".shooting-prompt")) return;
     
+    // グリッド表示する
+    container.classList.add("grid");
+    
     const prompt = document.createElement("div");
     prompt.className = "shooting-prompt";
     prompt.textContent = "射撃方向を入力してください (矢印キー)";
@@ -203,9 +206,12 @@ class EffectsManager {
   /**
    * 射撃準備用プロンプトを非表示にする
    */
-  static hideShootingPrompt() {
+  static hideShootingPrompt(container) {
     const prompt = document.querySelector(".shooting-prompt");
     if (prompt) prompt.remove();
+    
+    // グリッド非表示する
+    container.classList.remove("grid");
   }
   /**
    * プレイヤーの位置から入力方向に弾が一直線に飛ぶエフェクトを表示する
@@ -213,39 +219,43 @@ class EffectsManager {
    * @param {Player} player プレイヤーオブジェクト（描画上は中央と仮定）
    * @param {{dx:number, dy:number}} direction 射撃方向
    * @param {number} range 射程（タイル数）
-   * @param {string} projectileEmoji 弾の絵文字（例："●"）
+   * @param {string} projectileEmoji 弾の絵文字（例："●"） デフォルトは上向き
    * @param {Object} options オプション（factor: タイル1単位あたりのピクセル数、duration: アニメーション時間）
    */
   static showShootingLineEffect(container, player, direction, range, projectileEmoji, options = {}) {
-    const fontSize = window.getComputedStyle(container).fontSize.replace("px", "") - 0;
+    const fontSize = CONFIG.FONT_SIZE;
     
     const factor = options.factor || fontSize; // タイル1単位あたりのピクセル数
     const duration = options.duration || 0.3; // アニメーション時間（秒）
     
     // container の中央をプレイヤーの表示位置とする
     const rect = container.getBoundingClientRect();
-    const startX = rect.left + rect.width / 2 - (fontSize / 2) /*font-size*/;
-    const startY = rect.top + rect.height / 2 - (fontSize * 5/2) /*font-size*/;
+    const startX = rect.left + rect.width / 2 - (fontSize / 2) /*font-size*/ - 3;
+    const startY = rect.top + rect.height / 2 - (fontSize * 7/3) /*font-size*/ + 3;
     
     // 移動先を算出：入力方向 * 射程 * factor
     const targetOffsetX = direction.dx * range * factor;
     const targetOffsetY = direction.dy * range * factor;
     
+    // 射撃方向を角度に変換
+    const th = Math.atan2(direction.dy, direction.dx) * 180 / Math.PI + 90;
+    
     // プロジェクトイル要素を作成
     const projectile = document.createElement("div");
     projectile.className = "shooting-projectile";
     projectile.textContent = projectileEmoji || "●";
+    projectile.style.fontSize = `${fontSize}px`;
     projectile.style.position = "absolute";
     projectile.style.left = `${startX}px`;
     projectile.style.top = `${startY}px`;
     projectile.style.transition = `transform ${duration}s linear`;
     projectile.style.zIndex = "3000";
-    projectile.style.transform = "translate(0, 0)";
+    projectile.style.transform = "translate(0, 0)" + ` rotate(${th}deg)`;
     document.body.appendChild(projectile);
     
     // 少し待ってから移動開始（再描画のためのタイムアウト）
     setTimeout(() => {
-      projectile.style.transform = `translate(${targetOffsetX}px, ${targetOffsetY}px)`;
+      projectile.style.transform = `translate(${targetOffsetX}px, ${targetOffsetY}px) rotate(${th}deg)`;
     }, 10);
     
     // アニメーション終了後に要素を削除

@@ -19,7 +19,7 @@ const CONFIG = {
   VIEW_RADIUS: 7,
   DIFFICULTY: "easy",
   REVEALLV: 3,
-  FONT_SIZE: 28
+  FONT_SIZE: window.getComputedStyle(document.querySelector("#game")).fontSize.replace("px", "") - (-2)
 };
 
 const MAP_TILE = {
