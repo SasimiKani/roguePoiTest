@@ -199,6 +199,7 @@ class Game {
                 this.items.push(this.groundItem);
               }
             }
+            console.log(this.groundItem.name);
             // 箱は消費しない
             if (!this.groundItem.name.match(/箱.*/g)) {
               this.groundItem = null;
@@ -871,13 +872,13 @@ class Game {
         }
       } while (this.map.grid[y][x] !== ' ' || (x === this.player.x && y === this.player.y));
       if (type === "sushi") {
-        arr.push(new InventoryItem(x, y, "すし", '🍣', function(game) {
+        arr.push(new InventoryItem(x, y, "すし", '🍣', async function(game) {
           game.player.hp += 5;
           if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
           EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+5", "heal");
         }));
       } else if (type === "niku") {
-        arr.push(new InventoryItem(x, y, "お肉", '🍖', function(game) {
+        arr.push(new InventoryItem(x, y, "お肉", '🍖', async function(game) {
           game.player.hp += 10;
           if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
           EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+10", "heal");
@@ -920,13 +921,13 @@ class Game {
         arr.push(new EnemyClass(x, y, hp));
       } else if (type === "food") {
         if (Math.random() > 0.7) {
-          arr.push(new InventoryItem(x, y, "パン", '🥖', function(game) {
+          arr.push(new InventoryItem(x, y, "パン", '🥖', async function(game) {
             game.player.hunger += 20;
             if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger;
             EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+20", "food");
           }));
         } else {
-          arr.push(new InventoryItem(x, y, "大きなパン", '🍞', function(game) {
+          arr.push(new InventoryItem(x, y, "大きなパン", '🍞', async function(game) {
             game.player.hunger += 50;
             if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger;
             EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+50", "food");

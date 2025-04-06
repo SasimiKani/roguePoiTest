@@ -172,31 +172,35 @@ class BoxItem extends InventoryItem {
 class MagicSpell extends InventoryItem {
   constructor(x, y, name, tile, emoji, options) {
     super(x, y, name, tile, async (game) => {
-      let affected = false;
-      //EffectsManager.showMagicEffect(game.gameContainer, game.player, game.player.x, game.player.y, this.area, this.emoji || "✨");
-      ///// console.log("showMagicEffectCircle Start");
-      await EffectsManager.showMagicEffectCircle(game.gameContainer, game.player, game.player.x, game.player.y, this.area, this.emoji || "✨");
-      ///// console.log("showMagicEffectCircle End");
-      for (let i = game.enemies.length - 1; i >= 0; i--) {
-        let enemy = game.enemies[i];
-        if (Math.abs(enemy.x - game.player.x) <= this.area &&
-            Math.abs(enemy.y - game.player.y) <= this.area) {
-          enemy.hp -= this.damage;
-          EffectsManager.showEffect(game.gameContainer, game.player, enemy.x, enemy.y, `-${this.damage}`, "damage");
-          affected = true;
-          if (enemy.hp <= 0) {
-            EffectsManager.showEffect(game.gameContainer, game.player, enemy.x, enemy.y, "💥", "explosion");
-            game.enemies.splice(i, 1);
-            game.score += 50;
-            game.gainExp(5);
+      return new Promise((resolve) => {
+        let affected = false;
+        //EffectsManager.showMagicEffect(game.gameContainer, game.player, game.player.x, game.player.y, this.area, this.emoji || "✨");
+        ///// console.log("showMagicEffectCircle Start");
+        EffectsManager.showMagicEffectCircle(game.gameContainer, game.player, game.player.x, game.player.y, this.area, this.emoji || "✨").then(() => {
+          for (let i = game.enemies.length - 1; i >= 0; i--) {
+            let enemy = game.enemies[i];
+            if (Math.abs(enemy.x - game.player.x) <= this.area &&
+                Math.abs(enemy.y - game.player.y) <= this.area) {
+              enemy.hp -= this.damage;
+              EffectsManager.showEffect(game.gameContainer, game.player, enemy.x, enemy.y, `-${this.damage}`, "damage");
+              affected = true;
+              if (enemy.hp <= 0) {
+                EffectsManager.showEffect(game.gameContainer, game.player, enemy.x, enemy.y, "💥", "explosion");
+                game.enemies.splice(i, 1);
+                game.score += 50;
+                game.gainExp(5);
+              }
+            }
           }
-        }
-      }
-      if (this.fallbackHeal && !affected) {
-        game.player.hp += this.fallbackHeal;
-        if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
-        EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${this.fallbackHeal}`, "heal");
-      }
+          if (this.fallbackHeal && !affected) {
+            game.player.hp += this.fallbackHeal;
+            if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
+            EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${this.fallbackHeal}`, "heal");
+          }
+          ///// console.log("showMagicEffectCircle End");
+          resolve("ok");
+        });
+      });
     });
     this.emoji = emoji;
     this.damage = options.damage;
