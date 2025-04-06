@@ -864,6 +864,15 @@ class Game {
         x = randomInt(room.x + 1, room.x + room.w - 2);
         y = randomInt(room.y + 1, room.y + room.h - 2);
         if (type === "enemy") {
+          // プレイヤーのいる部屋なら飛ばす
+          for (const inPlayerRoom of getPlayerRoom(this)) { // プレイヤーのいる部屋を取得
+            if (isInRoom(x, y, inPlayerRoom)) {
+              x = this.player.x;
+              y = this.player.y;
+              break;
+            }
+          }
+          
           hp = randomInt(
             Math.round(Math.pow(this.floor, this.minMagnification)),
             Math.round(Math.pow(this.floor, this.maxMagnification))

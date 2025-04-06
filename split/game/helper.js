@@ -34,6 +34,30 @@ function pickupItem(game, pickupItem) {
   }
 }
 
+/* プレイヤーがいる部屋を取得する */
+function* getPlayerRoom(game) {
+  for (let room of game.map.rooms) {
+    if (
+      game.player.x >= room.x &&
+      game.player.x < room.x + room.w &&
+      game.player.y >= room.y &&
+      game.player.y < room.y + room.h
+    ) {
+      yield room;
+    }
+  }
+}
+/* 座標が部屋に含まれるか取得する */
+function isInRoom(x, y, room) {
+  if (!room) return false;
+  if (room.x <= x && x <= room.x + room.w &&
+      room.y <= y && y <= room.y + room.h) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 /* グリッド表示を切り替える */
 function switchGrid(container, on=true) {
   if (on) {
