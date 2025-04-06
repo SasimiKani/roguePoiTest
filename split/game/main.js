@@ -28,11 +28,12 @@ const MAP_TILE = {
 }
 
 // enemyList 関数（各敵クラスに応じたリストを返す）
-function enemyList(floor, difficulty) {
+function enemyList(floor, difficulty, freq) {
 	class EnemyDefinition {
-		constructor(EnemyClass, floorRange) {
+		constructor(EnemyClass, floorRange, freq) {
 			this.enemy = EnemyClass
 			this.floorRange = floorRange
+			this.freq = freq
 		}
 	}
 
@@ -41,34 +42,35 @@ function enemyList(floor, difficulty) {
 	switch (difficulty) {
 		case "easy":
 			enemyDefinitions = [
-				new EnemyDefinition(EnemyLarvae, [1, 5]),
-				new EnemyDefinition(EnemyAnt, [3, 7]),
-				new EnemyDefinition(EnemyCrayfish, [4, 10]),
-				new EnemyDefinition(EnemySlime, [6, 10])
+				new EnemyDefinition(EnemyLarvae, [1, 5], 5),
+				new EnemyDefinition(EnemyAnt, [3, 7], 4),
+				new EnemyDefinition(EnemyCrayfish, [4, 10], 3),
+				new EnemyDefinition(EnemySlime, [6, 10], 1)
 			]
 			break
 		case "normal":
 			enemyDefinitions = [
-				new EnemyDefinition(EnemyLarvae, [1, 4]),
-				new EnemyDefinition(EnemyAnt, [2, 5]),
-				new EnemyDefinition(EnemyCrayfish, [4, 8]),
-				new EnemyDefinition(EnemySlime, [8, 10]),
-				new EnemyDefinition(EnemyBat, [12, 18]),
-				new EnemyDefinition(EnemyGoblin, [16, 20]),
-				new EnemyDefinition(EnemySkeleton, [19, 20])
+				new EnemyDefinition(EnemyLarvae, [1, 4], 5),
+				new EnemyDefinition(EnemyAnt, [2, 5], 4),
+				new EnemyDefinition(EnemyCrayfish, [4, 8], 4),
+				new EnemyDefinition(EnemySlime, [8, 10], 3),
+				new EnemyDefinition(EnemyBat, [12, 18], 2),
+				new EnemyDefinition(EnemyGoblin, [16, 20], 1),
+				new EnemyDefinition(EnemySkeleton, [19, 20], 1)
 			]
 			break
 		case "hard":
 			enemyDefinitions = [
-				new EnemyDefinition(EnemyLarvae, [1, null]),
-				new EnemyDefinition(EnemyAnt, [2, null]),
-				new EnemyDefinition(EnemyCrayfish, [4, null]),
-				new EnemyDefinition(EnemySlime, [8, null]),
-				new EnemyDefinition(EnemyBat, [12, null]),
-				new EnemyDefinition(EnemyGoblin, [16, null]),
-				new EnemyDefinition(EnemySkeleton, [19, null]),
-				new EnemyDefinition(EnemySpider, [24, null]),
-				new EnemyDefinition(EnemyWizard, [30, null])
+				new EnemyDefinition(EnemyLarvae, [1, 20], 20),
+				new EnemyDefinition(EnemyAnt, [2, 20], 30),
+				new EnemyDefinition(EnemyCrayfish, [4, 40], 15),
+				new EnemyDefinition(EnemySlime, [8, 50], 15),
+				new EnemyDefinition(EnemyBat, [12, null], 10),
+				new EnemyDefinition(EnemyGoblin, [16, null], 7),
+				new EnemyDefinition(EnemySkeleton, [19, null], 7),
+				new EnemyDefinition(EnemySpider, [24, null], 5),
+				new EnemyDefinition(EnemyWizard, [30, null], 5),
+				new EnemyDefinition(EnemyDragon, [2, null], 30)
 			]
 			break
 		default:
@@ -77,11 +79,15 @@ function enemyList(floor, difficulty) {
 	
 	enemyDefinitions.forEach(def => {
 		if (def.floorRange[0] <= floor && (def.floorRange[1] === null || floor <= def.floorRange[1])) {
-			list.push(def.enemy)
+			for (var i=0; i<def.freq; i++) { // 頻度の高い敵ほど出やすくなる
+				list.push(def.enemy)
+			}
 		}
 	})
 
 	if (list.length === 0) list.push( EnemyLarvae )
+	
+	/////console.log(JSON.stringify(list.map(l => l.prototype.constructor.name)))
 
 	return list
 }

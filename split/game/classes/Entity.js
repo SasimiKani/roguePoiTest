@@ -119,8 +119,7 @@ class EnemyDragon extends Enemy {
 	constructor(x, y, hp) {
 		super(x, y, hp + 30, 50, 10, '🐉')
 		this.magicDamage = 2
-		this.action = 1
-		this.maxAction = 1
+		this.action = this.maxAction = 2 // ニ回行動
 	}
 }
 

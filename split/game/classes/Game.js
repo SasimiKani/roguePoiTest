@@ -331,7 +331,7 @@ class Game {
 		this.hungerCycle[0] = (this.hungerCycle[0] + 1) % this.hungerCycle[1]
 	}
 	// プレイヤーの移動や攻撃後のゲーム状態（敵へのダメージ、アイテム取得、マップの視界更新など）を更新します。
-	updateData(inputResult) {
+	async updateData(inputResult) {
 		if (!inputResult) return
 		this.actionCount = 0
 		const { tx, ty } = inputResult
@@ -391,15 +391,22 @@ class Game {
 			return true; // マップ上に残す
 		})
 		this.checkHunger()
-		if (attacked) {
-			this.enemyAttackPhase()
-			this.queueTimeout(() => {
-				this.enemyMovementPhase(tx, ty, attacked)
-				this.enemyActionRefresh()
-			}, (this.actionCount + 1) * this.actionTime)
-		} else {
-			this.enemyMovementPhase(tx, ty)
-			this.enemyAttackPhase()
+		let action = this.enemies.filter(e => e.action > 0).length
+		///// console.log(action)
+		while (action > 0) {
+			action = await (async () => {
+				return new Promise((resolve) => {
+					if (attacked) {
+						this.enemyAttackPhase()
+						this.enemyMovementPhase(tx, ty, attacked)
+					} else {
+						this.enemyMovementPhase(tx, ty)
+						this.enemyAttackPhase()
+					}
+					resolve(this.enemies.filter(e => e.action > 0).length)
+				})
+			})()
+			///// console.log(action);
 			this.queueTimeout(() => { this.enemyActionRefresh(); }, this.actionCount * this.actionTime)
 		}
 		this.checkCollisions()
@@ -442,10 +449,10 @@ class Game {
 	}
 	// 敵の移動のために、プレイヤーまでの経路を探索します（経路探索アルゴリズム）。
 	findPath(startX, startY, targetX, targetY) {
-		let queue = []
-		queue.push({ x: startX, y: startY, path: [] })
-		let visited = new Set()
-		visited.add(`${startX},${startY}`)
+		const queue = [{ x: startX, y: startY, path: [] }];
+		const visited = new Set();
+		visited.add(`${startX},${startY}`);
+		
 		const directions = [
 			{ dx: 1, dy: 0 },
 			{ dx: -1, dy: 0 },
@@ -455,23 +462,32 @@ class Game {
 			{ dx: -1, dy: -1 },
 			{ dx: 1, dy: -1 },
 			{ dx: -1, dy: 1 }
-		]
+		];
+		
 		while (queue.length > 0) {
-			const current = queue.shift()
-			if (current.x === targetX && current.y === targetY) return current.path
+			const current = queue.shift();
+			// ゴールに到達したら経路を返す
+			if (current.x === targetX && current.y === targetY) {
+				return current.path;
+			}
+			
 			for (const d of directions) {
-				const nx = current.x + d.dx
-				const ny = current.y + d.dy
-				if (nx < 0 || ny < 0 || nx >= this.width || ny >= this.height) continue
-				if (this.map.grid[ny][nx] === MAP_TILE.WALL) continue
-				const key = `${nx},${ny}`
+				const nx = current.x + d.dx;
+				const ny = current.y + d.dy;
+				
+				// グリッド外は除外
+				if (nx < 0 || ny < 0 || nx >= this.width || ny >= this.height) continue;
+				// 壁なら除外（この条件はグリッドデータと MAP_TILE.WALL の値が一致している前提）
+				if (this.map.grid[ny][nx] === MAP_TILE.WALL) continue;
+				
+				const key = `${nx},${ny}`;
 				if (!visited.has(key)) {
-					visited.add(key)
-					queue.push({ x: nx, y: ny, path: current.path.concat([{ x: nx, y: ny }]) })
+					visited.add(key);
+					queue.push({ x: nx, y: ny, path: current.path.concat([{ x: nx, y: ny }]) });
 				}
 			}
 		}
-		return null
+		return null;
 	}
 	// 敵の移動処理を行い、プレイヤーとの距離や障害物を考慮して移動先を決定します。
 	enemyMovementPhase(nextPlayerX, nextPlayerY, attacked = false) {
@@ -823,7 +839,7 @@ class Game {
 		const SettingValues = {
 			easy: {
 				enemy: {min: 2, max: 4},
-				entity: {min: 1,  max: 2},
+				entity: {min: 1, max: 2},
 				maxItems: {min: 3, max: 5},
 				itemWeights: {
 					food: 4,
@@ -837,7 +853,7 @@ class Game {
 			},
 			normal: {
 				enemy: {min: 2, max: 4},
-				entity: {min: 1,  max: 2},
+				entity: {min: 1, max: 2},
 				maxItems: {min: 3, max: 5},
 				itemWeights: {
 					food: 4,
@@ -851,7 +867,7 @@ class Game {
 			},
 			hard: {
 				enemy: {min: 2, max: 4},
-				entity: {min: 1,  max: 2},
+				entity: {min: 1, max: 2},
 				maxItems: {min: 3, max: 5},
 				itemWeights: {
 					food: 4,
