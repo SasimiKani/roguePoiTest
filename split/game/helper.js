@@ -45,7 +45,6 @@ function pickupItem(game, pickupItem) {
 					game.gameContainer, player, player.x, player.y, "GET"
 				)
 				// 足元アイテムがあればクリアして、インベントリオープンを解除
-				console.log(game.groundItem)
 				if (game.groundItem) {
 					game.groundItem = null
 					game.inventoryOpen = false

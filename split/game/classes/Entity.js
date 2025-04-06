@@ -252,9 +252,13 @@ class ShootingItem extends InventoryItem {
 	constructor(x, y, name, tile, stack, damage, range, projectileEmoji) {
 		// use() の動作を独自に定義するため、InventoryItem の use 関数を上書きする
 		super(x, y, name, tile, async (game) => {
-			await this.prepareShooting(game)
-			this.stack--; // 使ったら数を減らす
-			this.updateName(); // 名前の残数を更新
+			return new Promise((resolve) => {
+				this.prepareShooting(game).then(() => {
+					this.stack--; // 使ったら数を減らす
+					this.updateName(); // 名前の残数を更新
+					resolve()
+				})
+			})
 		})
 		this.originalName = name
 		this.stack = stack

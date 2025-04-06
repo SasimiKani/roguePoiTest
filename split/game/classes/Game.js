@@ -234,11 +234,7 @@ class Game {
 					}
 					// 箱を見る以外ならターンを進める
 					if (!(item instanceof BoxItem)) {
-						this.enemyActionRefresh()
-						this.advanceTurn()
-						this.enemyMovementPhase(this.player.x, this.player.y)
-						this.enemyAttackPhase()
-						this.checkCollisions()
+						this.turn()
 					}
 				}
 				this.render()
@@ -821,6 +817,56 @@ class Game {
 			}
 		}
 		
+		// 設定値の基準として使う値
+		const maxFloor = difficultySettings[CONFIG.DIFFICULTY].maxFloor // 最大階層からの割合で調整
+		const dif = CONFIG.DIFFICULTY // 難易度で調整
+		const SettingValues = {
+			easy: {
+				enemy: {min: 2, max: 4},
+				entity: {min: 1,  max: 2},
+				maxItems: {min: 3, max: 5},
+				itemWeights: {
+					food: 4,
+					sushi: 4,
+					magic: 2,
+					niku: 2,
+					weapon: 2,
+					shooting: 2,
+					box: 1
+				}
+			},
+			normal: {
+				enemy: {min: 2, max: 4},
+				entity: {min: 1,  max: 2},
+				maxItems: {min: 3, max: 5},
+				itemWeights: {
+					food: 4,
+					sushi: 4,
+					magic: 2,
+					niku: 2,
+					weapon: 2,
+					shooting: 2,
+					box: 1
+				}
+			},
+			hard: {
+				enemy: {min: 2, max: 4},
+				entity: {min: 1,  max: 2},
+				maxItems: {min: 3, max: 5},
+				itemWeights: {
+					food: 4,
+					sushi: 4,
+					magic: 2,
+					niku: 2,
+					weapon: 2,
+					shooting: 2,
+					box: 1
+				}
+			}
+		}
+		// 難易度の設定値を取得
+		const sv = SettingValues[CONFIG.DIFFICULTY]
+		
 		const lastRoom = this.map.rooms.at(-1)
 		this.stairs.x = lastRoom.x + 2
 		this.stairs.y = lastRoom.y + 2
@@ -832,17 +878,18 @@ class Game {
 			this.minMagnification = CONFIG.MIN_ENEMY_MULTIPLIER
 			this.maxMagnification = CONFIG.MAX_ENEMY_MULTIPLIER
 		}
-		this.placeEntities(this.enemies, randomInt(2, 4), "enemy")
-		this.placeEntities(this.gems, randomInt(1, 2), "entity")
-		const maxItems = randomInt(3, 5)
+
+		this.placeEntities(this.enemies, randomInt(sv.enemy.min, sv.enemy.max), "enemy")
+		this.placeEntities(this.gems, randomInt(sv.entity.min, sv.entity.max), "entity")
+		const maxItems = randomInt(sv.maxItems.min, sv.maxItems.max)
 		const weightedTypes = [
-			...Array(4).fill("food"),
-			...Array(4).fill("sushi"),
-			...Array(2).fill("magic"),
-			...Array(2).fill("niku"),
-			...Array(2).fill("weapon"),
-			...Array(2).fill("shooting"),
-			...Array(1).fill("box")
+			...Array(sv.itemWeights.food).fill("food"),
+			...Array(sv.itemWeights.sushi).fill("sushi"),
+			...Array(sv.itemWeights.magic).fill("magic"),
+			...Array(sv.itemWeights.niku).fill("niku"),
+			...Array(sv.itemWeights.weapon).fill("weapon"),
+			...Array(sv.itemWeights.shooting).fill("shooting"),
+			...Array(sv.itemWeights.box).fill("box")
 		]
 		for (let i = 0; i < maxItems; i++) {
 			const type = weightedTypes.splice(randomInt(0, weightedTypes.length - 1), 1)[0]
@@ -954,9 +1001,9 @@ class Game {
 			this.player.maxHp += (upHp = randomInt(2, 3))
 			this.player.healAmount++
 			this.player.hp = this.player.maxHp
-			EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "LEVEL UP!", "heal")
-			this.queueTimeout(() => { EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `HP +${upHp}`, "heal"); }, 500)
-			this.queueTimeout(() => { EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `攻撃力 +${upAtk}`, "heal"); }, 1000)
+			this.queueTimeout(() => { EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "LEVEL UP!", "heal"); }, 800)
+			this.queueTimeout(() => { EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `HP +${upHp}`, "heal"); }, 1300)
+			this.queueTimeout(() => { EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `攻撃力 +${upAtk}`, "heal"); }, 1800)
 		}
 	}
 	// プレイヤーがアイテムを食べた際の飢餓回復処理を行います。
@@ -1124,7 +1171,7 @@ class Game {
 							selectionIndex = Math.max(0, box.contents.length - 1)
 						}
 						// 使ったら箱を閉じてターンを進める
-						turn()
+						this.turn()
 					})
 				}
 			}
@@ -1142,7 +1189,7 @@ class Game {
 					// 置いたら箱を閉じてターンを進める
 					cleanup()
 					renderList()
-					turn()
+					this.turn()
 				}
 			}
 			// Esc でオーバーレイを閉じる
@@ -1165,22 +1212,28 @@ class Game {
 			// オーバーレイ終了後、ゲームの再描画
 			this.render()
 		}
-		
-		const turn = () => {
-			const syncTimeout = (time) => {
-				return new Promise((resolve) => {
-					setTimeout(() => { resolve("ok"); }, time)
-				})
-			}
-			// 待ってからターンを進める
-			syncTimeout(400).then(() => {
-				this.advanceTurn()
-				this.enemyMovementPhase(this.player.x, this.player.y)
-				this.enemyAttackPhase()
-				this.checkCollisions()
-				this.render()
-			})
-		}
 	}
 	
+	turn() {
+		const syncTimeout = (time) => {
+			return new Promise((resolve) => {
+				setTimeout(() => { resolve("ok"); }, time)
+			})
+		}
+		// 待ってからターンを進める
+		syncTimeout(400).then(() => {
+			this.advanceTurn()
+			this.queueTimeout(() => {
+				this.enemyAttackPhase()
+			}, this.actionCount * this.actionTime)
+			this.queueTimeout(() => {
+				this.enemyMovementPhase(this.player.x, this.player.y)
+			}, this.actionCount * this.actionTime)
+			this.queueTimeout(() => {
+				this.enemyActionRefresh()
+				this.checkCollisions()
+				this.render()
+			}, (this.actionCount + 1) * this.actionTime)
+		})
+	}
 }
