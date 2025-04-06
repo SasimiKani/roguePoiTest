@@ -33,3 +33,12 @@ function pickupItem(game, pickupItem) {
     game.inventoryOpen = false;
   }
 }
+
+/* グリッド表示を切り替える */
+function switchGrid(container, on=true) {
+  if (on) {
+    container.classList.add("grid");
+  } else {
+    container.classList.remove("grid");
+  }
+}

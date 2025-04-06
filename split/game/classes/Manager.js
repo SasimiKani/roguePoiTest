@@ -182,7 +182,7 @@ class EffectsManager {
     if (document.querySelector(".shooting-prompt")) return;
     
     // グリッド表示する
-    container.classList.add("grid");
+    switchGrid(container, true);
     
     const prompt = document.createElement("div");
     prompt.className = "shooting-prompt";
@@ -211,7 +211,7 @@ class EffectsManager {
     if (prompt) prompt.remove();
     
     // グリッド非表示する
-    container.classList.remove("grid");
+    switchGrid(container, false);
   }
   /**
    * プレイヤーの位置から入力方向に弾が一直線に飛ぶエフェクトを表示する
@@ -399,10 +399,16 @@ class InputManager {
   }
   init() {
     document.addEventListener('keydown', (e) => {
+      // シフトを押したらグリッド表示
+      switchGrid(this.game.gameContainer, e.shiftKey);
+      
       this.game.keysDown[e.key] = true;
       this.game.processInput(e);
     });
     document.addEventListener('keyup', (e) => {
+      // シフトを押したらグリッド表示
+      switchGrid(this.game.gameContainer, e.shiftKey || document.querySelector(".shooting-prompt"));
+      
       this.game.keysDown[e.key] = false;
     });
   }
