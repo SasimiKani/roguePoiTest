@@ -394,16 +394,29 @@ class EffectsManager {
 // InputManager クラス
 class InputManager {
 	constructor(game) {
-		this.game = game
+		this.game = game;
+		this.inputLocked = false; // 処理中かどうかのフラグ
 		this.init()
 	}
 	init() {
 		document.addEventListener('keydown', (e) => {
+			console.log(this.inputLocked)
+			// すでに処理中なら無視する
+			if (this.inputLocked) return;
+
+			// 入力処理を開始するのでフラグを立てる
+			this.inputLocked = true;
+			
 			// シフトを押したらグリッド表示
 			switchGrid(this.game.gameContainer, e.shiftKey)
 			
 			this.game.keysDown[e.key] = true
 			this.game.processInput(e)
+
+			// 一定期間後にフラグを解除（ここでは100ms）
+			setTimeout(() => {
+				this.inputLocked = false;
+			}, 200);
 		})
 		document.addEventListener('keyup', (e) => {
 			// シフトを押したらグリッド表示
