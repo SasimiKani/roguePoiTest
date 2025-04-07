@@ -401,45 +401,51 @@ class InputManager {
 		this.inputInterval = 200 // ミリ秒単位、例えば100msごとに1回だけ処理
 	}
 	init() {
+		// 定数定義（必要に応じて調整）
+		const ARROW_KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+
+		// シフトキーのトグル状態を管理するためのヘルパー
+		function hasShiftToggled(game, newShiftState) {
+		  // 直前のシフト状態と比較して変化があればtrueを返す
+		  return newShiftState !== game.prevShiftState;
+		}
+
+		// 矢印キーの押下数を返す関数
+		function getArrowKeyCount(keysDown) {
+		  return Object.entries(keysDown)
+		    .filter(([key, pressed]) => ARROW_KEYS.includes(key) && pressed)
+		    .length;
+		}
+		
 		document.addEventListener('keydown', (e) => {
-			let isShift = this.game.keysDown['Shift']
-			this.game.keysDown[e.key] = true
+			// 既存のkeysDown更新
+			this.game.keysDown[e.key] = true;
+			const newShiftState = this.game.keysDown['Shift'];
+
+			// シフトキーのトグルチェック（初回はundefinedと比較になるので、初期化しておく）
+			if (hasShiftToggled(this.game, newShiftState)) {
+				switchGrid(this.game.gameContainer, newShiftState);
+				this.game.prevShiftState = newShiftState; // 最新の状態を保持
+			}
 			
-			// 行動キー
-			let isAction = this.game.keysDown['ArrowLeft'] ||
-				this.game.keysDown['ArrowRight'] ||
-				this.game.keysDown['ArrowUp'] ||
-				this.game.keysDown['ArrowDown'] ||
-				this.game.keysDown['.']
-			let isSingleArrow = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)
-			let arrows = Object.entries(this.game.keysDown).filter(k => ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(k[0]) && k[1]).length === 2
+			let isSingleArrow = ARROW_KEYS.includes(e.key);
+			let arrowCount = getArrowKeyCount(this.game.keysDown);
+			let isDiagonalMove = newShiftState && arrowCount === 2;
+			let isRest = this.game.keysDown['.'];
 
 			// シフトを押したらグリッド表示
-			if (isShift != this.game.keysDown['Shift']) {
+			if (this.game.prevShiftState != newShiftState) {
 				switchGrid(this.game.gameContainer, this.game.keysDown['Shift'])
 			}
 
 			const now = Date.now();
-
-			// 入力受付待ち or インターバル未経過なら無視
 			if (now - this.lastInputTime < this.inputInterval || !this.game.acceptingInput) return;
 
-			// lastInputTimeを更新するケース
-			// ケース1: 単独の方向キー（斜め移動なし）
-			if (isSingleArrow && !isShift) {
+			// 入力処理を実行すべきケース
+			if ((isSingleArrow && !newShiftState) || isDiagonalMove || isRest) {
 				this.lastInputTime = now;
 			}
-
-			// ケース2: Shift＋方向キー2つ（斜め移動）
-			if (isShift && arrows) {
-				this.lastInputTime = now;
-			}
-
-			// ケース3: "."キーで休憩（行動としてカウント）
-			if (this.game.keysDown['.']) {
-				this.lastInputTime = now;
-			}
-
+			
 			this.game.processInput(e)  // 入力処理呼び出し
 		})
 		document.addEventListener('keyup', (e) => {
