@@ -396,25 +396,51 @@ class InputManager {
 	constructor(game) {
 		this.game = game
 		this.init()
+		
+		this.lastInputTime = 0
+		this.inputInterval = 200 // ミリ秒単位、例えば100msごとに1回だけ処理
 	}
 	init() {
 		document.addEventListener('keydown', (e) => {
-			// 行動キー
 			let isShift = this.game.keysDown['Shift']
+			this.game.keysDown[e.key] = true
+			
+			// 行動キー
 			let isAction = this.game.keysDown['ArrowLeft'] ||
 				this.game.keysDown['ArrowRight'] ||
 				this.game.keysDown['ArrowUp'] ||
 				this.game.keysDown['ArrowDown'] ||
 				this.game.keysDown['.']
-			
-			this.game.keysDown[e.key] = true
+			let isSingleArrow = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)
+			let arrows = Object.entries(this.game.keysDown).filter(k => ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(k[0]) && k[1]).length === 2
 
 			// シフトを押したらグリッド表示
 			if (isShift != this.game.keysDown['Shift']) {
 				switchGrid(this.game.gameContainer, this.game.keysDown['Shift'])
 			}
 
-			this.game.processInput(e)
+			const now = Date.now();
+
+			// 入力受付待ち or インターバル未経過なら無視
+			if (now - this.lastInputTime < this.inputInterval || !this.game.acceptingInput) return;
+
+			// lastInputTimeを更新するケース
+			// ケース1: 単独の方向キー（斜め移動なし）
+			if (isSingleArrow && !isShift) {
+				this.lastInputTime = now;
+			}
+
+			// ケース2: Shift＋方向キー2つ（斜め移動）
+			if (isShift && arrows) {
+				this.lastInputTime = now;
+			}
+
+			// ケース3: "."キーで休憩（行動としてカウント）
+			if (this.game.keysDown['.']) {
+				this.lastInputTime = now;
+			}
+
+			this.game.processInput(e)  // 入力処理呼び出し
 		})
 		document.addEventListener('keyup', (e) => {
 			let isShift = this.game.keysDown['Shift']

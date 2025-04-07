@@ -99,7 +99,6 @@ function isInRoom(x, y, room) {
 
 /* グリッド表示を切り替える */
 function switchGrid(container, on=false) {
-	console.log("呼び出し")
 	
 	// グリッド用コンテナ
 	const gridContainer = document.querySelector(".grid")
