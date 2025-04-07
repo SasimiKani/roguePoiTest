@@ -423,20 +423,17 @@ class InputManager {
 			const newShiftState = this.game.keysDown['Shift'];
 
 			// シフトキーのトグルチェック（初回はundefinedと比較になるので、初期化しておく）
-			if (hasShiftToggled(this.game, newShiftState)) {
-				switchGrid(this.game.gameContainer, newShiftState);
-				this.game.prevShiftState = newShiftState; // 最新の状態を保持
+			if (!document.querySelector(".shooting-prompt")) {
+				if (hasShiftToggled(this.game, newShiftState)) {
+					switchGrid(this.game.gameContainer, newShiftState);
+					this.game.prevShiftState = newShiftState; // 最新の状態を保持
+				}
 			}
 			
 			let isSingleArrow = ARROW_KEYS.includes(e.key);
 			let arrowCount = getArrowKeyCount(this.game.keysDown);
 			let isDiagonalMove = newShiftState && arrowCount === 2;
 			let isRest = this.game.keysDown['.'];
-
-			// シフトを押したらグリッド表示
-			if (hasShiftToggled(this.game, newShiftState)) {
-				switchGrid(this.game.gameContainer, this.game.keysDown['Shift'])
-			}
 
 			const now = Date.now();
 			if (now - this.lastInputTime < this.inputInterval || !this.game.acceptingInput) return;
@@ -453,14 +450,11 @@ class InputManager {
 			const newShiftState = this.game.keysDown['Shift'];
 			
 			// シフトキーのトグルチェック（初回はundefinedと比較になるので、初期化しておく）
-			if (hasShiftToggled(this.game, newShiftState)) {
-				switchGrid(this.game.gameContainer, newShiftState);
-				this.game.prevShiftState = newShiftState; // 最新の状態を保持
-			}
-			
-			// シフトを押したらグリッド表示
-			if (hasShiftToggled(this.game, newShiftState)) {
-				switchGrid(this.game.gameContainer, this.game.keysDown['Shift'] || document.querySelector(".shooting-prompt"))
+			if (!document.querySelector(".shooting-prompt")) {
+				if (hasShiftToggled(this.game, newShiftState)) {
+					switchGrid(this.game.gameContainer, newShiftState);
+					this.game.prevShiftState = newShiftState; // 最新の状態を保持
+				}
 			}
 		})
 	}

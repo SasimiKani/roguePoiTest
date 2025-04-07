@@ -29,7 +29,7 @@ class Game {
 		this.player = new Player(0, 0, this.initialHP)
 		this.player.tile = myIcon
 		// x, y, name, tile, damage, range, projectileEmoji
-		////this.player.inventory.push(new ShootingItem(0, 0, "射撃-銃", '🔫', 10, 8))
+		////this.player.inventory.push(new ShootingItem(0, 0, "射撃-弓矢", '🏹', /* 数 */ 5, /* ダメージ */ 10, /* 距離 */ 8, "↑"))
 		////this.player.inventory.push(new BoxItem())
 		////this.player.inventory.push(new MagicSpell(0, 0, "炎", "🔥", "🔥", {damage: 20, area: 1, fallbackHeal: null}))
 		this.uiManager = new UIManager()
