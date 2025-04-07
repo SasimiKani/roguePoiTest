@@ -394,8 +394,7 @@ class EffectsManager {
 // InputManager クラス
 class InputManager {
 	constructor(game) {
-		this.game = game;
-		this.inputLocked = false; // 処理中かどうかのフラグ
+		this.game = game
 		this.init()
 	}
 	init() {
@@ -408,33 +407,18 @@ class InputManager {
 				this.game.keysDown['ArrowDown'] ||
 				this.game.keysDown['.']
 			
-			// すでに処理中なら無視する
-			if (this.inputLocked) return;
-
-			// 入力処理を開始するのでフラグを立てる
-			if (isAction) {
-				console.log("lock");
-				this.inputLocked = true;
-			}
-			
-			// シフトを押したらグリッド表示
-			switchGrid(this.game.gameContainer, e.shiftKey)
-			
 			this.game.keysDown[e.key] = true
-			this.game.processInput(e)
 
-			// 一定期間後にフラグを解除（ここでは100ms）
-			if (isAction) {
-				setTimeout(() => {
-					this.inputLocked = false;
-				}, 200);
-			}
+			// シフトを押したらグリッド表示
+			switchGrid(this.game.gameContainer, this.game.keysDown['Shift'])
+
+			this.game.processInput(e)
 		})
 		document.addEventListener('keyup', (e) => {
-			// シフトを押したらグリッド表示
-			switchGrid(this.game.gameContainer, e.shiftKey || document.querySelector(".shooting-prompt"))
-			
 			this.game.keysDown[e.key] = false
+			
+			// シフトを押したらグリッド表示
+			switchGrid(this.game.gameContainer, this.game.keysDown['Shift'] || document.querySelector(".shooting-prompt"))
 		})
 	}
 }

@@ -4,6 +4,7 @@ class Game {
 	// ゲームの初期状態（マップ、プレイヤー、UI、タイマー、キー入力管理など）をセットアップし、各種オブジェクトの初期化とイベント登録を行います。
 	constructor(myIcon) {
 		this.myIcon = myIcon
+		this.isKeyOK = true
 		this.isPlay = true
 		this.keyX = 0
 		this.keyY = 0
@@ -109,24 +110,34 @@ class Game {
 	processInput(event) {
 		if (!this.isPlay) return
 		if (this.isGameOver || !this.acceptingInput || this.boxOverlayActive || this.isAwaitingShootingDirection) return
-		this.ctrlPressed = event.ctrlKey
-		if (event.key === 'e') {
-			this.inventoryOpen = !this.inventoryOpen
-			// カーソル初期値は0
-			this.inventorySelection = 0
+
+		if (!this.isKeyOK) return // キー入力受け付け
+		this.isKeyOK = false; // キー入力を受け付けない
+
+		new Promise(async r => {
+			this.ctrlPressed = event.ctrlKey
+			if (event.key === 'e') {
+				this.inventoryOpen = !this.inventoryOpen
+				// カーソル初期値は0
+				this.inventorySelection = 0
+				this.render()
+				r(); return;
+			}
+			if (this.inventoryOpen) {
+				await this.processInventoryInput(event)
+				r(); return;
+			}
+			if (window.overlayActive) { r(); return; }
+			const inputResult = this.computeInput(event)
+			if (!inputResult) { r(); return; }
+			this.advanceTurn()
+			await this.updateData(inputResult)
 			this.render()
-			return
-		}
-		if (this.inventoryOpen) {
-			this.processInventoryInput(event)
-			return
-		}
-		if (window.overlayActive) return
-		const inputResult = this.computeInput(event)
-		if (!inputResult) return
-		this.advanceTurn()
-		this.updateData(inputResult)
-		this.render()
+
+			r();
+		}).then(() => {
+			this.isKeyOK = true // キー入力を受け付ける
+		})
 	}
 	// インベントリが開いている場合の入力（カーソル移動、使用、置く、交換、入れるなど）を処理します。
 	async processInventoryInput(event) {
@@ -391,22 +402,20 @@ class Game {
 			return true; // マップ上に残す
 		})
 		this.checkHunger()
-		let action = this.enemies.filter(e => e.action > 0).length
-		///// console.log(action)
-		while (action > 0) {
-			action = await (async () => {
-				return new Promise((resolve) => {
-					if (attacked) {
-						this.enemyAttackPhase()
-						this.enemyMovementPhase(tx, ty, attacked)
-					} else {
-						this.enemyMovementPhase(tx, ty)
-						this.enemyAttackPhase()
-					}
-					resolve(this.enemies.filter(e => e.action > 0).length)
-				})
-			})()
-			///// console.log(action);
+		
+		// 敵の最大行動回数を取得
+		let maxAction = Math.max(...(this.enemies.map(e => e.maxAction)))
+		for (var i=0; i<maxAction; i++) {
+			await new Promise((resolve) => {
+				if (attacked) {
+					this.enemyAttackPhase()
+					this.enemyMovementPhase(tx, ty, attacked)
+				} else {
+					this.enemyMovementPhase(tx, ty)
+					this.enemyAttackPhase()
+				}
+				resolve()
+			})
 			this.queueTimeout(() => { this.enemyActionRefresh(); }, this.actionCount * this.actionTime)
 		}
 		this.checkCollisions()
