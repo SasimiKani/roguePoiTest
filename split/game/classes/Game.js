@@ -864,6 +864,20 @@ class Game {
 					box: 1
 				}
 			},
+			normalPlus: {
+				enemy: {min: 2, max: 4},
+				entity: {min: 1, max: 2},
+				maxItems: {min: 3, max: 5},
+				itemWeights: {
+					food: 4,
+					sushi: 4,
+					magic: 2,
+					niku: 2,
+					weapon: 2,
+					shooting: 2,
+					box: 1
+				}
+			},
 			hard: {
 				enemy: {min: 2, max: 4},
 				entity: {min: 1, max: 2},

@@ -14,7 +14,8 @@ class DifficultySelector {
 		this.options = [
 			{ x: 3, y: 3, difficulty: "easy", tile: difficultySettings.easy.wallEmoji },
 			{ x: 11, y: 3, difficulty: "normal", tile: difficultySettings.normal.wallEmoji },
-			{ x: 7, y: 11, difficulty: "hard", tile: difficultySettings.hard.wallEmoji }
+			{ x: 3, y: 11, difficulty: "normalPlus", tile: difficultySettings.normalPlus.wallEmoji },
+			{ x: 11, y: 11, difficulty: "hard", tile: difficultySettings.hard.wallEmoji }
 		]
 		this.options.forEach(opt => {
 			for (var pos of [[-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0]]) {

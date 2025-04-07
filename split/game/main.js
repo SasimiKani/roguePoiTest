@@ -3,6 +3,7 @@
 const difficultySettings = {
 	easy:	 { name: "森レベル", wallEmoji: "🌳", maxFloor: 10, revealLv: 5 },
 	normal: { name: "山レベル", wallEmoji: "⛰️", maxFloor: 20, revealLv: 3 },
+	normalPlus:	 { name: "雪原レベル", wallEmoji: "⬜️", maxFloor: 40, revealLv: 7 },
 	hard:	 { name: "火山レベル", wallEmoji: "🌋", maxFloor: 99, revealLv: 2 }
 }
 
@@ -49,6 +50,17 @@ function enemyList(floor, difficulty, freq) {
 			]
 			break
 		case "normal":
+			enemyDefinitions = [
+				new EnemyDefinition(EnemyLarvae, [1, 4], 5),
+				new EnemyDefinition(EnemyAnt, [2, 5], 4),
+				new EnemyDefinition(EnemyCrayfish, [4, 8], 4),
+				new EnemyDefinition(EnemySlime, [8, 10], 3),
+				new EnemyDefinition(EnemyBat, [12, 18], 2),
+				new EnemyDefinition(EnemyGoblin, [16, 20], 1),
+				new EnemyDefinition(EnemySkeleton, [19, 20], 1)
+			]
+			break
+		case "normalPlus":
 			enemyDefinitions = [
 				new EnemyDefinition(EnemyLarvae, [1, 4], 5),
 				new EnemyDefinition(EnemyAnt, [2, 5], 4),
