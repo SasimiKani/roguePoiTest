@@ -102,6 +102,7 @@ function switchGrid(container, on=false) {
 	
 	// グリッド用コンテナ
 	const gridContainer = document.querySelector(".grid")
+	Array.from(gridContainer.children).forEach(child => child.remove())
 	
 	if (on) {
 		const D = CONFIG.VIEW_RADIUS * 2 + 1

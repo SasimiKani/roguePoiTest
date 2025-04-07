@@ -1156,6 +1156,9 @@ class Game {
 			e.remove()
 		})
 		
+		// グリッドを削除
+		switchGrid(this.gameContainer, false);
+		
 		// 難易度選択マップに戻る
 		selector = new DifficultySelector(this.myIcon)
 	}
