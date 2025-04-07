@@ -1,5 +1,28 @@
 // EffectsManager クラス
 class EffectsManager {
+	static async showFieldEffect(container, emoji, many) {
+		const rect = container.getBoundingClientRect()
+		const containerSize = CONFIG.FONT_SIZE * (CONFIG.VIEW_RADIUS * 2 + 1)
+		
+		let chain = Promise.resolve()
+		for (var i=0; i<many; i++) {
+			const promise = () => new Promise(r => {
+				const span = document.createElement("span");
+				const x = randomInt(rect.left, rect.left + containerSize);
+				const y = randomInt(rect.top, rect.top + containerSize);
+				span.textContent = emoji
+				span.style.left = `${x}px`
+				span.style.top = `${y}px`
+				span.classList.add("field-effects")
+				
+				document.body.appendChild(span);
+				setTimeout(() => {r()}, 3000 / many)
+			})
+			
+			chain = chain.then(() => promise())
+		}
+	}
+	
 	static showEffect(container, player, x, y, text, type = "damage") {
 		const dx = x - player.x
 		const dy = y - player.y
