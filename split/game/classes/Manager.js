@@ -410,15 +410,20 @@ class InputManager {
 			this.game.keysDown[e.key] = true
 
 			// シフトを押したらグリッド表示
-			switchGrid(this.game.gameContainer, this.game.keysDown['Shift'])
+			if (isShift != this.game.keysDown['Shift']) {
+				switchGrid(this.game.gameContainer, this.game.keysDown['Shift'])
+			}
 
 			this.game.processInput(e)
 		})
 		document.addEventListener('keyup', (e) => {
+			let isShift = this.game.keysDown['Shift']
 			this.game.keysDown[e.key] = false
 			
 			// シフトを押したらグリッド表示
-			switchGrid(this.game.gameContainer, this.game.keysDown['Shift'] || document.querySelector(".shooting-prompt"))
+			if (isShift != this.game.keysDown['Shift']) {
+				switchGrid(this.game.gameContainer, this.game.keysDown['Shift'] || document.querySelector(".shooting-prompt"))
+			}
 		})
 	}
 }

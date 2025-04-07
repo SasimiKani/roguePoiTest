@@ -99,13 +99,23 @@ function isInRoom(x, y, room) {
 
 /* グリッド表示を切り替える */
 function switchGrid(container, on=false) {
-	if (!container) {
-		document.querySelector("#game").classList.remove("grid")
-		return
-	}
+	console.log("呼び出し")
+	
+	// グリッド用コンテナ
+	const gridContainer = document.querySelector(".grid")
+	
 	if (on) {
-		container.classList.add("grid")
+		const D = CONFIG.VIEW_RADIUS * 2 + 1
+		for (var i=0; i<D; i++) {
+			for (var j=0; j<D; j++) {
+				const span = document.createElement("span")
+				span.textContent = " "
+				gridContainer.appendChild(span)
+			}
+			const br = document.createElement("br")
+			gridContainer.appendChild(br)
+		}
 	} else {
-		container.classList.remove("grid")
+		Array.from(gridContainer.children).forEach(child => child.remove())
 	}
 }

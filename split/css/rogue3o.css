@@ -71,8 +71,8 @@ body {
 }
 .container { display: flex; }
 /* メイン画面 */
-.game-container { 
-	font-size: 24px; 
+.game-container, .grid { 
+	font-size: 28px; 
 	line-height: 1.2; 
 	white-space: pre; 
 	position: relative; 
@@ -90,14 +90,19 @@ body {
 .game-container span.normal { background-color: hsl(150, 5%, 50%); }
 .game-container span.hard { background-color: hsl(0, 25%, 50%); }
 /* グリッド表示 */
+.grid {
+	position: absolute;
+}
 .grid span {
-	padding: 0px!important;
+	display: inline-block; 
+	width: 2.2ch; 
+	text-align: center; 
 	animation: gridAnimation 2.5s ease infinite;
 }
 @keyframes gridAnimation {
 	0% { border: 1px dotted #0440 }
-	30% { border: 1px dotted #044f }
-	70% { border: 1px dotted #044f }
+	20% { border: 1px dotted #044f }
+	80% { border: 1px dotted #044f }
 	100% { border: 1px dotted #0440 }
 }
 /* UIサイドバー */
