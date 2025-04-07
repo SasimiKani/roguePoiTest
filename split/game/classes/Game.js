@@ -157,6 +157,9 @@ class Game {
 		if (this.isGameOver || !this.acceptingInput || this.boxOverlayActive || this.isAwaitingShootingDirection) return
 
 		this.ctrlPressed = event.ctrlKey
+		if (!window.overlayActive && !this.inventoryOpen && event.key === 'Escape') {
+			EffectsManager.showGiveUpConfirmationKeyboard(this)
+		}
 		if (event.key === 'e') {
 			this.inventoryOpen = !this.inventoryOpen
 			// カーソル初期値は0

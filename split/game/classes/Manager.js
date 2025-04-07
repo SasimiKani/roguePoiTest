@@ -413,6 +413,76 @@ class EffectsManager {
 
 		document.addEventListener("keydown", onKeyDown)
 	}
+	
+	/**
+	 * ゲーム終了確認用オーバーレイ（諦める or 続ける）
+	 * オーバーレイ中はグローバルフラグでゲーム操作を停止する（インベントリ表示時と同様）
+	 * 「諦める」を選んだ場合は game.destroy() を呼び出し、「続ける」を選んだ場合はオーバーレイを閉じる
+	 */
+	static showGiveUpConfirmationKeyboard(game) {
+		window.overlayActive = true;
+	
+		// 全画面を覆うオーバーレイ
+		const overlay = document.createElement("div");
+		overlay.className = "giveup-confirm-overlay";
+	
+		// ダイアログボックス（中央に配置、縦並びレイアウト）
+		const dialog = document.createElement("div");
+		dialog.className = "giveup-confirm-dialog";
+	
+		// メッセージ
+		const message = document.createElement("p");
+		message.textContent = "ゲームを続けますか？";
+		dialog.appendChild(message);
+	
+		// 選択肢用コンテナ
+		const optionsContainer = document.createElement("div");
+		optionsContainer.className = "giveup-options";
+	
+		// 「諦める」オプション（Escキーまたはクリックでゲーム終了）
+		const giveUpOption = document.createElement("div");
+		giveUpOption.className = "giveup-option giveup";
+		giveUpOption.textContent = "Esc: 諦める";
+		giveUpOption.addEventListener("click", () => {
+			cleanup();
+			game.destroy();
+		});
+	
+		// 「続ける」オプション（Enterキーまたはクリックでオーバーレイを閉じる）
+		const continueOption = document.createElement("div");
+		continueOption.className = "giveup-option continue";
+		continueOption.textContent = "Enter: 続ける";
+		continueOption.addEventListener("click", () => {
+			cleanup();
+		});
+	
+		optionsContainer.appendChild(giveUpOption);
+		optionsContainer.appendChild(continueOption);
+		dialog.appendChild(optionsContainer);
+		overlay.appendChild(dialog);
+		document.body.appendChild(overlay);
+	
+		// キーボード操作で選択可能にする
+		function onKeyDown(e) {
+			if (e.key === "Escape") {
+				e.preventDefault();
+				cleanup();
+				game.destroy();
+			} else if (e.key === "Enter") {
+				e.preventDefault();
+				cleanup();
+			}
+		}
+	
+		// オーバーレイ解除処理
+		function cleanup() {
+			window.overlayActive = false;
+			document.removeEventListener("keydown", onKeyDown);
+			overlay.remove();
+		}
+	
+		document.addEventListener("keydown", onKeyDown);
+	}
 }
 // InputManager クラス
 class InputManager {
@@ -429,15 +499,15 @@ class InputManager {
 
 		// シフトキーのトグル状態を管理するためのヘルパー
 		function hasShiftToggled(game, newShiftState) {
-		  // 直前のシフト状態と比較して変化があればtrueを返す
-		  return newShiftState !== game.prevShiftState;
+			// 直前のシフト状態と比較して変化があればtrueを返す
+			return newShiftState !== game.prevShiftState;
 		}
 
 		// 矢印キーの押下数を返す関数
 		function getArrowKeyCount(keysDown) {
-		  return Object.entries(keysDown)
-		    .filter(([key, pressed]) => ARROW_KEYS.includes(key) && pressed)
-		    .length;
+			return Object.entries(keysDown)
+				.filter(([key, pressed]) => ARROW_KEYS.includes(key) && pressed)
+				.length;
 		}
 		
 		document.addEventListener('keydown', (e) => {
@@ -466,7 +536,7 @@ class InputManager {
 				this.lastInputTime = now;
 			}
 			
-			this.game.processInput(e)  // 入力処理呼び出し
+			this.game.processInput(e)	// 入力処理呼び出し
 		})
 		document.addEventListener('keyup', (e) => {
 			this.game.keysDown[e.key] = false
