@@ -70,7 +70,7 @@ function enemyList(floor, difficulty, freq) {
 				new EnemyDefinition(EnemySkeleton, [19, null], 7),
 				new EnemyDefinition(EnemySpider, [24, null], 5),
 				new EnemyDefinition(EnemyWizard, [30, null], 5),
-				new EnemyDefinition(EnemyDragon, [2, null], 30)
+				new EnemyDefinition(EnemyDragon, [20, null], 30)
 			]
 			break
 		default:
