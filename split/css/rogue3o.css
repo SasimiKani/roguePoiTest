@@ -117,6 +117,16 @@ body {
 .hit { background-color: red !important; color: white; }
 .shake { transform: translateY(-2px); }
 /* エフェクト用 */
+.field-effects {
+	position: absolute;
+	transform: translate(0 0);
+	animation: fieldEffect 3.0s ease-in-out infinite;
+}
+@keyframes fieldEffect {
+	0% { transform: translate(0, 0); opacity: 0; }
+	50% { opacity: 1; }
+	100% { transform: translate(30px, 50px); opacity: 0; }
+}
 .damage, .damage-me, .heal, .explosion, .food {
 	position: absolute; 
 	font-weight: bold; 

@@ -3,51 +3,97 @@ class Game {
 	/* 1. 初期化・セットアップ */
 	// ゲームの初期状態（マップ、プレイヤー、UI、タイマー、キー入力管理など）をセットアップし、各種オブジェクトの初期化とイベント登録を行います。
 	constructor(myIcon) {
-		this.myIcon = myIcon
-		this.isPlay = true
-		this.keyX = 0
-		this.keyY = 0
-		this.actionCount = 0
-		this.actionTime = 400
-		this.width = CONFIG.WIDTH
-		this.height = CONFIG.HEIGHT
-		this.initialHP = CONFIG.INITIAL_HP
-		this.floor = 1
-		this.score = 0
-		this.isGameOver = false
-		this.generateEnemyCycle = [0, CONFIG.GENERATE_ENEMY_CYCLE]
-		this.restCycle = [0, CONFIG.REST_CYCLE]
-		this.hungerCycle = [0, CONFIG.HUNGER_CYCLE]
-		this.timeoutQueue = []
-		this.acceptingInput = true
-		this.keysDown = {}
-		this.items = []
-		this.boxSelected = null
-		this.gems = []
-		this.enemies = []
-		this.stairs = { x: 0, y: 0 }
-		this.player = new Player(0, 0, this.initialHP)
-		this.player.tile = myIcon
-		// x, y, name, tile, damage, range, projectileEmoji
-		////this.player.inventory.push(new ShootingItem(0, 0, "射撃-弓矢", '🏹', /* 数 */ 5, /* ダメージ */ 10, /* 距離 */ 8, "↑"))
-		////this.player.inventory.push(new BoxItem())
-		////this.player.inventory.push(new MagicSpell(0, 0, "炎", "🔥", "🔥", {damage: 20, area: 1, fallbackHeal: null}))
-		this.uiManager = new UIManager()
-		this.map = new DungeonMap(this.width, this.height)
-		this.gameContainer = document.getElementById("game")
-		this.minimapContainer = document.getElementById("minimap")
-		this.inventoryOpen = false
-		this.boxOverlayActive = false
-		// inventorySelectionの範囲は、所持品＋（足元アイテムがある場合は１つ追加）
-		this.inventorySelection = 0
-		this.ctrlPressed = false
-		// 足元アイテム用プロパティ
-		this.groundItem = null
-		document.getElementById("restCycle").innerText = CONFIG.REST_CYCLE
-		this.generateDungeon(false)
-		this.render()
+		// ------------------------------
+		// 基本設定とプレイヤー初期化
+		// ------------------------------
+		this.myIcon = myIcon;
+		this.isPlay = true;
+		this.initialHP = CONFIG.INITIAL_HP;
+		// プレイヤーの生成とアイコンの設定
+		this.player = new Player(0, 0, this.initialHP);
+		this.player.tile = myIcon;
+
+		// ------------------------------
+		// キー入力関連の初期化
+		// ------------------------------
+		this.keyX = 0;
+		this.keyY = 0;
+		this.keysDown = {};
+		this.acceptingInput = true;
+		this.ctrlPressed = false;
+
+		// ------------------------------
+		// ゲーム進行管理
+		// ------------------------------
+		this.actionCount = 0;
+		this.actionTime = 400;
+		this.score = 0;
+		this.floor = 1;
+		this.isGameOver = false;
+
+		// ------------------------------
+		// マップ・画面関連設定
+		// ------------------------------
+		this.width = CONFIG.WIDTH;
+		this.height = CONFIG.HEIGHT;
+		this.map = new DungeonMap(this.width, this.height);
+		this.gameContainer = document.getElementById("game");
+		this.minimapContainer = document.getElementById("minimap");
+
+		// ------------------------------
+		// サイクル管理
+		// ------------------------------
+		// 敵生成、休息、空腹の各サイクル（初期値と設定値）
+		this.generateEnemyCycle = [0, CONFIG.GENERATE_ENEMY_CYCLE];
+		this.restCycle = [0, CONFIG.REST_CYCLE];
+		this.hungerCycle = [0, CONFIG.HUNGER_CYCLE];
+		// 休息サイクルを表示
+		document.getElementById("restCycle").innerText = CONFIG.REST_CYCLE;
+
+		// ------------------------------
+		// アイテム・敵・その他のオブジェクト
+		// ------------------------------
+		this.timeoutQueue = [];
+		this.items = [];
+		this.gems = [];
+		this.enemies = [];
+		this.stairs = { x: 0, y: 0 };
+		this.boxSelected = null;
+		// 足元にあるアイテム（存在する場合）
+		this.groundItem = null;
+		// インベントリ状態（所持品＋足元アイテムがある場合は1つ追加）
+		this.inventorySelection = 0;
+		this.inventoryOpen = false;
+		this.boxOverlayActive = false;
+
+		// ------------------------------
+		// UI関連の初期化
+		// ------------------------------
+		this.uiManager = new UIManager();
+
+		// ------------------------------
+		// ダンジョン生成と初期描画
+		// ------------------------------
+		this.generateDungeon(false);
+		this.render();
+
+		// ------------------------------
+		// ※ 以下はプレイヤー初期アイテムの例（必要に応じてコメント解除）
+		// ------------------------------
+		// this.player.inventory.push(new ShootingItem(0, 0, "射撃-弓矢", '🏹', 5, 10, 8, "↑"));
+		// this.player.inventory.push(new BoxItem());
+		// this.player.inventory.push(new MagicSpell(0, 0, "炎", "🔥", "🔥", {damage: 20, area: 1, fallbackHeal: null}));
 		
 		EffectsManager.showFloorOverlay(this.gameContainer, this.floor)
+		
+		switch (CONFIG.DIFFICULTY) {
+		case "normalPlus":
+			EffectsManager.showFieldEffect(this.gameContainer, "❄", 50)
+			break
+		case "hard":
+			EffectsManager.showFieldEffect(this.gameContainer, "🔥", 10)
+			break
+		}
 		
 		setTimeout(() => {
 			new InputManager(this)
@@ -1087,6 +1133,11 @@ class Game {
 		this.gameContainer = null
 		this.minimapContainer = null
 		this.isPlay = false
+		
+		// フィールドエフェクトを削除
+		Array.from(document.querySelectorAll(".field-effects")).forEach(e => {
+			e.remove()
+		})
 		
 		// 難易度選択マップに戻る
 		selector = new DifficultySelector(this.myIcon)
