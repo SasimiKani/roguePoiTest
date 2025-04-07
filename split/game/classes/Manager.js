@@ -434,7 +434,7 @@ class InputManager {
 			let isRest = this.game.keysDown['.'];
 
 			// シフトを押したらグリッド表示
-			if (this.game.prevShiftState != newShiftState) {
+			if (hasShiftToggled(this.game, newShiftState)) {
 				switchGrid(this.game.gameContainer, this.game.keysDown['Shift'])
 			}
 
@@ -449,11 +449,17 @@ class InputManager {
 			this.game.processInput(e)  // 入力処理呼び出し
 		})
 		document.addEventListener('keyup', (e) => {
-			let isShift = this.game.keysDown['Shift']
 			this.game.keysDown[e.key] = false
+			const newShiftState = this.game.keysDown['Shift'];
+			
+			// シフトキーのトグルチェック（初回はundefinedと比較になるので、初期化しておく）
+			if (hasShiftToggled(this.game, newShiftState)) {
+				switchGrid(this.game.gameContainer, newShiftState);
+				this.game.prevShiftState = newShiftState; // 最新の状態を保持
+			}
 			
 			// シフトを押したらグリッド表示
-			if (isShift != this.game.keysDown['Shift']) {
+			if (hasShiftToggled(this.game, newShiftState)) {
 				switchGrid(this.game.gameContainer, this.game.keysDown['Shift'] || document.querySelector(".shooting-prompt"))
 			}
 		})
