@@ -82,7 +82,7 @@ body {
 	background-color: hsl(0, 0%, 50%);
 	display: inline-block; 
 	padding: 1px;
-	width: 2.2ch; 
+	width: 35.6px; 
 	text-align: center; 
 	/*transition: all 0.1s; */
 }
@@ -95,7 +95,8 @@ body {
 }
 .grid span {
 	display: inline-block; 
-	width: 2.2ch; 
+	width: 35.6px; 
+	height: 35.6px; 
 	text-align: center; 
 	animation: gridAnimation 2.5s ease infinite;
 }
