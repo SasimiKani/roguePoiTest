@@ -552,6 +552,46 @@ class InputManager {
 		})
 	}
 }
+
+class MessageManager {
+	constructor(game) {
+		this.game = game
+		this.message = document.querySelector(".message")
+		this.textBox = document.querySelector(".message textarea")
+		this.text = ""
+		this.maxLine = 3
+		this.init()
+		
+		window.onresize = () => this.init()
+	}
+	init() {
+		const rect = this.game.gameContainer.getBoundingClientRect()
+		const box = window.getComputedStyle(this.message)
+		
+		this.message.style.top = `${rect.bottom - (box.height.replace("px", "") - 0) * 2}px`
+		this.message.style.left = `${rect.left + rect.width / 2 - box.width.replace("px", "") / 2}px`
+		this.message.style.opacity = 1
+	}
+	
+	// メッセージクリア
+	clear() {
+		this.text = ""
+		this.update()
+	}
+	// メッセージ追加
+	add(text) {
+		if (this.text.split("\n").length > this.maxLine) {
+			this.clear()
+		}
+		this.text = `${text}\n${this.text}`
+		this.update()
+	}
+	// メッセージ更新
+	update() {
+		this.textBox.value = this.text
+	}
+}
+
 // UIManager クラス
 class UIManager {
 	constructor() {

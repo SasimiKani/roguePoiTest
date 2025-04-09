@@ -72,6 +72,14 @@ class Game {
 		this.uiManager = new UIManager();
 
 		// ------------------------------
+		// メッセージの初期化
+		// ------------------------------
+		this.message = new MessageManager(this)
+		this.message.add("もちのこうげき！")
+		this.message.add("かにはぼうぎょした！")
+		this.message.add("うにがキャベツをたべている！")
+
+		// ------------------------------
 		// ダンジョン生成と初期描画
 		// ------------------------------
 		this.generateDungeon(false);
@@ -119,6 +127,7 @@ class Game {
 				this.keysDown['ArrowUp'] ||
 				this.keysDown['ArrowDown'] ||
 				event.key === '.') {
+			this.message.add(`${event.key}を入力したよ`)
 			this.restCycle[0] = (this.restCycle[0] + 1) % this.restCycle[1]
 			if (this.restCycle[0] === 0 && this.player.hp < this.player.maxHp) this.player.hp++
 		}
