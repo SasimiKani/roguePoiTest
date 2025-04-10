@@ -26,8 +26,9 @@ class Player extends BaseEntity {
 // Base Enemy クラス
 class Enemy extends BaseEntity {
 	static floorRange = [1, 3]
-	constructor(x, y, hp, exp, atk = 1, tile = '👾') {
+	constructor(name, x, y, hp, exp, atk = 1, tile = '👾') {
 		super(x, y, tile)
+		this.name = name
 		this.hp = hp
 		this.atk = atk
 		this.exp = exp
@@ -44,28 +45,28 @@ class Enemy extends BaseEntity {
 class EnemyLarvae extends Enemy {
 	static floorRange = [1, 5]
 	constructor(x, y, hp) {
-		super(x, y, hp, 5, 1, '🐛')
+		super("Larvae", x, y, hp, 5, 1, '🐛')
 	}
 }
 
 class EnemyAnt extends Enemy {
 	static floorRange = [2, 7]
 	constructor(x, y, hp) {
-		super(x, y, hp + 2, 6, 2, '🐜')
+		super("Ant", x, y, hp + 2, 6, 2, '🐜')
 	}
 }
 
 class EnemyCrayfish extends Enemy {
 	static floorRange = [3, 9]
 	constructor(x, y, hp) {
-		super(x, y, hp + 3, 8, 3, '🦞')
+		super("Crayfish", x, y, hp + 3, 8, 3, '🦞')
 	}
 }
 
 class EnemySlime extends Enemy {
 	static floorRange = [5, 8]
 	constructor(x, y, hp) {
-		super(x, y, hp + 5, 7, 1, '🟩')
+		super("Slime", x, y, hp + 5, 7, 1, '🟩')
 		this.regenerationRate = 1
 	}
 	takeDamage(damage) {
@@ -77,7 +78,7 @@ class EnemySlime extends Enemy {
 class EnemyBat extends Enemy {
 	static floorRange = [7, 12]
 	constructor(x, y, hp) {
-		super(x, y, hp, 10, 2, '🦇')
+		super("Bat", x, y, hp, 10, 2, '🦇')
 		this.evasion = 0.3
 	}
 }
@@ -85,7 +86,7 @@ class EnemyBat extends Enemy {
 class EnemyGoblin extends Enemy {
 	static floorRange = [8, 13]
 	constructor(x, y, hp) {
-		super(x, y, hp + 8, 16, 4, '👹')
+		super("Goblin", x, y, hp + 8, 16, 4, '👹')
 		this.stealChance = 0.2
 	}
 }
@@ -93,7 +94,7 @@ class EnemyGoblin extends Enemy {
 class EnemySkeleton extends Enemy {
 	static floorRange = [10, null]
 	constructor(x, y, hp) {
-		super(x, y, hp + 10, 19, 4, '💀')
+		super("Skeleton", x, y, hp + 10, 19, 4, '💀')
 		this.resurrectionTimer = 0
 	}
 }
@@ -101,7 +102,7 @@ class EnemySkeleton extends Enemy {
 class EnemySpider extends Enemy {
 	static floorRange = [10, null]
 	constructor(x, y, hp) {
-		super(x, y, hp + 8, 18, 3, '🕷️')
+		super("Spider", x, y, hp + 8, 18, 3, '🕷️')
 		this.poisonDamage = 1
 	}
 }
@@ -109,7 +110,7 @@ class EnemySpider extends Enemy {
 class EnemyWizard extends Enemy {
 	static floorRange = [10, null]
 	constructor(x, y, hp) {
-		super(x, y, hp + 12, 25, 5, '🧙')
+		super("Wizard", x, y, hp + 12, 25, 5, '🧙')
 		this.magicDamage = 2
 	}
 }
@@ -117,7 +118,7 @@ class EnemyWizard extends Enemy {
 class EnemyDragon extends Enemy {
 	static floorRange = [10, null]
 	constructor(x, y, hp) {
-		super(x, y, hp + 30, 50, 10, '🐉')
+		super("Dragon", x, y, hp + 30, 50, 10, '🐉')
 		this.magicDamage = 2
 		this.action = this.maxAction = 2 // ニ回行動
 	}
