@@ -15,9 +15,9 @@ class DifficultySelector {
 			}
 		}
 		this.options = [
-			{ x: 3, y: 3, difficulty: "easy", tile: difficultySettings.easy.wallEmoji },
-			{ x: 11, y: 3, difficulty: "normal", tile: difficultySettings.normal.wallEmoji },
-			{ x: 7, y: 11, difficulty: "hard", tile: difficultySettings.hard.wallEmoji }
+			{ x: 3, y: 3, difficulty: "easy", tile: difficultySettings.easy.wallEmoji, text: "森レベル" },
+			{ x: 11, y: 3, difficulty: "normal", tile: difficultySettings.normal.wallEmoji, text: "山レベル" },
+			{ x: 7, y: 11, difficulty: "hard", tile: difficultySettings.hard.wallEmoji, text: "火山レベル" }
 		]
 		this.options.forEach(opt => {
 			for (var pos of [[-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0]]) {
@@ -74,7 +74,7 @@ class DifficultySelector {
 				}
 				if (Math.abs(opt.x - this.playerX) <= 1 && Math.abs(opt.y - this.playerY) <= 1) {
 					this.message.clear()
-					this.message.add(opt.difficulty)
+					this.message.add(`${opt.difficulty} ${opt.text}`)
 					break
 				}
 			}
