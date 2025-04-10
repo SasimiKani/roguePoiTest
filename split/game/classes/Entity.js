@@ -172,6 +172,7 @@ class BoxItem extends InventoryItem {
 class MagicSpell extends InventoryItem {
 	constructor(x, y, name, tile, emoji, options) {
 		super(x, y, name, tile, async (game) => {
+			game.message.add(`${this.name}を使った`)
 			return new Promise((resolve) => {
 				let affected = false
 				//EffectsManager.showMagicEffect(game.gameContainer, game.player, game.player.x, game.player.y, this.area, this.emoji || "✨")
@@ -227,12 +228,14 @@ class WeaponItem extends InventoryItem {
 	}
 	
 	equip(game, weapon = this) {
+		game.message.add(`${this.name}を装備した`)
 		game.player.weapon = weapon
 		game.player.attack += weapon.bonus
 		EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `武器装備+${weapon.bonus}`, "heal")
 	}
 	
 	unEquip(game, weapon = this) {
+		game.message.add(`${this.name}の装備を外した`)
 		game.player.attack -= game.player.weapon.bonus
 		game.player.weapon = null
 		EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `装備解除-${weapon.bonus}`, "damage-me")
@@ -288,6 +291,7 @@ class ShootingItem extends InventoryItem {
 		EffectsManager.hideShootingPrompt(game.gameContainer)
 		// 射撃実行
 		this.shoot(game, direction)
+		game.message.add(`${this.name}を撃った`)
 	}
 	
 	/**

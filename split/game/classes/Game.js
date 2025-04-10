@@ -690,15 +690,17 @@ class Game {
 		this.actionCount++
 		if (enemy.hp <= 0) {
 			EffectsManager.showEffect(this.gameContainer, this.player, enemy.x, enemy.y, "💥", "explosion")
-			this.message.add(`${enemy.name}を倒した`)
 			// # MESSAGE
 			this.enemies.splice(index, 1)
 			this.score += 50
 			this.gainExp(enemy.exp)
 			setTimeout(() => {
-				EffectsManager.showEffect(this.gameContainer, this.player, enemy.x, enemy.y, `+${enemy.exp} EXP`, "heal")
-				this.message.add(`経験値を${enemy.exp}ポイント得た`)
-				// # MESSAGE
+				this.message.add(`${enemy.name}を倒した`)
+				setTimeout(() => {
+					EffectsManager.showEffect(this.gameContainer, this.player, enemy.x, enemy.y, `+${enemy.exp} EXP`, "heal")
+					this.message.add(`経験値を${enemy.exp}ポイント得た`)
+					// # MESSAGE
+				}, 300)
 			}, 300)
 		}
 	}
@@ -1025,7 +1027,7 @@ class Game {
 					game.player.hp += 5
 					if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp
 					EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+5", "heal")
-					this.message.add(`すしを食べて5ポイント回復`)
+					game.message.add(`すしを食べて5ポイント回復`)
 					// # MESSAGE
 				}))
 			} else if (type === "niku") {
@@ -1033,7 +1035,7 @@ class Game {
 					game.player.hp += 10
 					if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp
 					EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+10", "heal")
-					this.message.add(`お肉を食べて10ポイント回復`)
+					game.message.add(`お肉を食べて10ポイント回復`)
 					// # MESSAGE
 				}))
 			} else if (type === "weapon") {
@@ -1112,17 +1114,17 @@ class Game {
 			this.queueTimeout(() => {
 				EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "LEVEL UP!", "heal");
 				this.message.add("レベルが上がった!")
-			}, 800)
+			}, 1100)
 			// # MESSAGE
 			this.queueTimeout(() => {
 				EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `HP +${upHp}`, "heal");
 				this.message.add(`HP +${upHp}`)
-			}, 1300)
+			}, 1600)
 			// # MESSAGE
 			this.queueTimeout(() => {
 				EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `攻撃力 +${upAtk}`, "heal");
 				this.message.add(`攻撃力 +${upAtk}`)
-			}, 1800)
+			}, 2100)
 			// # MESSAGE
 		}
 	}
@@ -1132,6 +1134,7 @@ class Game {
 		if (this.player.hunger > this.player.maxHunger) this.player.hunger = this.player.maxHunger
 		EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `+${amount}`, "food")
 		// # MESSAGE
+		this.message.add(`${amount}ポイント回復した`)
 	}
 	// プレイヤーが回復アイテムなどでHPを回復する処理です。
 	onHeal() {
@@ -1139,6 +1142,7 @@ class Game {
 		if (this.player.hp > this.player.maxHp) this.player.hp = this.player.maxHp
 		EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `+${this.player.healAmount}`, "heal")
 		// # MESSAGE
+		this.message.add(`${amount}ポイント回復した`)
 	}
 	
 	/* 7. 結果・スコアの管理 */

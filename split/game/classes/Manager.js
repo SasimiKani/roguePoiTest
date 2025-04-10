@@ -554,31 +554,34 @@ class InputManager {
 }
 
 class MessageManager {
-	constructor(game) {
+	constructor(game, maxLine = 4) {
 		this.game = game
 		this.message = document.querySelector(".message")
 		this.textBox = document.querySelector(".message textarea")
 		this.text = ""
-		this.maxLine = 4
+		this.maxLine = maxLine
 		this.init()
-		this.timeout = 0;
+		this.clear()
+		this.timeout = 0
 		
 		window.onresize = () => this.init()
 	}
 	init() {
+		
 		const rect = this.game.gameContainer.getBoundingClientRect()
+		this.message.style.height = `calc(${3 * this.maxLine}ex + 1.0ex)`
 		const box = window.getComputedStyle(this.message)
 		
-		let top = rect.bottom								// ゲーム画面の底辺
-				- (box.height.replace("px", "") - 0) * 2	// - メッセージボックスの高さの2倍
-				- CONFIG.FONT_SIZE / 2						// - フォントサイズの半分
+		let top = rect.top									// ゲーム画面の上辺
+				+ CONFIG.FONT_SIZE * (CONFIG.VIEW_RADIUS + 1) * 2	// - ゲーム画面の縦幅
+				- box.height.replace("px", "") / 2			// - メッセージボックスの高さの半分
 		let left = rect.left								// ゲーム画面の左端
 				+ rect.width / 2							// + ゲーム画面の幅の半分
 				- box.width.replace("px", "") / 2			// - メッセージボックスの幅の半分
 		
 		this.message.style.top = `${top}px`
 		this.message.style.left = `${left}px`
-		this.message.style.opacity = 1
+		this.message.style.opacity = 0
 	}
 	
 	show() {

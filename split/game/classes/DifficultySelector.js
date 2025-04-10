@@ -1,6 +1,9 @@
 // DifficultySelector クラス（修正版）
 class DifficultySelector {
 	constructor(myIcon="😊") {
+		this.gameContainer = document.getElementById("game")
+		this.message = new MessageManager(this, 1)
+		
 		this.gridWidth = 15
 		this.gridHeight = 15
 		this.grid = []
@@ -41,7 +44,7 @@ class DifficultySelector {
 			}
 			html += "<br>"
 		}
-		document.getElementById("game").innerHTML = html
+		this.gameContainer.innerHTML = html
 	}
 	handleKeyDown(e) {
 		if (!this.inSelection) return
@@ -67,6 +70,11 @@ class DifficultySelector {
 					this.inSelection = false
 					document.removeEventListener('keydown', this.handleKeyDown)
 					startDungeonGame(opt.difficulty, this.myIcon)
+					break
+				}
+				if (Math.abs(opt.x - this.playerX) <= 1 && Math.abs(opt.y - this.playerY) <= 1) {
+					this.message.clear()
+					this.message.add(opt.difficulty)
 					break
 				}
 			}
