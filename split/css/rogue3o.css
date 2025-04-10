@@ -110,16 +110,18 @@ body {
 .message {
 	position: absolute;
 	width: 400px;
-	height: 100px;
+	font-size: 1.8ex;
+	height: calc(12ex + 1.0ex);
 	background-color: #000d;
 	border: 2px solid white;
 	opacity: 0;
 }
 .message textarea {
 	user-select: none;
-	padding: .5em;
+	font-size: 1.8ex;
+	padding: .5ex;
 	width: 400px;
-	height: 100px;
+	height: inherit;
 	border: none;
 	background-color: #0000;
 	color: white;

@@ -72,6 +72,12 @@ class Game {
 		this.uiManager = new UIManager();
 
 		// ------------------------------
+		// ダンジョン生成と初期描画
+		// ------------------------------
+		this.generateDungeon(false);
+		this.render();
+
+		// ------------------------------
 		// メッセージの初期化
 		// ------------------------------
 		this.message = new MessageManager(this)
@@ -79,12 +85,6 @@ class Game {
 		////this.message.add("もちのこうげき！")
 		////this.message.add("かにはぼうぎょした！")
 		////this.message.add("うにがキャベツをたべている！")
-
-		// ------------------------------
-		// ダンジョン生成と初期描画
-		// ------------------------------
-		this.generateDungeon(false);
-		this.render();
 
 		// ------------------------------
 		// ※ 以下はプレイヤー初期アイテムの例（必要に応じてコメント解除）

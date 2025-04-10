@@ -561,6 +561,7 @@ class MessageManager {
 		this.text = ""
 		this.maxLine = 4
 		this.init()
+		this.timeout = 0;
 		
 		window.onresize = () => this.init()
 	}
@@ -568,9 +569,23 @@ class MessageManager {
 		const rect = this.game.gameContainer.getBoundingClientRect()
 		const box = window.getComputedStyle(this.message)
 		
-		this.message.style.top = `${rect.bottom - (box.height.replace("px", "") - 0) * 2}px`
-		this.message.style.left = `${rect.left + rect.width / 2 - box.width.replace("px", "") / 2}px`
+		let top = rect.bottom								// ゲーム画面の底辺
+				- (box.height.replace("px", "") - 0) * 2	// - メッセージボックスの高さの2倍
+				- CONFIG.FONT_SIZE / 2						// - フォントサイズの半分
+		let left = rect.left								// ゲーム画面の左端
+				+ rect.width / 2							// + ゲーム画面の幅の半分
+				- box.width.replace("px", "") / 2			// - メッセージボックスの幅の半分
+		
+		this.message.style.top = `${top}px`
+		this.message.style.left = `${left}px`
 		this.message.style.opacity = 1
+	}
+	
+	show() {
+		this.message.style.opacity = 1
+	}
+	hide() {
+		this.message.style.opacity = 0
 	}
 	
 	// メッセージクリア
@@ -580,11 +595,19 @@ class MessageManager {
 	}
 	// メッセージ追加
 	add(text) {
-		if (this.text.split("\n").length > this.maxLine) {
+		if (this.timeout) {
+			clearTimeout(this.timeout)
+		}
+		if (this.text.split("\n").length >= this.maxLine) {
 			this.clear()
 		}
 		this.text = this.text === "" ? text : `${this.text}\n${text}`
 		this.update()
+		this.show()
+		this.timeout = setTimeout(() => {
+			this.hide()
+			this.timeout = 0
+		}, 7500)
 	}
 	// メッセージ更新
 	update() {
