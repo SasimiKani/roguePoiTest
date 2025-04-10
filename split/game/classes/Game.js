@@ -78,6 +78,15 @@ class Game {
 		this.render();
 
 		// ------------------------------
+		// メッセージの初期化
+		// ------------------------------
+		this.message = new MessageManager(this)
+		this.message.clear()
+		////this.message.add("もちのこうげき！")
+		////this.message.add("かにはぼうぎょした！")
+		////this.message.add("うにがキャベツをたべている！")
+
+		// ------------------------------
 		// ※ 以下はプレイヤー初期アイテムの例（必要に応じてコメント解除）
 		// ------------------------------
 		// this.player.inventory.push(new ShootingItem(0, 0, "射撃-弓矢", '🏹', 5, 10, 8, "↑"));
@@ -193,6 +202,7 @@ class Game {
 			this.map.revealAround(this.player.x, this.player.y)
 			// エフェクトを表示してデバッグ感を出す（例：WARP 表示）
 			EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "WARP", "heal")
+			// # MESSAGE
 			// ターンを進めたり、レンダリングを更新
 			this.advanceTurn()
 			this.render()
@@ -298,6 +308,8 @@ class Game {
 						this.player.attack -= this.player.weapon.bonus
 						this.player.weapon = null
 						EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `装備解除-${item.bonus}`, "heal")
+						this.message.add(`${item.name}の装備を外した`)
+						// # MESSAGE
 					}
 					// ここ、アイテムを置く場合は足元に設置する
 					if (!this.groundItem) {
@@ -327,6 +339,8 @@ class Game {
 					this.player.inventory[this.inventorySelection] = this.groundItem
 					this.groundItem = temp
 					EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "交換")
+					this.message.add(`${temp.name}と${this.player.inventory[this.inventorySelection]}を交換した`)
+					// # MESSAGE
 					if (this.groundItem.name.match(/武器.*/g) && this.player.weapon) {
 						// インベントリの装備している武器を交換したら外す
 						this.groundItem.use(this)
@@ -357,6 +371,8 @@ class Game {
 						return
 					} else {
 						EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "容量オーバー", "damage")
+						this.message.add(`これ以上入れられない`)
+						// # MESSAGE
 					}
 				} else if (this.boxSelected === selectedItem) {
 					this.boxSelected = null
@@ -428,12 +444,16 @@ class Game {
 		this.items = this.items.filter(item => {
 			if (item.x === this.player.x && item.y === this.player.y) {
 				// アイテムを拾う
-				if (!this.ctrlPressed && !pickupItem(this, item)) return false; // マップ上から削除
-				else {
+				if (!this.ctrlPressed && !pickupItem(this, item)) {
+					this.message.add(`${item.name}を拾った`);
+					return false; // マップ上から削除
+				} else {
 					// 拾わなかった場合の処理
 					if (!this.groundItem) {
 						this.groundItem = item
 						EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `${this.groundItem.name}に乗った`)
+						this.message.add(`${this.groundItem.name}に乗った`)
+						// # MESSAGE
 						return false; // マップ上から削除
 					}
 				}
@@ -466,7 +486,11 @@ class Game {
 	checkHunger() {
 		this.hungerCycle[0] = (this.hungerCycle[0] + 1) % this.hungerCycle[1]
 		if (this.hungerCycle[0] === 0) { this.player.hunger--; if (this.player.hunger < 0) this.player.hunger = 0; }
-		if (this.player.hunger === 0) { this.player.hp--; EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "餓死", "damage"); }
+		if (this.player.hunger === 0) {
+			this.player.hp--; EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "餓死", "damage");
+			this.message.add(`空腹でダメージを受けた`)
+			// # MESSAGE
+		}
 	}
 	// プレイヤーと他エンティティとの衝突判定を行い、スコア加算やゲームオーバー処理などに反映させます。
 	checkCollisions() {
@@ -474,6 +498,8 @@ class Game {
 			if (gem.x === this.player.x && gem.y === this.player.y) {
 				this.score += 100
 				EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "+100")
+				this.message.add(`宝石を拾った`)
+				// # MESSAGE
 				return false
 			}
 			return true
@@ -624,6 +650,8 @@ class Game {
 					this.player.hp -= enemy.atk
 					if (this.player.hp < 0) this.player.hp = 0
 					EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me")
+					this.message.add(`${enemy.name}の攻撃　${enemy.atk}ダメージ`)
+					// # MESSAGE
 				}, this.actionCount * this.actionTime)
 				this.actionCount++
 			}
@@ -635,6 +663,8 @@ class Game {
 						this.player.hp -= enemy.atk
 						if (this.player.hp < 0) this.player.hp = 0
 						EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me")
+						this.message.add(`${enemy.name}の攻撃　${enemy.atk}ダメージ`)
+						// # MESSAGE
 					}, this.actionCount * this.actionTime)
 					this.actionCount++
 				}
@@ -655,14 +685,22 @@ class Game {
 		
 		enemy.takeDamage(this.player.attack)
 		EffectsManager.showEffect(this.gameContainer, this.player, enemy.x, enemy.y, `-${this.player.attack}`, "damage")
+		this.message.add(`${enemy.name}に${this.player.attack}ダメージ`)
+		// # MESSAGE
 		this.actionCount++
 		if (enemy.hp <= 0) {
 			EffectsManager.showEffect(this.gameContainer, this.player, enemy.x, enemy.y, "💥", "explosion")
+			// # MESSAGE
 			this.enemies.splice(index, 1)
 			this.score += 50
 			this.gainExp(enemy.exp)
 			setTimeout(() => {
-				EffectsManager.showEffect(this.gameContainer, this.player, enemy.x, enemy.y, `+${enemy.exp} EXP`, "heal")
+				this.message.add(`${enemy.name}を倒した`)
+				setTimeout(() => {
+					EffectsManager.showEffect(this.gameContainer, this.player, enemy.x, enemy.y, `+${enemy.exp} EXP`, "heal")
+					this.message.add(`経験値を${enemy.exp}ポイント得た`)
+					// # MESSAGE
+				}, 300)
 			}, 300)
 		}
 	}
@@ -1003,12 +1041,16 @@ class Game {
 					game.player.hp += 5
 					if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp
 					EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+5", "heal")
+					game.message.add(`すしを食べて5ポイント回復`)
+					// # MESSAGE
 				}))
 			} else if (type === "niku") {
 				arr.push(new InventoryItem(x, y, "お肉", '🍖', async function(game) {
 					game.player.hp += 10
 					if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp
 					EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+10", "heal")
+					game.message.add(`お肉を食べて10ポイント回復`)
+					// # MESSAGE
 				}))
 			} else if (type === "weapon") {
 				var selection = randomInt(1, 2)
@@ -1052,12 +1094,16 @@ class Game {
 						game.player.hunger += 20
 						if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
 						EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+20", "food")
+						game.message.add(`パンを食べて少しお腹がふくれた`)
+						// # MESSAGE
 					}))
 				} else {
 					arr.push(new InventoryItem(x, y, "大きなパン", '🍞', async function(game) {
 						game.player.hunger += 50
 						if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
 						EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+50", "food")
+						game.message.add(`大きなパンを食べてお腹がふくれた`)
+						// # MESSAGE
 					}))
 				}
 			} else if (type === "box") {
@@ -1079,9 +1125,21 @@ class Game {
 			this.player.maxHp += (upHp = randomInt(2, 3))
 			this.player.healAmount++
 			this.player.hp = this.player.maxHp
-			this.queueTimeout(() => { EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "LEVEL UP!", "heal"); }, 800)
-			this.queueTimeout(() => { EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `HP +${upHp}`, "heal"); }, 1300)
-			this.queueTimeout(() => { EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `攻撃力 +${upAtk}`, "heal"); }, 1800)
+			this.queueTimeout(() => {
+				EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "LEVEL UP!", "heal");
+				this.message.add("レベルが上がった!")
+			}, 1100)
+			// # MESSAGE
+			this.queueTimeout(() => {
+				EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `HP +${upHp}`, "heal");
+				this.message.add(`HP +${upHp}`)
+			}, 1600)
+			// # MESSAGE
+			this.queueTimeout(() => {
+				EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `攻撃力 +${upAtk}`, "heal");
+				this.message.add(`攻撃力 +${upAtk}`)
+			}, 2100)
+			// # MESSAGE
 		}
 	}
 	// プレイヤーがアイテムを食べた際の飢餓回復処理を行います。
@@ -1089,12 +1147,16 @@ class Game {
 		this.player.hunger += amount
 		if (this.player.hunger > this.player.maxHunger) this.player.hunger = this.player.maxHunger
 		EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `+${amount}`, "food")
+		// # MESSAGE
+		this.message.add(`${amount}ポイント回復した`)
 	}
 	// プレイヤーが回復アイテムなどでHPを回復する処理です。
 	onHeal() {
 		this.player.hp += this.player.healAmount
 		if (this.player.hp > this.player.maxHp) this.player.hp = this.player.maxHp
 		EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `+${this.player.healAmount}`, "heal")
+		// # MESSAGE
+		this.message.add(`${amount}ポイント回復した`)
 	}
 	
 	/* 7. 結果・スコアの管理 */

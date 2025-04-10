@@ -1,6 +1,9 @@
 // DifficultySelector クラス（修正版）
 class DifficultySelector {
 	constructor(myIcon="😊") {
+		this.gameContainer = document.getElementById("game")
+		this.message = new MessageManager(this, 1)
+		
 		this.gridWidth = 15
 		this.gridHeight = 15
 		this.grid = []
@@ -12,10 +15,10 @@ class DifficultySelector {
 			}
 		}
 		this.options = [
-			{ x: 3, y: 3, difficulty: "easy", tile: difficultySettings.easy.wallEmoji },
-			{ x: 11, y: 3, difficulty: "normal", tile: difficultySettings.normal.wallEmoji },
-			{ x: 3, y: 11, difficulty: "normalPlus", tile: difficultySettings.normalPlus.wallEmoji },
-			{ x: 11, y: 11, difficulty: "hard", tile: difficultySettings.hard.wallEmoji }
+			{ x: 3, y: 3, difficulty: "easy", tile: difficultySettings.easy.wallEmoji, text: "森レベル" },
+			{ x: 11, y: 3, difficulty: "normal", tile: difficultySettings.normal.wallEmoji, text: "山レベル" },
+			{ x: 3, y: 11, difficulty: "normalPlus", tile: difficultySettings.normalPlus.wallEmoji, text: "雪原レベル" },
+			{ x: 11, y: 11, difficulty: "hard", tile: difficultySettings.hard.wallEmoji, text: "火山レベル" }
 		]
 		this.options.forEach(opt => {
 			for (var pos of [[-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0]]) {
@@ -42,7 +45,7 @@ class DifficultySelector {
 			}
 			html += "<br>"
 		}
-		document.getElementById("game").innerHTML = html
+		this.gameContainer.innerHTML = html
 	}
 	handleKeyDown(e) {
 		if (!this.inSelection) return
@@ -68,6 +71,11 @@ class DifficultySelector {
 					this.inSelection = false
 					document.removeEventListener('keydown', this.handleKeyDown)
 					startDungeonGame(opt.difficulty, this.myIcon)
+					break
+				}
+				if (Math.abs(opt.x - this.playerX) <= 1 && Math.abs(opt.y - this.playerY) <= 1) {
+					this.message.clear()
+					this.message.add(`${opt.difficulty} ${opt.text}`)
 					break
 				}
 			}

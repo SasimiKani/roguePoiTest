@@ -552,6 +552,72 @@ class InputManager {
 		})
 	}
 }
+
+class MessageManager {
+	constructor(game, maxLine = 4) {
+		this.game = game
+		this.message = document.querySelector(".message")
+		this.textBox = document.querySelector(".message textarea")
+		this.text = ""
+		this.maxLine = maxLine
+		this.init()
+		this.clear()
+		this.timeout = 0
+		
+		window.onresize = () => this.init()
+	}
+	init() {
+		
+		const rect = this.game.gameContainer.getBoundingClientRect()
+		this.message.style.height = `calc(${3 * this.maxLine}ex + 1.0ex)`
+		const box = window.getComputedStyle(this.message)
+		
+		let top = rect.top									// ゲーム画面の上辺
+				+ CONFIG.FONT_SIZE * (CONFIG.VIEW_RADIUS + 1) * 2	// - ゲーム画面の縦幅
+				- box.height.replace("px", "") / 2			// - メッセージボックスの高さの半分
+		let left = rect.left								// ゲーム画面の左端
+				+ rect.width / 2							// + ゲーム画面の幅の半分
+				- box.width.replace("px", "") / 2			// - メッセージボックスの幅の半分
+		
+		this.message.style.top = `${top}px`
+		this.message.style.left = `${left}px`
+		this.message.style.opacity = 0
+	}
+	
+	show() {
+		this.message.style.opacity = 1
+	}
+	hide() {
+		this.message.style.opacity = 0
+	}
+	
+	// メッセージクリア
+	clear() {
+		this.text = ""
+		this.update()
+	}
+	// メッセージ追加
+	add(text) {
+		if (this.timeout) {
+			clearTimeout(this.timeout)
+		}
+		if (this.text.split("\n").length >= this.maxLine) {
+			this.clear()
+		}
+		this.text = this.text === "" ? text : `${this.text}\n${text}`
+		this.update()
+		this.show()
+		this.timeout = setTimeout(() => {
+			this.hide()
+			this.timeout = 0
+		}, 7500)
+	}
+	// メッセージ更新
+	update() {
+		this.textBox.value = this.text
+	}
+}
+
 // UIManager クラス
 class UIManager {
 	constructor() {

@@ -26,8 +26,9 @@ class Player extends BaseEntity {
 // Base Enemy クラス
 class Enemy extends BaseEntity {
 	static floorRange = [1, 3]
-	constructor(x, y, hp, exp, atk = 1, tile = '👾') {
+	constructor(name, x, y, hp, exp, atk = 1, tile = '👾') {
 		super(x, y, tile)
+		this.name = name
 		this.hp = hp
 		this.atk = atk
 		this.exp = exp
@@ -43,19 +44,19 @@ class Enemy extends BaseEntity {
 
 class EnemyLarvae extends Enemy { static floorRange = [1, 5]
 	constructor(x, y, hp) {
-		super(x, y, hp, 5, 1, '🐛')
+		super("Larvae", x, y, hp, 5, 1, '🐛')
 	}
 }
 
 class EnemyAnt extends Enemy { static floorRange = [2, 7]
 	constructor(x, y, hp) {
-		super(x, y, hp + 2, 6, 2, '🐜')
+		super("Ant", x, y, hp + 2, 6, 2, '🐜')
 	}
 }
 
 class EnemyCrayfish extends Enemy { static floorRange = [3, 9]
 	constructor(x, y, hp) {
-		super(x, y, hp + 3, 8, 3, '🦞')
+		super("Crayfish", x, y, hp + 3, 8, 3, '🦞')
 	}
 }
 
@@ -101,7 +102,7 @@ class EnemyWizard extends Enemy { static floorRange = [10, null]
 
 class EnemyDragon extends Enemy { static floorRange = [10, null]
 	constructor(x, y, hp) {
-		super(x, y, hp + 30, 50, 10, '🐉')
+		super("Dragon", x, y, hp + 30, 50, 10, '🐉')
 		this.magicDamage = 2
 		this.action = this.maxAction = 2 // ニ回行動
 	}
@@ -208,6 +209,7 @@ class BoxItem extends InventoryItem {
 class MagicSpell extends InventoryItem {
 	constructor(x, y, name, tile, emoji, options) {
 		super(x, y, name, tile, async (game) => {
+			game.message.add(`${this.name}を使った`)
 			return new Promise((resolve) => {
 				let affected = false
 				//EffectsManager.showMagicEffect(game.gameContainer, game.player, game.player.x, game.player.y, this.area, this.emoji || "✨")
@@ -263,12 +265,14 @@ class WeaponItem extends InventoryItem {
 	}
 	
 	equip(game, weapon = this) {
+		game.message.add(`${this.name}を装備した`)
 		game.player.weapon = weapon
 		game.player.attack += weapon.bonus
 		EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `武器装備+${weapon.bonus}`, "heal")
 	}
 	
 	unEquip(game, weapon = this) {
+		game.message.add(`${this.name}の装備を外した`)
 		game.player.attack -= game.player.weapon.bonus
 		game.player.weapon = null
 		EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `装備解除-${weapon.bonus}`, "damage-me")
@@ -324,6 +328,7 @@ class ShootingItem extends InventoryItem {
 		EffectsManager.hideShootingPrompt(game.gameContainer)
 		// 射撃実行
 		this.shoot(game, direction)
+		game.message.add(`${this.name}を撃った`)
 	}
 	
 	/**
