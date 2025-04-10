@@ -559,7 +559,7 @@ class MessageManager {
 		this.message = document.querySelector(".message")
 		this.textBox = document.querySelector(".message textarea")
 		this.text = ""
-		this.maxLine = 3
+		this.maxLine = 4
 		this.init()
 		
 		window.onresize = () => this.init()
@@ -583,7 +583,7 @@ class MessageManager {
 		if (this.text.split("\n").length > this.maxLine) {
 			this.clear()
 		}
-		this.text = `${text}\n${this.text}`
+		this.text = this.text === "" ? text : `${this.text}\n${text}`
 		this.update()
 	}
 	// メッセージ更新

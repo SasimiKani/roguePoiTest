@@ -1078,7 +1078,7 @@ class Game {
 						game.player.hunger += 20
 						if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
 						EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+20", "food")
-						this.message.add(`パンを食べて少しお腹がふくれた`)
+						game.message.add(`パンを食べて少しお腹がふくれた`)
 						// # MESSAGE
 					}))
 				} else {
@@ -1086,7 +1086,7 @@ class Game {
 						game.player.hunger += 50
 						if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
 						EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+50", "food")
-						this.message.add(`大きなパンを食べてお腹がふくれた`)
+						game.message.add(`大きなパンを食べてお腹がふくれた`)
 						// # MESSAGE
 					}))
 				}
