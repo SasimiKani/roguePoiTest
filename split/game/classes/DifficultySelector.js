@@ -2,7 +2,7 @@
 class DifficultySelector {
 	constructor(myIcon="😊") {
 		this.gameContainer = document.getElementById("game")
-		this.message = new MessageManager(this, 1)
+		this.message = new MessageManager(this, 2)
 		
 		this.gridWidth = 15
 		this.gridHeight = 15

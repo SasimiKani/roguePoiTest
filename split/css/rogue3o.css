@@ -118,8 +118,8 @@ body {
 }
 .message textarea {
 	user-select: none;
-	font-size: 1.8ex;
-	padding: .5ex;
+	font-size: 1em;
+	padding: .5em;
 	width: 400px;
 	height: inherit;
 	border: none;
