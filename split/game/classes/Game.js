@@ -351,7 +351,16 @@ class Game {
 				return
 			}
 			if (event.key === 'i') { // 入れる操作
-				const selectedItem = this.player.inventory[this.inventorySelection]
+				const selectedItem = this.player.inventory[this.inventorySelection] || this.groundItem
+				//console.group("選択中")
+				//console.log(selectedItem)
+				//console.groupEnd("選択中")
+				//console.group("足元")
+				//console.log(this.groundItem)
+				//console.groupEnd("足元")
+				//console.group("一致")
+				//console.log(this.groundItem === selectedItem)
+				//console.groupEnd("一致")
 				// 仮に、別途箱用の選択状態（this.boxSelected）があれば、その箱に入れる
 				if (this.boxSelected && !(selectedItem instanceof BoxItem)) {
 					if (this.boxSelected.insertItem(selectedItem)) {
@@ -359,13 +368,19 @@ class Game {
 							// 箱に入れたので、装備を解除
 							selectedItem.use(this)
 						}
-						// 箱に入れたので、インベントリから削除
-						this.player.inventory.splice(this.inventorySelection, 1)
+						if (this.groundItem === selectedItem) {
+							// 足元のアイテムを入れたら足元を削除
+							this.groundItem = null
+						} else {
+							// 箱に入れたので、インベントリから削除
+							this.player.inventory.splice(this.inventorySelection, 1)
+						}
 						
 						// インベントリの参照を修正する
 						if (this.player.inventory.length <= this.inventorySelection) {
 							this.inventorySelection--
 						}
+						
 						this.boxSelected.updateName()
 						this.render()
 						return

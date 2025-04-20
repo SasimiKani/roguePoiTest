@@ -127,8 +127,8 @@ class EffectsManager {
 		// ゲーム画面の中央位置を計算（以前の centerIndex の代わり）
 		const rect = container.getBoundingClientRect()
 		const fontSize = CONFIG.FONT_SIZE
-		const centerX = rect.left + rect.width / 2 - (fontSize / 2) /*font-size*/ + (dx * fontSize) /*方向*/
-		const centerY = rect.top + rect.height / 2 - (fontSize * 7/3) /*font-size*/ + (dy * fontSize) /*方向*/
+		const centerX = rect.left + window.scrollX + rect.width / 2 - (fontSize / 2) /*font-size*/ + (dx * fontSize) /*方向*/
+		const centerY = rect.top + window.scrollY + rect.height / 2 - fontSize /*font-size*/ + (dy * fontSize) /*方向*/
 		
 		// オーバーレイ用のエフェクト要素を作成
 		const effect = document.createElement("div")
@@ -167,8 +167,8 @@ class EffectsManager {
 	static showAttackMotionWeapon(container, dx, dy, weaponEmoji) {
 		const rect = container.getBoundingClientRect()
 		const fontSize = CONFIG.FONT_SIZE
-		const centerX = rect.left + rect.width / 2 - (fontSize / 2) /*font-size*/ + (dx * fontSize) /*方向*/
-		const centerY = rect.top + rect.height / 2 - (fontSize * 7/3) /*font-size*/ + (dy * fontSize) /*方向*/
+		const centerX = rect.left + window.scrollX + rect.width / 2 - (fontSize / 2) /*font-size*/ + (dx * fontSize) /*方向*/
+		const centerY = rect.top + window.scrollY + rect.height / 2 - fontSize /*font-size*/ + (dy * fontSize) /*方向*/
 		
 		// 武器の振るエフェクト要素を作成
 		const weaponEffect = document.createElement("div")
@@ -253,8 +253,8 @@ class EffectsManager {
 		
 		// container の中央をプレイヤーの表示位置とする
 		const rect = container.getBoundingClientRect()
-		const startX = rect.left + rect.width / 2 - (fontSize / 2) /*font-size*/ - 3
-		const startY = rect.top + rect.height / 2 - (fontSize * 7/3) /*font-size*/ + 3
+		const startX = rect.left + window.scrollX + rect.width / 2 - (fontSize / 2) /*font-size*/ - 3
+		const startY = rect.top + window.scrollY + rect.height / 2 - fontSize /*font-size*/ + 3
 		
 		// 移動先を算出：入力方向 * 射程 * factor
 		const targetOffsetX = direction.dx * range * factor

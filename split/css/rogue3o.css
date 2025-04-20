@@ -34,6 +34,7 @@
 	white-space: pre; 
 	position: relative; 
 	margin-right: 20px; 
+	height: fit-content;
 }
 #homeScreen { display: none; }
 
