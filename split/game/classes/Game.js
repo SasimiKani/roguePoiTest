@@ -103,6 +103,15 @@ class Game {
 			EffectsManager.showFieldEffect(this.gameContainer, "🔥", 10)
 			break
 		}
+
+		// BGM
+		const bgmBox = document.createElement("audio")
+		bgmBox.src = "./mus/easy.mp3"
+		bgmBox.loop = true
+		bgmBox.volume = 0.5
+		bgmBox.play()
+		//this.bgm = bgmBox
+		//console.log(bgm)
 		
 		setTimeout(() => {
 			new InputManager(this)
@@ -339,7 +348,7 @@ class Game {
 					this.player.inventory[this.inventorySelection] = this.groundItem
 					this.groundItem = temp
 					EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "交換")
-					this.message.add(`${temp.name}と${this.player.inventory[this.inventorySelection]}を交換した`)
+					this.message.add(`${temp.name}と${this.player.inventory[this.inventorySelection].name}を交換した`)
 					// # MESSAGE
 					if (this.groundItem.name.match(/武器.*/g) && this.player.weapon) {
 						// インベントリの装備している武器を交換したら外す
@@ -1027,6 +1036,7 @@ class Game {
 			this.placeEntities(this.items, 1, type)
 		}
 		/////console.log(JSON.stringify(this.enemies))
+		/////console.log(JSON.stringify(this.items, null, "\t"))
 
 	}
 	// 敵やアイテムなどのエンティティをマップ上にランダム配置する処理です。
@@ -1313,7 +1323,12 @@ class Game {
 			// 出す：箱内の選択アイテムを取り出してインベントリへ
 			else if (e.key.toLowerCase() === "d") {
 				e.preventDefault()
-				if (box.contents.length > 0) {
+				const inventory = this.player.inventory
+				const maxInventory = CONFIG.INVENTORY_MAX
+				// インベントリがいっぱいなら出せない
+				if (inventory.length === maxInventory) {
+					this.message.add("これ以上出せない")
+				} else if (box.contents.length > 0) {
 					const item = box.removeItem(selectionIndex)
 					this.player.inventory.push(item)
 					if (selectionIndex >= box.contents.length) {
@@ -1323,7 +1338,7 @@ class Game {
 				}
 			}
 			// 使う：箱内の選択アイテムを使用
-			else if (e.key.toLowerCase() === "u") {
+			else if (e.key.toLowerCase() === 'u') {
 				e.preventDefault()
 				if (box.contents.length > 0) {
 					const item = box.contents[selectionIndex]
@@ -1335,6 +1350,8 @@ class Game {
 						if (selectionIndex >= box.contents.length) {
 							selectionIndex = Math.max(0, box.contents.length - 1)
 						}
+						// 名前の隣の数字を更新
+						box.updateName()
 						// 使ったら箱を閉じてターンを進める
 						this.turn()
 					})
