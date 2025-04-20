@@ -1026,6 +1026,8 @@ class Game {
 			const type = weightedTypes.splice(randomInt(0, weightedTypes.length - 1), 1)[0]
 			this.placeEntities(this.items, 1, type)
 		}
+		/////console.log(JSON.stringify(this.enemies))
+
 	}
 	// 敵やアイテムなどのエンティティをマップ上にランダム配置する処理です。
 	placeEntities(arr, count, type) {
