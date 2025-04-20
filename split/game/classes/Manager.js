@@ -442,7 +442,7 @@ class EffectsManager {
 		// 「諦める」オプション（Escキーまたはクリックでゲーム終了）
 		const giveUpOption = document.createElement("div");
 		giveUpOption.className = "giveup-option giveup";
-		giveUpOption.textContent = "Esc: 諦める";
+		giveUpOption.textContent = /*"Esc: */"諦める";
 		giveUpOption.addEventListener("click", () => {
 			cleanup();
 			game.destroy();
@@ -451,7 +451,7 @@ class EffectsManager {
 		// 「続ける」オプション（Enterキーまたはクリックでオーバーレイを閉じる）
 		const continueOption = document.createElement("div");
 		continueOption.className = "giveup-option continue";
-		continueOption.textContent = "Enter: 続ける";
+		continueOption.textContent = /*"Enter: */"続ける";
 		continueOption.addEventListener("click", () => {
 			cleanup();
 		});
@@ -473,15 +473,15 @@ class EffectsManager {
 				cleanup();
 			}
 		}
-	
+		
 		// オーバーレイ解除処理
 		function cleanup() {
 			window.overlayActive = false;
-			document.removeEventListener("keydown", onKeyDown);
+			//document.removeEventListener("keydown", onKeyDown);
 			overlay.remove();
 		}
 	
-		document.addEventListener("keydown", onKeyDown);
+		//document.addEventListener("keydown", onKeyDown);
 	}
 }
 // InputManager クラス
