@@ -105,11 +105,11 @@ class Game {
 		}
 
 		// BGM
-		const bgmBox = document.createElement("audio")
-		bgmBox.src = "./mus/easy.mp3"
-		bgmBox.loop = true
-		bgmBox.volume = 0.5
-		bgmBox.play()
+		//const bgmBox = document.createElement("audio")
+		//bgmBox.src = "./mus/easy.mp3"
+		//bgmBox.loop = true
+		//bgmBox.volume = 0.5
+		//bgmBox.play()
 		//this.bgm = bgmBox
 		//console.log(bgm)
 		
