@@ -41,7 +41,21 @@ class DungeonMap {
 	}
 	generate() {
 		this.reset()
-		const roomCount = (CONFIG.DIFFICULTY === "hard") ? randomInt(5, 8) : randomInt(3, 6)
+		const countGen = () => {
+			switch (CONFIG.DIFFICULTY) {
+				case "easy":
+					return randomInt(3, 5)
+				case "normal":
+					return randomInt(3, 6)
+				case "normalPlus":
+					return randomInt(4, 7)
+				case "hard":
+					return randomInt(5, 8)
+				default:
+					return randomInt(3, 8)
+			}
+		}
+		const roomCount = countGen()
 		for (let i = 0; i < roomCount; i++) { this.createRoom(); }
 		for (let i = 0; i < this.rooms.length - 1; i++) { this.connectRooms(this.rooms[i], this.rooms[i + 1]); }
 	}

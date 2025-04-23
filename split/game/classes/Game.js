@@ -964,7 +964,7 @@ class Game {
 			normal: {
 				enemy: {min: 2, max: 4},
 				entity: {min: 1, max: 2},
-				maxItems: {min: 3, max: 5},
+				maxItems: {min: 2, max: 4},
 				itemWeights: {
 					food: 4,
 					sushi: 4,
@@ -976,31 +976,32 @@ class Game {
 				}
 			},
 			normalPlus: {
-				enemy: {min: 2, max: 4},
-				entity: {min: 1, max: 2},
-				maxItems: {min: 3, max: 5},
+				enemy:    {min: 2, max: 4},
+				entity:   {min: 1, max: 2},
+				// ↓ 出現アイテム数を 1～3 に絞る
+				maxItems: {min: 1, max: 3},
 				itemWeights: {
-					food: 4,
-					sushi: 4,
-					magic: 2,
-					niku: 2,
-					weapon: 2,
-					shooting: 2,
-					box: 1
+					food:     2,
+					sushi:    2,
+					magic:    1,
+					niku:     1,
+					weapon:   1,
+					shooting: 1,
+					box:      1 
 				}
 			},
 			hard: {
 				enemy: {min: 2, max: 4},
 				entity: {min: 1, max: 2},
-				maxItems: {min: 3, max: 5},
+				maxItems: {min: 1, max: 3},
 				itemWeights: {
-					food: 4,
-					sushi: 4,
-					magic: 2,
-					niku: 2,
-					weapon: 2,
-					shooting: 2,
-					box: 1
+					food:     2,
+					sushi:    2,
+					magic:    1,
+					niku:     1,
+					weapon:   1,
+					shooting: 1,
+					box:      1 
 				}
 			}
 		}
@@ -1020,7 +1021,7 @@ class Game {
 		}
 
 		this.placeEntities(this.enemies, randomInt(sv.enemy.min, sv.enemy.max), "enemy")
-		this.placeEntities(this.gems, randomInt(sv.entity.min, sv.entity.max), "entity")
+		//this.placeEntities(this.gems, randomInt(sv.entity.min, sv.entity.max), "entity")
 		const maxItems = randomInt(sv.maxItems.min, sv.maxItems.max)
 		const weightedTypes = [
 			...Array(sv.itemWeights.food).fill("food"),
