@@ -13,7 +13,7 @@ const CONFIG = {
 	INITIAL_HP: 8,
 	REST_CYCLE: 5,
 	GENERATE_ENEMY_CYCLE: 30,
-	HUNGER_CYCLE: 5,
+	HUNGER_CYCLE: 10,
 	MIN_ENEMY_MULTIPLIER: 1.1,
 	MAX_ENEMY_MULTIPLIER: 1.2,
 	INVENTORY_MAX: 10,
@@ -121,6 +121,7 @@ function startDungeonGame(difficulty, myIcon="😊") {
 	MAP_TILE.WALL = difficultySettings[difficulty].wallEmoji
 	setTimeout(() => {
 		document.querySelector("button#change-icon").style.display = "none"
+		selector.bgmBox.pause()
 		new Game(myIcon)
 	}, 300)
 }

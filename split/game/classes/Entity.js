@@ -413,8 +413,9 @@ class ShootingItem extends InventoryItem {
 		
 		// もし射程内に直線上の敵が存在すればダメージを与える
 		if (hitEnemy) {
-			hitEnemy.hp -= this.damage
-			EffectsManager.showEffect(game.gameContainer, game.player, hitEnemy.x, hitEnemy.y, `-${this.damage}`, "damage")
+			let damage = Math.round(this.damage + game.player.attack * 0.2)
+			hitEnemy.hp -= damage
+			EffectsManager.showEffect(game.gameContainer, game.player, hitEnemy.x, hitEnemy.y, `-${damage}`, "damage")
 			if (hitEnemy.hp <= 0) {
 				EffectsManager.showEffect(game.gameContainer, game.player, hitEnemy.x, hitEnemy.y, "💥", "explosion")
 				const idx = game.enemies.indexOf(hitEnemy)

@@ -32,6 +32,13 @@ class DifficultySelector {
 		this.handleKeyDown = this.handleKeyDown.bind(this)
 		document.addEventListener('keydown', this.handleKeyDown)
 		document.querySelector("button#change-icon").style.display = "inline"
+
+		// BGM
+		this.bgmBox = document.createElement("audio")
+		this.bgmBox.loop = true
+		this.bgmBox.volume = 0.5
+		this.bgmBox.src = "./mus/difficulty.mp3"
+		this.bgmBox.play()
 	}
 	render() {
 		let html = ""

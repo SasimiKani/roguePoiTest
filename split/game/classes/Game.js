@@ -95,7 +95,18 @@ class Game {
 		
 		EffectsManager.showFloorOverlay(this.gameContainer, this.floor)
 		
+		// BGM
+		this.bgmBox = document.createElement("audio")
+		this.bgmBox.loop = true
+		this.bgmBox.volume = 0.5
+		
 		switch (CONFIG.DIFFICULTY) {
+		case "easy":
+			this.bgmBox.src = "./mus/easy.mp3"
+			break
+		case "normal":
+			this.bgmBox.src = "./mus/normal.mp3"
+			break
 		case "normalPlus":
 			EffectsManager.showFieldEffect(this.gameContainer, "❄", 50)
 			break
@@ -104,15 +115,8 @@ class Game {
 			break
 		}
 
-		// BGM
-		//const bgmBox = document.createElement("audio")
-		//bgmBox.src = "./mus/easy.mp3"
-		//bgmBox.loop = true
-		//bgmBox.volume = 0.5
-		//bgmBox.play()
-		//this.bgm = bgmBox
-		//console.log(bgm)
-		
+		this.bgmBox.play()
+
 		setTimeout(() => {
 			new InputManager(this)
 		}, 300)
@@ -952,56 +956,56 @@ class Game {
 				entity: {min: 1, max: 2},
 				maxItems: {min: 3, max: 5},
 				itemWeights: {
-					food: 4,
-					sushi: 4,
-					magic: 2,
-					niku: 2,
-					weapon: 2,
-					shooting: 2,
-					box: 1
+					food: 40,
+					sushi: 40,
+					magic: 20,
+					niku: 20,
+					weapon: 20,
+					shooting: 20,
+					box: 10
 				}
 			},
 			normal: {
 				enemy: {min: 2, max: 4},
 				entity: {min: 1, max: 2},
-				maxItems: {min: 2, max: 4},
+				maxItems: {min: 3, max: 4},
 				itemWeights: {
-					food: 4,
-					sushi: 4,
-					magic: 2,
-					niku: 2,
-					weapon: 2,
-					shooting: 2,
-					box: 1
+					food: 40,
+					sushi: 40,
+					magic: 20,
+					niku: 20,
+					weapon: 20,
+					shooting: 15,
+					box: 8
 				}
 			},
 			normalPlus: {
 				enemy:    {min: 2, max: 4},
 				entity:   {min: 1, max: 2},
 				// ↓ 出現アイテム数を 1～3 に絞る
-				maxItems: {min: 1, max: 3},
+				maxItems: {min: 2, max: 4},
 				itemWeights: {
-					food:     2,
-					sushi:    2,
-					magic:    1,
-					niku:     1,
-					weapon:   1,
-					shooting: 1,
-					box:      1 
+					food:     35,
+					sushi:    20,
+					magic:    10,
+					niku:     10,
+					weapon:   10,
+					shooting: 10,
+					box:      7 
 				}
 			},
 			hard: {
 				enemy: {min: 2, max: 4},
 				entity: {min: 1, max: 2},
-				maxItems: {min: 1, max: 3},
+				maxItems: {min: 2, max: 4},
 				itemWeights: {
-					food:     2,
-					sushi:    2,
-					magic:    1,
-					niku:     1,
-					weapon:   1,
-					shooting: 1,
-					box:      1 
+					food:     30,
+					sushi:    20,
+					magic:    10,
+					niku:     10,
+					weapon:   7,
+					shooting: 10,
+					box:      5
 				}
 			}
 		}
@@ -1070,6 +1074,11 @@ class Game {
 					if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp
 					EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+5", "heal")
 					game.message.add(`すしを食べて5ポイント回復`)
+
+					game.player.hunger += 5 // 食事ボーナス
+					if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
+					EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+5", "food")
+					game.message.add(`少しお腹がふくれた`)
 					// # MESSAGE
 				}))
 			} else if (type === "niku") {
@@ -1078,6 +1087,11 @@ class Game {
 					if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp
 					EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+10", "heal")
 					game.message.add(`お肉を食べて10ポイント回復`)
+
+					game.player.hunger += 5 // 食事ボーナス
+					if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
+					EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+5", "food")
+					game.message.add(`少しお腹がふくれた`)
 					// # MESSAGE
 				}))
 			} else if (type === "weapon") {
@@ -1245,6 +1259,9 @@ class Game {
 		Array.from(document.querySelectorAll(".field-effects")).forEach(e => {
 			e.remove()
 		})
+
+		// BGMを停止
+		this.bgmBox.pause()
 		
 		// グリッドを削除
 		switchGrid(this.gameContainer, false);
