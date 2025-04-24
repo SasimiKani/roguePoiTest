@@ -634,3 +634,44 @@ class UIManager {
 		else this.hpBar.style.backgroundColor = "red"
 	}
 }
+
+class SEManager {
+	constructor() {
+		// SE
+		this.seBox = document.createElement("audio")
+		this.seBox.volume = 0.8
+		this.seBox.src = "./mus/se.mp3"
+	}
+
+	playPickup() {
+		this.seBox.currentTime = 0.416 * 0
+		this.seBox.play()
+		setTimeout(() => {
+			this.seBox.pause()
+		}, 0.416)
+	}
+
+	playEffect() {
+		this.seBox.currentTime = 0.416 * 1
+		this.seBox.play()
+		setTimeout(() => {
+			this.seBox.pause()
+		}, 0.416)
+	}
+
+	playDamageMe() {
+		this.seBox.currentTime = 0.416 * 2
+		this.seBox.play()
+		setTimeout(() => {
+			this.seBox.pause()
+		}, 0.416)
+	}
+
+	playDamage() {
+		this.seBox.currentTime = 0.416 * 3
+		this.seBox.play()
+		setTimeout(() => {
+			this.seBox.pause()
+		}, 0.416)
+	}
+}

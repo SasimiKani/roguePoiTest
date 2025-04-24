@@ -117,6 +117,8 @@ class Game {
 
 		this.bgmBox.play()
 
+		//this.seBox = new SEManager()
+
 		setTimeout(() => {
 			new InputManager(this)
 		}, 300)
@@ -423,6 +425,7 @@ class Game {
 	advanceTurn() {
 		this.generateEnemyCycle[0] = (this.generateEnemyCycle[0] + 1) % this.generateEnemyCycle[1]
 		this.hungerCycle[0] = (this.hungerCycle[0] + 1) % this.hungerCycle[1]
+		console.log(this.hungerCycle)
 	}
 	// プレイヤーの移動や攻撃後のゲーム状態（敵へのダメージ、アイテム取得、マップの視界更新など）を更新します。
 	async updateData(inputResult) {
@@ -512,7 +515,6 @@ class Game {
 	}
 	// プレイヤーの飢餓状態を管理し、一定タイミングで飢えによるダメージなどを適用します。
 	checkHunger() {
-		this.hungerCycle[0] = (this.hungerCycle[0] + 1) % this.hungerCycle[1]
 		if (this.hungerCycle[0] === 0) { this.player.hunger--; if (this.player.hunger < 0) this.player.hunger = 0; }
 		if (this.player.hunger === 0) {
 			this.player.hp--; EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "餓死", "damage");
