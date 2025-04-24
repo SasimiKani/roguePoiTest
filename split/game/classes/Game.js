@@ -195,10 +195,12 @@ class Game {
 
 		this.ctrlPressed = event.ctrlKey
 		if (!window.overlayActive && !this.inventoryOpen && event.key === 'o') {
+			this.seBox.playMenu(2)
 			EffectsManager.showGiveUpConfirmationKeyboard(this)
 		}
 		if (event.key === 'e') {
 			this.inventoryOpen = !this.inventoryOpen
+			this.seBox.playMenu(this.inventoryOpen ? 2 : 4)
 			// カーソル初期値は0
 			this.inventorySelection = 0
 			this.render()
@@ -240,6 +242,7 @@ class Game {
 		// カーソル移動
 		if (event.key === 'ArrowUp') {
 			if (totalOptions > 0) {
+				this.seBox.playMenu(3)
 				this.inventorySelection = (this.inventorySelection - 1 + totalOptions) % totalOptions
 				this.render()
 			}
@@ -247,6 +250,7 @@ class Game {
 		}
 		if (event.key === 'ArrowDown') {
 			if (totalOptions > 0) {
+				this.seBox.playMenu(3)
 				this.inventorySelection = (this.inventorySelection + 1) % totalOptions
 				this.render()
 			}
@@ -257,6 +261,7 @@ class Game {
 		if (this.groundItem && this.inventorySelection === this.player.inventory.length && !this.boxSelected) {
 			if (event.key === 'p') {
 				if (this.groundItem.tile === '🔼') return; // 足元が階段なら何もしない
+				this.seBox.playPickup()
 				// 足元アイテムを拾う
 				pickupItem(this, this.groundItem)
 				this.render()
@@ -426,6 +431,7 @@ class Game {
 				this.render()
 			}
 			if (event.key === 'Escape' || event.key === 'e') {
+				this.seBox.playMenu(4)
 				this.inventoryOpen = false
 				this.boxSelected = null
 				this.render()
@@ -469,6 +475,7 @@ class Game {
 			this.map.revealAround(tx, ty)
 		}
 		if (!attacked && (this.keyX || this.keyY) && this.player.x === this.stairs.x && this.player.y === this.stairs.y) {
+			this.seBox.playMenu(2)
 			// ここで選択肢のオーバーレイを表示
 			EffectsManager.showStairConfirmationKeyboard(() => {
 				// 「降りる」を選んだ場合
@@ -476,6 +483,7 @@ class Game {
 				this.render()
 				EffectsManager.showFloorOverlay(this.gameContainer, this.floor)
 			}, () => {
+				this.seBox.playMenu(4)
 				// 「キャンセル」を選んだ場合、必要に応じてプレイヤー位置を戻すなどの処理
 				this.groundItem = new BaseEntity(tx, ty, '🔼')
 				
@@ -1090,6 +1098,7 @@ class Game {
 			} while (this.map.grid[y][x] !== ' ' || (x === this.player.x && y === this.player.y))
 			if (type === "sushi") {
 				arr.push(new InventoryItem(x, y, "すし", '🍣', async function(game) {
+					game.seBox.playEat()
 					game.player.hp += 5
 					if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp
 					EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+5", "heal")
@@ -1103,6 +1112,7 @@ class Game {
 				}))
 			} else if (type === "niku") {
 				arr.push(new InventoryItem(x, y, "お肉", '🍖', async function(game) {
+					game.seBox.playEat()
 					game.player.hp += 10
 					if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp
 					EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+10", "heal")
@@ -1153,6 +1163,7 @@ class Game {
 			} else if (type === "food") {
 				if (Math.random() > 0.7) {
 					arr.push(new InventoryItem(x, y, "パン", '🥖', async function(game) {
+						game.seBox.playEat()
 						game.player.hunger += 20
 						if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
 						EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+20", "food")
@@ -1161,6 +1172,7 @@ class Game {
 					}))
 				} else {
 					arr.push(new InventoryItem(x, y, "大きなパン", '🍞', async function(game) {
+						game.seBox.playEat()
 						game.player.hunger += 50
 						if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
 						EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+50", "food")
@@ -1347,12 +1359,14 @@ class Game {
 			// ↑/↓でカーソル移動
 			if (e.key === "ArrowUp") {
 				e.preventDefault()
+				this.seBox.playMenu(3)
 				if (box.contents.length > 0) {
 					selectionIndex = (selectionIndex - 1 + box.contents.length) % box.contents.length
 					renderList()
 				}
 			} else if (e.key === "ArrowDown") {
 				e.preventDefault()
+				this.seBox.playMenu(3)
 				if (box.contents.length > 0) {
 					selectionIndex = (selectionIndex + 1) % box.contents.length
 					renderList()

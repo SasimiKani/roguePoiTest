@@ -734,6 +734,14 @@ class SEManager extends AudioManager {
 			"./mus/se-effect.mp3",
 			"./mus/se-damageMe.mp3",
 			"./mus/se-damage.mp3",
+
+			"./mus/se-eat.mp3",
+
+			"./mus/se-menu-1.mp3",
+			"./mus/se-menu-2.mp3",
+			"./mus/se-menu-3.mp3",
+			"./mus/se-menu-4.mp3",
+
 			"EOL",
 		]
 
@@ -761,6 +769,18 @@ class SEManager extends AudioManager {
 
 	playDamage() {
 		this.player.src = this.playList["./mus/se-damage.mp3"]
+		this.player.currentTime = 0
+		this.player.play()
+	}
+
+	playMenu(n) {
+		this.player.src = this.playList[`./mus/se-menu-${n}.mp3`]
+		this.player.currentTime = 0
+		this.player.play()
+	}
+
+	playEat(n) {
+		this.player.src = this.playList[`./mus/se-eat.mp3`]
 		this.player.currentTime = 0
 		this.player.play()
 	}
