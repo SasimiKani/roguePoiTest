@@ -121,7 +121,7 @@ function startDungeonGame(difficulty, myIcon="😊") {
 	MAP_TILE.WALL = difficultySettings[difficulty].wallEmoji
 	setTimeout(() => {
 		document.querySelector("button#change-icon").style.display = "none"
-		selector.bgmBox.pause()
+		selector.bgmBox.stopBGM()
 		new Game(myIcon)
 	}, 300)
 }

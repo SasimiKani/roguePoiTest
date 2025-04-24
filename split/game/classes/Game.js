@@ -96,28 +96,41 @@ class Game {
 		EffectsManager.showFloorOverlay(this.gameContainer, this.floor)
 		
 		// BGM
-		this.bgmBox = document.createElement("audio")
-		this.bgmBox.loop = true
-		this.bgmBox.volume = 0.5
-		
+		this.bgmBox = new BGMManager()
+		this.seBox = new SEManager()
+		this.seBox.loadfile()
+
+		this.bgmBox.loadfile().then(() => {
+			switch (CONFIG.DIFFICULTY) {
+			case "easy":
+				this.bgmBox.playEasy()
+				break
+			case "normal":
+				this.bgmBox.playNormal()
+				break
+			case "normalPlus":
+				//this.bgmBox.playNormal()
+				break
+			case "hard":
+				//this.bgmBox.playNormal()
+				break
+			}
+		})
+
 		switch (CONFIG.DIFFICULTY) {
 		case "easy":
-			this.bgmBox.src = "./mus/easy.mp3"
 			break
 		case "normal":
-			this.bgmBox.src = "./mus/normal.mp3"
 			break
 		case "normalPlus":
 			EffectsManager.showFieldEffect(this.gameContainer, "❄", 50)
+			//this.bgmBox.playNormal()
 			break
 		case "hard":
 			EffectsManager.showFieldEffect(this.gameContainer, "🔥", 10)
+			//this.bgmBox.playNormal()
 			break
 		}
-
-		this.bgmBox.play()
-
-		this.seBox = new SEManager()
 
 		setTimeout(() => {
 			new InputManager(this)

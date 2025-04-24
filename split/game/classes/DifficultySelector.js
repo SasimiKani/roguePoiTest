@@ -34,11 +34,10 @@ class DifficultySelector {
 		document.querySelector("button#change-icon").style.display = "inline"
 
 		// BGM
-		this.bgmBox = document.createElement("audio")
-		this.bgmBox.loop = true
-		this.bgmBox.volume = 0.5
-		this.bgmBox.src = "./mus/difficulty.mp3"
-		this.bgmBox.play()
+		this.bgmBox = new BGMManager()
+		this.bgmBox.loadfile().then(bgm => {
+			this.bgmBox.playDifficulty()
+		})
 	}
 	render() {
 		let html = ""

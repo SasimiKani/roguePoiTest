@@ -635,49 +635,133 @@ class UIManager {
 	}
 }
 
-class SEManager {
+class AudioManager {
 	constructor() {
-		// SE
-		this.seBox = document.createElement("audio")
-		this.seBox.volume = 0.8
-		this.seBox.loop = false
-		////(this.seBox)
+		// BGM
+		this.files = []
+		this.playList = {}
+
+		this.player = document.createElement("audio")
+		this.player.volume = 0.5
+		this.player.loop = true
+	}
+
+	async loadfile() {
+		const promiseChain = Promise.resolve()
+		for (const file of this.files) {
+			if (file === "EOL") {
+				this.debugLog(file)
+				return await promiseChain.then(() => this.playList)
+			} else {
+				this.debugLog(file)
+				await promiseChain.then(() => 
+					fetch(file).then(res => res.blob()).then(blob => {
+						const url = URL.createObjectURL(blob)
+						this.playList[file] = url
+						this.debugLog(url)
+						return
+					})
+				)
+			}
+		}
 	}
 
 	debugLog(text) {
-		console.log(text)
+		//console.log(text)
+	}
+
+	stopBGM() {
+		this.player.pause()
+	}
+}
+
+class BGMManager extends AudioManager {
+	constructor() {
+		super()
+		
+		// BGM
+		this.files = [
+			"./mus/difficulty.mp3",
+			"./mus/easy.mp3",
+			"./mus/normal.mp3",
+			//"./mus/normalPlus.mp3",
+			//"./mus/hard.mp3",
+			"EOL",
+		]
+
+		this.player.volume = 0.5
+		this.player.loop = true
+	}
+
+	playDifficulty() {
+		this.player.src = this.playList["./mus/difficulty.mp3"]
+		this.player.currentTime = 0
+		this.player.play()
+	}
+
+	playEasy() {
+		this.player.src = this.playList["./mus/easy.mp3"]
+		this.player.currentTime = 0
+		this.player.play()
+	}
+
+	playNormal() {
+		this.player.src = this.playList["./mus/normal.mp3"]
+		this.player.currentTime = 0
+		this.player.play()
+	}
+
+	playNormalPlus() {
+		this.player.src = this.playList["./mus/normalPlus.mp3"]
+		this.player.currentTime = 0
+		this.player.play()
+	}
+
+	playHard() {
+		this.player.src = this.playList["./mus/hard.mp3"]
+		this.player.currentTime = 0
+		this.player.play()
+	}
+}
+
+class SEManager extends AudioManager {
+	constructor() {
+		super()
+		
+		// SE
+		this.files = [
+			"./mus/se-pickup.mp3",
+			"./mus/se-effect.mp3",
+			"./mus/se-damageMe.mp3",
+			"./mus/se-damage.mp3",
+			"EOL",
+		]
+
+		this.player.volume = 0.8
+		this.player.loop = false
 	}
 
 	playPickup() {
-		this.seBox.src = "./mus/se-pickup.mp3"
-		this.seBox.currentTime = 1
-		setTimeout(() => {
-			this.seBox.play()
-		}, 100)
+		this.player.src = this.playList["./mus/se-pickup.mp3"]
+		this.player.currentTime = 0
+		this.player.play()
 	}
 
 	playEffect() {
-		this.seBox.src = "./mus/se-effect.mp3"
-		this.seBox.currentTime = 1
-		setTimeout(() => {
-			this.seBox.play()
-		}, 100)
+		this.player.src = this.playList["./mus/se-effect.mp3"]
+		this.player.currentTime = 0
+		this.player.play()
 	}
 
 	playDamageMe() {
-		this.seBox.src = "./mus/se-damageMe.mp3"
-		this.seBox.currentTime = 1
-		setTimeout(() => {
-			//this.debugLog(this.seBox.currentSrc)
-			this.seBox.play()
-		}, 100)
+		this.player.src = this.playList["./mus/se-damageMe.mp3"]
+		this.player.currentTime = 0
+		this.player.play()
 	}
 
 	playDamage() {
-		this.seBox.src = "./mus/se-damage.mp3"
-		this.seBox.currentTime = 1
-		setTimeout(() => {
-			this.seBox.play()
-		}, 100)
+		this.player.src = this.playList["./mus/se-damage.mp3"]
+		this.player.currentTime = 0
+		this.player.play()
 	}
 }
