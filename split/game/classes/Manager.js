@@ -640,38 +640,44 @@ class SEManager {
 		// SE
 		this.seBox = document.createElement("audio")
 		this.seBox.volume = 0.8
-		this.seBox.src = "./mus/se.mp3"
+		this.seBox.loop = false
+		////(this.seBox)
+	}
+
+	debugLog(text) {
+		console.log(text)
 	}
 
 	playPickup() {
-		this.seBox.currentTime = 0.416 * 0
-		this.seBox.play()
+		this.seBox.src = "./mus/se-pickup.mp3"
+		this.seBox.currentTime = 1
 		setTimeout(() => {
-			this.seBox.pause()
-		}, 0.416)
+			this.seBox.play()
+		}, 100)
 	}
 
 	playEffect() {
-		this.seBox.currentTime = 0.416 * 1
-		this.seBox.play()
+		this.seBox.src = "./mus/se-effect.mp3"
+		this.seBox.currentTime = 1
 		setTimeout(() => {
-			this.seBox.pause()
-		}, 0.416)
+			this.seBox.play()
+		}, 100)
 	}
 
 	playDamageMe() {
-		this.seBox.currentTime = 0.416 * 2
-		this.seBox.play()
+		this.seBox.src = "./mus/se-damageMe.mp3"
+		this.seBox.currentTime = 1
 		setTimeout(() => {
-			this.seBox.pause()
-		}, 0.416)
+			//this.debugLog(this.seBox.currentSrc)
+			this.seBox.play()
+		}, 100)
 	}
 
 	playDamage() {
-		this.seBox.currentTime = 0.416 * 3
-		this.seBox.play()
+		this.seBox.src = "./mus/se-damage.mp3"
+		this.seBox.currentTime = 1
 		setTimeout(() => {
-			this.seBox.pause()
-		}, 0.416)
+			this.seBox.play()
+		}, 100)
 	}
 }

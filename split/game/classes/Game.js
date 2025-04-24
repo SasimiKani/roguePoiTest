@@ -117,7 +117,7 @@ class Game {
 
 		this.bgmBox.play()
 
-		//this.seBox = new SEManager()
+		this.seBox = new SEManager()
 
 		setTimeout(() => {
 			new InputManager(this)
@@ -355,6 +355,7 @@ class Game {
 					this.groundItem = temp
 					EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "交換")
 					this.message.add(`${temp.name}と${this.player.inventory[this.inventorySelection].name}を交換した`)
+					this.seBox.playPickup()
 					// # MESSAGE
 					if (this.groundItem.name.match(/武器.*/g) && this.player.weapon) {
 						// インベントリの装備している武器を交換したら外す
@@ -476,6 +477,7 @@ class Game {
 				// アイテムを拾う
 				if (!this.ctrlPressed && !pickupItem(this, item)) {
 					this.message.add(`${item.name}を拾った`);
+					this.seBox.playPickup()
 					return false; // マップ上から削除
 				} else {
 					// 拾わなかった場合の処理
@@ -518,6 +520,7 @@ class Game {
 		if (this.player.hunger === 0) {
 			this.player.hp--; EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "餓死", "damage");
 			this.message.add(`空腹でダメージを受けた`)
+			this.seBox.playDamageMe()
 			// # MESSAGE
 		}
 	}
@@ -680,6 +683,7 @@ class Game {
 					if (this.player.hp < 0) this.player.hp = 0
 					EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me")
 					this.message.add(`${enemy.name}の攻撃　${enemy.atk}ダメージ`)
+					this.seBox.playDamageMe()
 					// # MESSAGE
 				}, this.actionCount * this.actionTime)
 				this.actionCount++
@@ -693,6 +697,7 @@ class Game {
 						if (this.player.hp < 0) this.player.hp = 0
 						EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me")
 						this.message.add(`${enemy.name}の攻撃　${enemy.atk}ダメージ`)
+						this.seBox.playDamageMe()
 						// # MESSAGE
 					}, this.actionCount * this.actionTime)
 					this.actionCount++
@@ -715,6 +720,7 @@ class Game {
 		enemy.takeDamage(this.player.attack)
 		EffectsManager.showEffect(this.gameContainer, this.player, enemy.x, enemy.y, `-${this.player.attack}`, "damage")
 		this.message.add(`${enemy.name}に${this.player.attack}ダメージ`)
+		this.seBox.playDamage()
 		// # MESSAGE
 		this.actionCount++
 		if (enemy.hp <= 0) {
