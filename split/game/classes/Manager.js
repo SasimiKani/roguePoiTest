@@ -671,7 +671,7 @@ class AudioManager {
 	}
 
 	stopBGM() {
-		this.player.pause()
+		this.player.stopBGM()
 	}
 }
 
