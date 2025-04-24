@@ -425,7 +425,6 @@ class Game {
 	advanceTurn() {
 		this.generateEnemyCycle[0] = (this.generateEnemyCycle[0] + 1) % this.generateEnemyCycle[1]
 		this.hungerCycle[0] = (this.hungerCycle[0] + 1) % this.hungerCycle[1]
-		console.log(this.hungerCycle)
 	}
 	// プレイヤーの移動や攻撃後のゲーム状態（敵へのダメージ、アイテム取得、マップの視界更新など）を更新します。
 	async updateData(inputResult) {
