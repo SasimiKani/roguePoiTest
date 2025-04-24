@@ -1281,7 +1281,7 @@ class Game {
 		})
 
 		// BGMを停止
-		this.bgmBox.pause()
+		this.bgmBox.stopBGM()
 		
 		// グリッドを削除
 		switchGrid(this.gameContainer, false);
