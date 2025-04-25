@@ -98,24 +98,25 @@ class Game {
 		// BGM
 		this.bgmBox = new BGMManager()
 		this.seBox = new SEManager()
-		this.seBox.loadfile()
-
-		this.bgmBox.loadfile().then(() => {
-			switch (CONFIG.DIFFICULTY) {
-			case "easy":
-				this.bgmBox.playEasy()
-				break
-			case "normal":
-				this.bgmBox.playNormal()
-				break
-			case "normalPlus":
-				//this.bgmBox.playNormal()
-				break
-			case "hard":
-				//this.bgmBox.playNormal()
-				break
-			}
+		this.seBox.loadfile().then(() => {
+			this.bgmBox.loadfile().then(() => {
+				switch (CONFIG.DIFFICULTY) {
+				case "easy":
+					this.bgmBox.playEasy()
+					break
+				case "normal":
+					this.bgmBox.playNormal()
+					break
+				case "normalPlus":
+					//this.bgmBox.playNormal()
+					break
+				case "hard":
+					//this.bgmBox.playNormal()
+					break
+				}
+			})
 		})
+
 
 		switch (CONFIG.DIFFICULTY) {
 		case "easy":

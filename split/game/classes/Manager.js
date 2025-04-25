@@ -646,24 +646,39 @@ class AudioManager {
 		this.player.loop = true
 	}
 
+	testPlay() {
+		const tester = document.createElement("audio")
+		tester.play().then(() => {
+			tester.pause()
+			return
+		})
+		.catch(() => {
+			alert("自動再生を許可してね")
+			return
+		})
+	}
+
 	async loadfile() {
-		const promiseChain = Promise.resolve()
-		for (const file of this.files) {
-			if (file === "EOL") {
+		const promises = this.files
+			.filter(file => file !== "EOL")
+			.map(async file => {
 				this.debugLog(file)
-				return await promiseChain.then(() => this.playList)
-			} else {
-				this.debugLog(file)
-				await promiseChain.then(() => 
-					fetch(file).then(res => res.blob()).then(blob => {
-						const url = URL.createObjectURL(blob)
-						this.playList[file] = url
-						this.debugLog(url)
-						return
-					})
-				)
-			}
+				const res = await fetch(file)
+				const blob = await res.blob()
+				const url = URL.createObjectURL(blob)
+				this.playList[file] = url
+				this.debugLog(url)
+			})
+	
+		await this.testPlay()
+		await Promise.all(promises)
+		
+		// "EOL" を通過点として使ってるならここでログ出すとか
+		if (this.files.includes("EOL")) {
+			this.debugLog("EOL")
 		}
+	
+		return this.playList
 	}
 
 	debugLog(text) {
