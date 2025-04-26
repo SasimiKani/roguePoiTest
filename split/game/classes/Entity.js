@@ -247,7 +247,7 @@ class MagicSpell extends InventoryItem {
 			})
 		})
 		this.emoji = emoji
-		this.damage = options.damage + options.player.attack * 0.5
+		this.damage = options.damage + Math.round(options.player.attack * 0.5)
 		this.area = options.area
 		this.fallbackHeal = options.fallbackHeal
 	}
