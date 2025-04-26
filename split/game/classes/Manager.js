@@ -659,14 +659,15 @@ class AudioManager {
 	}
 
 	async loadfile() {
-		const promises = this.files
-			.filter(file => file !== "EOL")
+		const promises = Object.entries(this.files).map(file => file[1])
+			.filter(file => file.name !== "EOL")
 			.map(async file => {
-				this.debugLog(file)
-				const res = await fetch(file)
+				console.log(file)
+				this.debugLog(file.name)
+				const res = await fetch(file.name)
 				const blob = await res.blob()
 				const url = URL.createObjectURL(blob)
-				this.playList[file] = url
+				this.playList[file.name] = {url, volume: file.volume}
 				this.debugLog(url)
 			})
 	
@@ -696,46 +697,46 @@ class BGMManager extends AudioManager {
 		
 		// BGM
 		this.files = [
-			"./rsrc/mus/difficulty.mp3",
-			"./rsrc/mus/easy.mp3",
-			"./rsrc/mus/normal.mp3",
-			//"./rsrc/mus/normalPlus.mp3",
-			//"./rsrc/mus/hard.mp3",
-			"EOL",
+			{name: "./rsrc/mus/difficulty.mp3", volume: 0.5},
+			{name: "./rsrc/mus/easy.mp3", volume: 0.5},
+			{name: "./rsrc/mus/normal.mp3", volume: 0.5},
+			//{name: "./rsrc/mus/normalPlus.mp3", volume: 0.5},
+			//{name: "./rsrc/mus/hard.mp3", volume: 0.5},
+			{name: "EOL", volume: 0.5},
 		]
 
 		this.player.volume = 0.5
 		this.player.loop = true
 	}
 
-	playDifficulty() {
-		this.player.src = this.playList["./rsrc/mus/difficulty.mp3"]
+	playBGM(file) {
+		// 音声ファイル
+		this.player.src = this.playList[file].url
+
+		// 再生
+		this.player.volume = this.playList[file].volume
 		this.player.currentTime = 0
 		this.player.play()
+	}
+
+	playDifficulty() {
+		this.playBGM("./rsrc/mus/difficulty.mp3")
 	}
 
 	playEasy() {
-		this.player.src = this.playList["./rsrc/mus/easy.mp3"]
-		this.player.currentTime = 0
-		this.player.play()
+		this.playBGM("./rsrc/mus/easy.mp3")
 	}
 
 	playNormal() {
-		this.player.src = this.playList["./rsrc/mus/normal.mp3"]
-		this.player.currentTime = 0
-		this.player.play()
+		this.playBGM("./rsrc/mus/normal.mp3")
 	}
 
 	playNormalPlus() {
-		this.player.src = this.playList["./rsrc/mus/normalPlus.mp3"]
-		this.player.currentTime = 0
-		this.player.play()
+		this.playBGM("./rsrc/mus/normalPlus.mp3")
 	}
 
 	playHard() {
-		this.player.src = this.playList["./rsrc/mus/hard.mp3"]
-		this.player.currentTime = 0
-		this.player.play()
+		this.playBGM("./rsrc/mus/hard.mp3")
 	}
 }
 
@@ -745,31 +746,33 @@ class SEManager extends AudioManager {
 		
 		// SE
 		this.files = [
-			"./rsrc/se/se-pickup.mp3",
-			"./rsrc/se/se-effect.mp3",
-			"./rsrc/se/se-damageMe.mp3",
-			"./rsrc/se/se-damage.mp3",
+			{name: "./rsrc/se/se-pickup.mp3", volume: 0.2},
+			{name: "./rsrc/se/se-effect.mp3", volume: 0.2},
+			{name: "./rsrc/se/se-damageMe.mp3", volume: 0.2},
+			{name: "./rsrc/se/se-damage.mp3", volume: 0.2},
 
-			"./rsrc/se/se-eat.mp3",
-			"./rsrc/se/se-lvup.mp3",
+			{name: "./rsrc/se/se-eat.mp3", volume: 0.2},
+			{name: "./rsrc/se/se-lvup.mp3", volume: 0.2},
+			{name: "./rsrc/se/se-stairs.mp3", volume: 0.5},
 
-			"./rsrc/se/se-menu-1.mp3",
-			"./rsrc/se/se-menu-2.mp3",
-			"./rsrc/se/se-menu-3.mp3",
-			"./rsrc/se/se-menu-4.mp3",
+			{name: "./rsrc/se/se-menu-1.mp3", volume: 0.2},
+			{name: "./rsrc/se/se-menu-2.mp3", volume: 0.2},
+			{name: "./rsrc/se/se-menu-3.mp3", volume: 0.2},
+			{name: "./rsrc/se/se-menu-4.mp3", volume: 0.2},
 
-			"EOL",
+			{name: "EOL"},
 		]
 
-		this.player.volume = 0.8
+		this.player.volume = 0.5
 		this.player.loop = false
 	}
 
 	playSE(file, duration=350) {
 		// 音声ファイル
-		this.player.src = this.playList[file]
+		this.player.src = this.playList[file].url
 
 		// 再生
+		this.player.volume = this.playList[file].volume
 		this.player.currentTime = 0
 		this.player.play()
 
@@ -805,5 +808,9 @@ class SEManager extends AudioManager {
 
 	playLVUP(n) {
 		this.playSE(`./rsrc/se/se-lvup.mp3`)
+	}
+
+	playStair(n) {
+		this.playSE(`./rsrc/se/se-stairs.mp3`, 800)
 	}
 }

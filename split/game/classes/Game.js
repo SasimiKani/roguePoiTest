@@ -480,6 +480,7 @@ class Game {
 			// ここで選択肢のオーバーレイを表示
 			EffectsManager.showStairConfirmationKeyboard(() => {
 				// 「降りる」を選んだ場合
+				this.seBox.playStair()
 				this.generateDungeon(true)
 				this.render()
 				EffectsManager.showFloorOverlay(this.gameContainer, this.floor)
