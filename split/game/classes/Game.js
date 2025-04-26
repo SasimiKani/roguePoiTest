@@ -262,16 +262,13 @@ class Game {
 			// アイテム整理（ソート）
 			this.seBox.playMenu(3)
 			let sortItems = this.player.inventory.sort((a, b) => {
-				console.log(a.constructor.name)
 				if (a.constructor.name.localeCompare(b.constructor.name) === 0) {
 					return a.name.localeCompare(b.name)
 				} else {
 					return b.constructor.name.localeCompare(a.constructor.name)
 				}
 			})
-			console.log(sortItems)
 			this.player.inventory = sortItems
-			console.log(this.player.inventory)
 			this.render()
 			return
 		}
