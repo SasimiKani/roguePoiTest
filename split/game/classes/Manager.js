@@ -662,7 +662,7 @@ class AudioManager {
 		const promises = Object.entries(this.files).map(file => file[1])
 			.filter(file => file.name !== "EOL")
 			.map(async file => {
-				console.log(file)
+				//////console.log(file)
 				this.debugLog(file.name)
 				const res = await fetch(file.name)
 				const blob = await res.blob()

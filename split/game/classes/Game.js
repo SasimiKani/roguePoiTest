@@ -258,6 +258,23 @@ class Game {
 			return
 		}
 		// 以下、キーの処理
+		if (event.key === 'y') {
+			// アイテム整理（ソート）
+			this.seBox.playMenu(3)
+			let sortItems = this.player.inventory.sort((a, b) => {
+				console.log(a.constructor.name)
+				if (a.constructor.name.localeCompare(b.constructor.name) === 0) {
+					return a.name.localeCompare(b.name)
+				} else {
+					return b.constructor.name.localeCompare(a.constructor.name)
+				}
+			})
+			console.log(sortItems)
+			this.player.inventory = sortItems
+			console.log(this.player.inventory)
+			this.render()
+			return
+		}
 		// もしカーソルが足元アイテム（＝インベントリリストの最後の項目）を指している場合
 		if (this.groundItem && this.inventorySelection === this.player.inventory.length && !this.boxSelected) {
 			if (event.key === 'p') {
@@ -283,10 +300,10 @@ class Game {
 					this.inventoryOpen = false
 					this.render()
 					// インベントリがマックスで足元の武器を装備できない
-					if (this.groundItem.name.match(/武器.*/g) && this.player.inventory.length >= CONFIG.INVENTORY_MAX) return
+					if (this.groundItem instanceof WeaponItem && this.player.inventory.length >= CONFIG.INVENTORY_MAX) return
 					this.groundItem.use(this).then(()	=> {
 						// もし足元のアイテムが武器なら、使用後にインベントリへ追加
-						if (this.groundItem.name.match(/(武器.*)/g)) {
+						if (this.groundItem instanceof WeaponItem) {
 							if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
 								this.player.inventory.push(this.groundItem)
 							} else {
@@ -294,7 +311,7 @@ class Game {
 							}
 						}
 						// 箱は消費しない
-						if (!this.groundItem.name.match(/箱.*/g)) {
+						if (!(this.groundItem instanceof BoxItem)) {
 							this.groundItem = null
 						}
 					})
@@ -338,7 +355,7 @@ class Game {
 				if (this.groundItem) return
 				let item = this.player.inventory[this.inventorySelection]
 				if (item) {
-					if (item.name.match(/武器.*/g) && this.player.weapon === item) {
+					if (item instanceof WeaponItem && this.player.weapon === item) {
 						this.player.attack -= this.player.weapon.bonus
 						this.player.weapon = null
 						EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `装備解除-${item.bonus}`, "heal")
@@ -376,7 +393,7 @@ class Game {
 					this.message.add(`${temp.name}と${this.player.inventory[this.inventorySelection].name}を交換した`)
 					this.seBox.playPickup()
 					// # MESSAGE
-					if (this.groundItem.name.match(/武器.*/g) && this.player.weapon) {
+					if (this.groundItem instanceof WeaponItem && this.player.weapon) {
 						// インベントリの装備している武器を交換したら外す
 						this.groundItem.use(this)
 					}
@@ -849,7 +866,7 @@ class Game {
 			for (let i = 0; i < this.player.inventory.length; i++) {
 				let selected = (i === this.inventorySelection) ? ">> " : ""
 				let itemName = this.player.inventory[i].name || "アイテム"
-				if (this.player.inventory[i].name.match(/武器.*/g) && this.player.weapon === this.player.inventory[i])
+				if (this.player.inventory[i] instanceof WeaponItem && this.player.weapon === this.player.inventory[i])
 					itemName += " (装備中)"
 				if (this.player.inventory[i] === this.boxSelected)
 					itemName += "（この箱に入れる）"
@@ -903,6 +920,7 @@ class Game {
 			
 			// それ以外の基本コマンド
 			invCommands.push("ESC/E: 閉じる")
+			invCommands.push("Y: 整理")
 		
 			invHtml += `<p>（${invCommands.join(", ")}）</p>`
 		
