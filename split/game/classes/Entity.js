@@ -209,6 +209,7 @@ class BoxItem extends InventoryItem {
 class MagicSpell extends InventoryItem {
 	constructor(x, y, name, tile, emoji, options) {
 		super(x, y, name, tile, async (game) => {
+			game.seBox.playMagic()
 			game.message.add(`${this.name}を使った`)
 			return new Promise((resolve) => {
 				let affected = false
@@ -271,6 +272,7 @@ class WeaponItem extends InventoryItem {
 	}
 	
 	equip(game, weapon = this) {
+		game.seBox.playEquip()
 		game.message.add(`${this.name}を装備した`)
 		game.player.weapon = weapon
 		game.player.attack += weapon.bonus
@@ -278,6 +280,7 @@ class WeaponItem extends InventoryItem {
 	}
 	
 	unEquip(game, weapon = this) {
+		game.seBox.playDisarm()
 		game.message.add(`${this.name}の装備を外した`)
 		game.player.attack -= game.player.weapon.bonus
 		game.player.weapon = null
