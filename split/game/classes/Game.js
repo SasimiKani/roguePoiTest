@@ -1092,8 +1092,8 @@ class Game {
 					}
 					
 					hp = randomInt(
-						Math.round(Math.pow(this.floor, this.minMagnification)),
-						Math.round(Math.pow(this.floor, this.maxMagnification))
+						Math.round(Math.pow((this.floor + 1) / 2, this.minMagnification)),
+						Math.round(Math.pow((this.floor + 1) / 2, this.maxMagnification))
 					)
 				}
 			} while (this.map.grid[y][x] !== ' ' || (x === this.player.x && y === this.player.y))
@@ -1152,9 +1152,58 @@ class Game {
 					...Array(1).fill({name: "メテオ", tile: '🌠', damage: 30, area: 5, fallbackHeal: null}),
 				//// 回復魔法
 					...Array(10).fill({name: "リカバーオール", tile: '✨️', damage: null, area: null, fallbackHeal: 100}),
+					//// 補助魔法
+					...Array(10).fill({name: "ワープ", tile: '🌀', damage: null, area: null, fallbackHeal: null, effect: async (game) => {
+						// 現在部屋を除外してワープ先ルームを選ぶ
+						const otherRooms = game.map.rooms.filter(room =>
+							!(
+								game.player.x >= room.x &&
+								game.player.x <	room.x + room.w &&
+								game.player.y >= room.y &&
+								game.player.y <	room.y + room.h
+							)
+						);
+						if (otherRooms.length === 0) return; // 念のため
+					
+						const toRoom = otherRooms[randomInt(0, otherRooms.length - 1)];
+					
+						// 候補セルを収集
+						const candidates = [];
+						for (let ix = toRoom.x; ix < toRoom.x + toRoom.w; ix++) {
+							for (let iy = toRoom.y; iy < toRoom.y + toRoom.h; iy++) {
+								// 床タイルかつ敵がいない
+								if (
+									game.map.grid[iy][ix] === ' ' &&
+									!game.enemies.some(e => e.x === ix && e.y === iy)
+								) {
+									candidates.push({ x: ix, y: iy });
+								}
+							}
+						}
+					
+						// 候補が空ならフォールバック
+						if (candidates.length === 0) {
+							console.warn("ワープ先に使えるセルがありませんでした。ワープキャンセル");
+							return;
+						}
+					
+						// ランダムに選んで座標更新
+						const { x: toX, y: toY } = candidates[randomInt(0, candidates.length - 1)];
+						game.player.x = toX;
+						game.player.y = toY;
+					
+						// ■ 視界更新 ■
+						game.map.visible[toY][toX] = true;
+						game.map.revealRoom(toX, toY);
+						game.map.revealAround(toX, toY);
+					
+						// ターン進行・再描画
+						game.advanceTurn();
+						game.render();
+					}}),
 				]
 				let magic = weightedMagics.splice(randomInt(1, weightedMagics.length - 1), 1)[0]
-				arr.push(new MagicSpell(x, y, magic.name, magic.tile, magic.tile, {damage: magic.damage, area: magic.area, fallbackHeal: magic.fallbackHeal}))
+				arr.push(new MagicSpell(x, y, magic.name, magic.tile, magic.tile, {damage: magic.damage, player: this.player, area: magic.area, fallbackHeal: magic.fallbackHeal, effect: magic.effect}))
 			} else if (type === "entity") {
 				arr.push(new BaseEntity(x, y))
 			} else if (type === "enemy") {
@@ -1201,6 +1250,7 @@ class Game {
 			this.player.healAmount++
 			this.player.hp = this.player.maxHp
 			this.queueTimeout(() => {
+				this.seBox.playLVUP()
 				EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "LEVEL UP!", "heal");
 				this.message.add("レベルが上がった!")
 			}, 1100)

@@ -696,11 +696,11 @@ class BGMManager extends AudioManager {
 		
 		// BGM
 		this.files = [
-			"./mus/difficulty.mp3",
-			"./mus/easy.mp3",
-			"./mus/normal.mp3",
-			//"./mus/normalPlus.mp3",
-			//"./mus/hard.mp3",
+			"./rsrc/mus/difficulty.mp3",
+			"./rsrc/mus/easy.mp3",
+			"./rsrc/mus/normal.mp3",
+			//"./rsrc/mus/normalPlus.mp3",
+			//"./rsrc/mus/hard.mp3",
 			"EOL",
 		]
 
@@ -709,31 +709,31 @@ class BGMManager extends AudioManager {
 	}
 
 	playDifficulty() {
-		this.player.src = this.playList["./mus/difficulty.mp3"]
+		this.player.src = this.playList["./rsrc/mus/difficulty.mp3"]
 		this.player.currentTime = 0
 		this.player.play()
 	}
 
 	playEasy() {
-		this.player.src = this.playList["./mus/easy.mp3"]
+		this.player.src = this.playList["./rsrc/mus/easy.mp3"]
 		this.player.currentTime = 0
 		this.player.play()
 	}
 
 	playNormal() {
-		this.player.src = this.playList["./mus/normal.mp3"]
+		this.player.src = this.playList["./rsrc/mus/normal.mp3"]
 		this.player.currentTime = 0
 		this.player.play()
 	}
 
 	playNormalPlus() {
-		this.player.src = this.playList["./mus/normalPlus.mp3"]
+		this.player.src = this.playList["./rsrc/mus/normalPlus.mp3"]
 		this.player.currentTime = 0
 		this.player.play()
 	}
 
 	playHard() {
-		this.player.src = this.playList["./mus/hard.mp3"]
+		this.player.src = this.playList["./rsrc/mus/hard.mp3"]
 		this.player.currentTime = 0
 		this.player.play()
 	}
@@ -745,17 +745,18 @@ class SEManager extends AudioManager {
 		
 		// SE
 		this.files = [
-			"./mus/se-pickup.mp3",
-			"./mus/se-effect.mp3",
-			"./mus/se-damageMe.mp3",
-			"./mus/se-damage.mp3",
+			"./rsrc/se/se-pickup.mp3",
+			"./rsrc/se/se-effect.mp3",
+			"./rsrc/se/se-damageMe.mp3",
+			"./rsrc/se/se-damage.mp3",
 
-			"./mus/se-eat.mp3",
+			"./rsrc/se/se-eat.mp3",
+			"./rsrc/se/se-lvup.mp3",
 
-			"./mus/se-menu-1.mp3",
-			"./mus/se-menu-2.mp3",
-			"./mus/se-menu-3.mp3",
-			"./mus/se-menu-4.mp3",
+			"./rsrc/se/se-menu-1.mp3",
+			"./rsrc/se/se-menu-2.mp3",
+			"./rsrc/se/se-menu-3.mp3",
+			"./rsrc/se/se-menu-4.mp3",
 
 			"EOL",
 		]
@@ -764,39 +765,45 @@ class SEManager extends AudioManager {
 		this.player.loop = false
 	}
 
-	playPickup() {
-		this.player.src = this.playList["./mus/se-pickup.mp3"]
+	playSE(file, duration=350) {
+		// 音声ファイル
+		this.player.src = this.playList[file]
+
+		// 再生
 		this.player.currentTime = 0
 		this.player.play()
+
+		// 止める
+		setTimeout(() => {
+			this.player.pause()
+		}, duration)
+	}
+
+	playPickup() {
+		this.playSE("./rsrc/se/se-pickup.mp3")
 	}
 
 	playEffect() {
-		this.player.src = this.playList["./mus/se-effect.mp3"]
-		this.player.currentTime = 0
-		this.player.play()
+		this.playSE("./rsrc/se/se-effect.mp3")
 	}
 
 	playDamageMe() {
-		this.player.src = this.playList["./mus/se-damageMe.mp3"]
-		this.player.currentTime = 0
-		this.player.play()
+		this.playSE("./rsrc/se/se-damageMe.mp3")
 	}
 
 	playDamage() {
-		this.player.src = this.playList["./mus/se-damage.mp3"]
-		this.player.currentTime = 0
-		this.player.play()
+		this.playSE("./rsrc/se/se-damage.mp3")
 	}
 
 	playMenu(n) {
-		this.player.src = this.playList[`./mus/se-menu-${n}.mp3`]
-		this.player.currentTime = 0
-		this.player.play()
+		this.playSE(`./rsrc/se/se-menu-${n}.mp3`)
 	}
 
 	playEat(n) {
-		this.player.src = this.playList[`./mus/se-eat.mp3`]
-		this.player.currentTime = 0
-		this.player.play()
+		this.playSE(`./rsrc/se/se-eat.mp3`)
+	}
+
+	playLVUP(n) {
+		this.playSE(`./rsrc/se/se-lvup.mp3`)
 	}
 }
