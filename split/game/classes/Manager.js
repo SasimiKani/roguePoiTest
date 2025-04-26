@@ -750,6 +750,7 @@ class SEManager extends AudioManager {
 			{name: "./rsrc/se/se-effect.mp3", volume: 0.2},
 			{name: "./rsrc/se/se-damageMe.mp3", volume: 0.2},
 			{name: "./rsrc/se/se-damage.mp3", volume: 0.2},
+			{name: "./rsrc/se/se-arrow.mp3", volume: 0.4},
 
 			{name: "./rsrc/se/se-eat.mp3", volume: 0.2},
 			{name: "./rsrc/se/se-lvup.mp3", volume: 0.2},
@@ -796,6 +797,10 @@ class SEManager extends AudioManager {
 
 	playDamage() {
 		this.playSE("./rsrc/se/se-damage.mp3")
+	}
+
+	playArrow() {
+		this.playSE("./rsrc/se/se-arrow.mp3")
 	}
 
 	playMenu(n) {

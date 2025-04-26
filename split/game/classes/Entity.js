@@ -389,6 +389,7 @@ class ShootingItem extends InventoryItem {
 	 * @param {{dx:number, dy:number}} direction - 射撃方向
 	 */
 	shoot(game, direction) {
+		game.seBox.playArrow()
 		// 射撃エフェクト
 		EffectsManager.showShootingLineEffect(
 			game.gameContainer,
