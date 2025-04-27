@@ -69,13 +69,14 @@ class Game {
 		// ------------------------------
 		// UI関連の初期化
 		// ------------------------------
+		this.renderer = new Renderer(this)
 		this.uiManager = new UIManager();
 
 		// ------------------------------
 		// ダンジョン生成と初期描画
 		// ------------------------------
 		this.generateDungeon(false);
-		this.render();
+		this.renderer.render();
 
 		// ------------------------------
 		// メッセージの初期化
@@ -145,7 +146,7 @@ class Game {
 			callback()
 			this.timeoutQueue = this.timeoutQueue.filter(t => t !== id)
 			if (this.timeoutQueue.length === 0) this.acceptingInput = true
-			this.render()
+			this.renderer.render()
 		}, delay)
 		this.timeoutQueue.push(id)
 	}
@@ -205,7 +206,7 @@ class Game {
 			this.seBox.playMenu(this.inventoryOpen ? 2 : 4)
 			// カーソル初期値は0
 			this.inventorySelection = 0
-			this.render()
+			this.renderer.render()
 			return;
 		}
 		if (this.inventoryOpen) {
@@ -217,7 +218,7 @@ class Game {
 		if (!inputResult) { return; }
 		this.advanceTurn()
 		this.updateData(inputResult)
-		this.render()
+		this.renderer.render()
 	}
 	// インベントリが開いている場合の入力（カーソル移動、使用、置く、交換、入れるなど）を処理します。
 	async processInventoryInput(event) {
@@ -237,7 +238,7 @@ class Game {
 			// # MESSAGE
 			// ターンを進めたり、レンダリングを更新
 			this.advanceTurn()
-			this.render()
+			this.renderer.render()
 			return
 		}*/
 		
@@ -246,7 +247,7 @@ class Game {
 			if (totalOptions > 0) {
 				this.seBox.playMenu(3)
 				this.inventorySelection = (this.inventorySelection - 1 + totalOptions) % totalOptions
-				this.render()
+				this.renderer.render()
 			}
 			return
 		}
@@ -254,7 +255,7 @@ class Game {
 			if (totalOptions > 0) {
 				this.seBox.playMenu(3)
 				this.inventorySelection = (this.inventorySelection + 1) % totalOptions
-				this.render()
+				this.renderer.render()
 			}
 			return
 		}
@@ -270,7 +271,7 @@ class Game {
 				}
 			})
 			this.player.inventory = sortItems
-			this.render()
+			this.renderer.render()
 			return
 		}
 		// もしカーソルが足元アイテム（＝インベントリリストの最後の項目）を指している場合
@@ -280,7 +281,7 @@ class Game {
 				this.seBox.playPickup()
 				// 足元アイテムを拾う
 				pickupItem(this, this.groundItem)
-				this.render()
+				this.renderer.render()
 				return
 			}
 			if (event.key === 'u') {
@@ -289,14 +290,14 @@ class Game {
 					this.inventoryOpen = false
 					this.groundItem = null
 					this.generateDungeon(true)
-					this.render()
+					this.renderer.render()
 					EffectsManager.showFloorOverlay(this.gameContainer, this.floor)
 					return
 				}
 				// 足元アイテムを使用
 				else if (this.groundItem.use) {
 					this.inventoryOpen = false
-					this.render()
+					this.renderer.render()
 					// インベントリがマックスで足元の武器を装備できない
 					if (this.groundItem instanceof WeaponItem && this.player.inventory.length >= CONFIG.INVENTORY_MAX) return
 					this.groundItem.use(this).then(()	=> {
@@ -315,7 +316,7 @@ class Game {
 					})
 				}
 				this.inventoryOpen = false
-				this.render()
+				this.renderer.render()
 				return
 			}
 			if (event.key === 'x') {
@@ -327,7 +328,7 @@ class Game {
 				let item = this.player.inventory[this.inventorySelection]
 				this.inventoryOpen = false
 				if (item && item.use) {
-					this.render()
+					this.renderer.render()
 					// アイテムを使う
 					await item.use(this)
 					// 武器・箱じゃなければ消費する
@@ -346,7 +347,7 @@ class Game {
 						this.turn()
 					}
 				}
-				this.render()
+				this.renderer.render()
 				return
 			}
 			if (event.key === 'd' && !this.boxSelected) {
@@ -374,7 +375,7 @@ class Game {
 					}
 				}
 				this.inventoryOpen = false
-				this.render()
+				this.renderer.render()
 				return
 			}
 			if (event.key === 'x' && !this.boxSelected) {
@@ -397,7 +398,7 @@ class Game {
 					}
 				}
 				this.inventoryOpen = false
-				this.render()
+				this.renderer.render()
 				return
 			}
 			if (event.key === 'i') { // 入れる操作
@@ -432,7 +433,7 @@ class Game {
 						}
 						
 						this.boxSelected.updateName()
-						this.render()
+						this.renderer.render()
 						return
 					} else {
 						EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "容量オーバー", "damage")
@@ -444,13 +445,13 @@ class Game {
 				} else if (selectedItem instanceof BoxItem) {
 					this.boxSelected = selectedItem
 				}
-				this.render()
+				this.renderer.render()
 			}
 			if (event.key === 'Escape' || event.key === 'e') {
 				this.seBox.playMenu(4)
 				this.inventoryOpen = false
 				this.boxSelected = null
-				this.render()
+				this.renderer.render()
 				return
 			}
 		}
@@ -497,7 +498,7 @@ class Game {
 				// 「降りる」を選んだ場合
 				this.seBox.playStair()
 				this.generateDungeon(true)
-				this.render()
+				this.renderer.render()
 				EffectsManager.showFloorOverlay(this.gameContainer, this.floor)
 			}, () => {
 				this.seBox.playMenu(4)
@@ -505,7 +506,7 @@ class Game {
 				this.groundItem = new BaseEntity(tx, ty, '🔼')
 				
 				// 例: 現在の位置から少しずらす（ここは実装に合わせて調整）
-				this.render()
+				this.renderer.render()
 			})
 			
 			return
@@ -779,186 +780,7 @@ class Game {
 	}
 	
 	/* 4. レンダリング・UI更新 */
-	// ゲーム画面（マップ、敵、アイテム、プレイヤーなど）のメインビューを描画します。
-	renderMainView() {
-		let html = ''
-		var radius = CONFIG.VIEW_RADIUS
-		const startX = this.player.x - radius
-		const startY = this.player.y - radius
-		for (let y = startY; y <= this.player.y + radius; y++) {
-			for (let x = startX; x <= this.player.x + radius; x++) {
-				let tile = MAP_TILE.WALL
-				if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
-					if (!this.map.visible[y][x]) { html += `<span class="wall ${CONFIG.DIFFICULTY}">${MAP_TILE.WALL}</span>`; continue; }
-					else if (this.player.x === x && this.player.y === y) tile = this.player.tile
-					else {
-						let drawn = false
-						for (let enemy of this.enemies) {
-							if (enemy.x === x && enemy.y === y) { tile = enemy.tile; drawn = true; break; }
-						}
-						if (!drawn) {
-							for (let item of this.items) {
-								if (item.x === x && item.y === y) { tile = item.tile; drawn = true; break; }
-							}
-							for (let gem of this.gems) {
-								if (gem.x === x && gem.y === y) { tile = '💎'; drawn = true; break; }
-							}
-							if (!drawn && this.stairs.x === x && this.stairs.y === y) tile = MAP_TILE.STEPS
-							if (!drawn && tile === MAP_TILE.WALL) tile = this.map.grid[y][x]
-						}
-					}
-				}
-				html += `<span class="${CONFIG.DIFFICULTY}">${tile}</span>`
-			}
-			html += '<br>'
-		}
-		this.gameContainer.innerHTML = html
-	}
-	// ミニマップを生成し、現在の視界状態や各エンティティの位置を反映します。
-	renderMinimap() {
-		let html = ''
-		for (let y = 0; y < this.height; y++) {
-			for (let x = 0; x < this.width; x++) {
-				let style = ""
-				if (this.map.visible[y][x]) {
-					if (this.player.x === x && this.player.y === y) style = "background-color: yellow;"
-					else if (this.enemies.some(e => e.x === x && e.y === y)) style = "background-color: red;"
-					else if (this.items.some(item => item.x === x && item.y === y)) style = "background-color: cyan;"
-					else if (this.stairs.x === x && this.stairs.y === y) style = "border: 1px solid cyan; background-color: transparent;"
-					else style = (this.map.grid[y][x] === ' ') ? "background-color: #555;" : "background-color: #222;"
-				}
-				html += `<div class="minimap-cell" style="${style}"></div>`
-			}
-		}
-		this.minimapContainer.innerHTML = html
-		this.minimapContainer.style.gridTemplateColumns = `repeat(${this.width}, 4px)`
-	}
-	// 上記のメインビューとミニマップの更新、及びインベントリオーバーレイなどのUI要素の再描画を統合的に行います。
-	render() {
-		if (!this.isPlay) return
-		document.body.classList.remove("easy-dungeon", "hard-dungeon", "deep-dungeon")
-		if (this.floor < 10) document.body.classList.add("easy-dungeon")
-		else if (this.floor < 50) document.body.classList.add("hard-dungeon")
-		else document.body.classList.add("deep-dungeon")
-		const maxFloor = difficultySettings[CONFIG.DIFFICULTY].maxFloor
-		const brightness = 80 - ((this.floor - 1) / (maxFloor - 1)) * 60
-		document.body.style.backgroundColor = `hsl(0, 0%, ${brightness}%)`
-		this.renderMainView()
-		this.renderMinimap()
-		document.getElementById('difficulty').innerText = CONFIG.DIFFICULTY
-		document.getElementById('hp').innerText = this.player.hp
-		document.getElementById('maxhp').innerText = this.player.maxHp
-		document.getElementById('atk').innerText = this.player.attack
-		document.getElementById('lv').innerText = this.player.level
-		document.getElementById('exp').innerText = this.player.exp
-		document.getElementById('floor').innerText = this.floor
-		document.getElementById('score').innerText = this.score
-		document.getElementById('hunger').innerText = this.player.hunger
-		document.getElementById('maxhunger').innerText = this.player.maxHunger
-		// プレイヤーのHPや満腹度などのステータスバーを更新します。
-		this.uiManager.update(this.player)
-		if (this.inventoryOpen) {
-			let invHtml = `<div class="inventory-modal">`
-			invHtml += `<h3>所持品 (${this.player.inventory.length + (this.groundItem ? 1 : 0)}/${CONFIG.INVENTORY_MAX})</h3>`
-			invHtml += `<ul style="min-height:20px;">`
-			for (let i = 0; i < this.player.inventory.length; i++) {
-				let selected = (i === this.inventorySelection) ? ">> " : ""
-				let itemName = this.player.inventory[i].name || "アイテム"
-				if (this.player.inventory[i] instanceof WeaponItem && this.player.weapon === this.player.inventory[i])
-					itemName += " (装備中)"
-				if (this.player.inventory[i] === this.boxSelected)
-					itemName += "（この箱に入れる）"
-				invHtml += `<li class="${(i === this.inventorySelection) ? 'selected' : ''} ${this.player.inventory[i] === this.boxSelected ? 'boxSelected' : ''}">${selected}${this.player.inventory[i].tile} ${itemName}</li>`
-			}
-			invHtml += `</ul>`
-		
-			// コマンド表示用の配列（インベントリ側）
-			let invCommands = []
-			
-			// 選択中のアイテム
-			let selectedItem = this.player.inventory[this.inventorySelection]
-			
-			if (this.boxSelected) {
-				if (selectedItem === this.boxSelected) {
-					// 選択中の箱が選択されている場合は「I: 入れる」を表示
-					invCommands.push("I: キャンセル")
-				} else {
-					// 箱が選択されている場合は「I: 入れる」を表示
-					invCommands.push("I: 入れる")
-				}
-			}
-			
-			// クラスごとのコマンド
-			if (selectedItem instanceof BoxItem && !this.boxSelected) {
-				// 箱の場合は「」を表示
-				invCommands.push("I: 箱に入れる")
-				invCommands.push("U: 見る")
-			}
-			else if (selectedItem instanceof MagicSpell) {
-				// 魔法の場合は「」を表示
-				invCommands.push("U: 唱える")
-			}
-			else if (selectedItem instanceof WeaponItem) {
-				// 武器の場合の場合は「」を表示
-				if (this.player.weapon === selectedItem) {
-					invCommands.push("U: 外す")
-				} else {
-					invCommands.push("U: 装備")
-				}
-			}
-			else {
-				invCommands.push("U: 使う")
-			}
-			
-			if (this.groundItem) {
-				invCommands.push("X: 交換")
-			} else {
-				invCommands.push("D: 置く")
-			}
-			
-			// それ以外の基本コマンド
-			invCommands.push("ESC/E: 閉じる")
-			invCommands.push("Y: 整理")
-		
-			invHtml += `<p>（${invCommands.join(", ")}）</p>`
-		
-			// 足元アイテムの表示
-			if (this.groundItem) {
-				invHtml += `<hr>`
-				invHtml += `<h3>足元</h3>`
-				invHtml += `<ul style="min-height:20px;">`
-				let index = this.player.inventory.length
-				let selected = (index === this.inventorySelection) ? ">> " : ""
-				invHtml += `<li class="${(index === this.inventorySelection) ? 'selected' : ''}">${selected}${this.groundItem.tile} ${this.groundItem.tile === '🔼' ? "階段" : this.groundItem.name}</li>`
-				invHtml += `</ul>`
-				// コマンド表示用の配列（足元）
-				let grdCommands = []
-				if (this.groundItem.tile === '🔼') {
-					grdCommands.push("U: 降りる")
-				} else {
-					if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
-						grdCommands.push("P: 拾う")
-					}
-					
-					// クラスごとのコマンド
-					if (this.groundItem instanceof MagicSpell) {
-						// 魔法の場合は「」を表示
-						grdCommands.push("U: 唱える")
-					}
-					else if (this.groundItem instanceof WeaponItem) {
-						grdCommands.push("U: 装備")
-					}
-					else {
-						grdCommands.push("U: 使う")
-					}
-				}
-				invHtml += `<p>（${grdCommands.join(", ")}）</p>`
-			}
-			invHtml += `</div>`
-			this.gameContainer.innerHTML += invHtml
-		}
-	}
-	// プレイヤーのHPや満腹度などのステータスバーを更新します。
+	// Rederer.jsに分割
 	
 	/* 5. ダンジョン生成・レベル管理 */
 	// 新しいダンジョン（または階層）の生成を行い、プレイヤー位置、エンティティ配置、階段設定などを更新します。
@@ -1159,28 +981,6 @@ class Game {
 		})
 		localStorage.setItem("gameResult", JSON.stringify(results))
 	}
-	// 保存された結果をモーダル画面で表示します。
-	showResults() {
-		let results = JSON.parse(localStorage.getItem("gameResult") || "[]")
-		let modalHtml = '<div class="results-modal" id="resultsModal">'
-		modalHtml += '<h3>記録された結果</h3>'
-		if (results.length === 0) modalHtml += '<p>記録がありません。</p>'
-		else {
-			modalHtml += '<table><tr><th>日付</th><th>難易度</th><th>フロア</th><th>結果</th><th>レベル</th><th>スコア</th></tr>'
-			results.forEach(r => {
-				modalHtml += `<tr><td>${new Date(r.date).toLocaleString()}</td><td>${r.dungeonLv == undefined ? "-" : r.dungeonLv}</td><td>${r.floor}</td><td>${r.clear ? "クリア" : "ゲームオーバー"}</td><td>${r.lv}</td><td>${r.score}</td></tr>`
-			})
-			modalHtml += '</table>'
-		}
-		modalHtml += '<button onclick="closeResults()">閉じる</button>'
-		modalHtml += '</div>'
-		const existingModal = document.getElementById("resultsModal")
-		if (!existingModal) {
-			const modalDiv = document.createElement("div")
-			modalDiv.innerHTML = modalHtml
-			document.body.appendChild(modalDiv)
-		}
-	}
 	
 	/* 8. ゲーム終了・リソース解放 */
 	// ゲームオーバーまたはクリア時に、登録済みのタイマーやイベントリスナーを解除して、Game インスタンスのリソースを解放します。
@@ -1214,152 +1014,6 @@ class Game {
 		selector = new DifficultySelector(this.myIcon)
 	}
 	
-	/* 9. 箱操作（入れ子アイテムの操作） */
-	// 箱アイテムの use 操作として呼ばれ、箱内に入れたアイテム一覧をオーバーレイ表示して、以下の操作を可能にします。
-	// ・出す：箱からアイテムを取り出しインベントリに戻す。
-	// ・使う：箱内のアイテムを使用する。
-	// ・置く：箱内のアイテムを取り出して地面に配置する。
-	openBox(box) {
-		// 箱オーバーレイ中は通常操作を停止
-		this.boxOverlayActive = true
-		let selectionIndex = 0; // 現在選択中の箱内アイテムのインデックス
-	
-		// オーバーレイ要素の生成
-		const overlay = document.createElement("div")
-		overlay.className = "box-overlay"
-	
-		// タイトル：箱内のアイテム数と容量を表示
-		const title = document.createElement("h3")
-		title.textContent = `箱の中身 (${box.contents.length}/${box.capacity})`
-		overlay.appendChild(title)
-	
-		// アイテム一覧表示用コンテナ（スクロール可能）
-		const listContainer = document.createElement("div")
-		listContainer.className = "box-item-list-container"
-		const list = document.createElement("ul")
-		list.className = "box-item-list"
-		listContainer.appendChild(list)
-		overlay.appendChild(listContainer)
-	
-		// 操作方法の説明
-		const instructions = document.createElement("p")
-		instructions.textContent = "↑/↓: 選択	D: 出す	U: 使う	X: 置く	Esc: 閉じる"
-		overlay.appendChild(instructions)
-	
-		document.body.appendChild(overlay)
-	
-		// オーバーレイ内のリストを描画
-		function renderList() {
-			title.textContent = `箱の中身 (${box.contents.length}/${box.capacity})`
-			list.innerHTML = ""
-			box.contents.forEach((item, index) => {
-				const li = document.createElement("li")
-				li.textContent = `${item.tile} ${item.name}`
-				// カーソル位置の場合は背景色を変更
-				if (index === selectionIndex) {
-					li.style.backgroundColor = "#444"
-					li.style.color = "#fff"
-				}
-				list.appendChild(li)
-			})
-		}
-		renderList()
-	
-		// キーボード入力ハンドラ
-		function onKeyDown(e) {
-			if (!this.boxOverlayActive) return
-			// ↑/↓でカーソル移動
-			if (e.key === "ArrowUp") {
-				e.preventDefault()
-				this.seBox.playMenu(3)
-				if (box.contents.length > 0) {
-					selectionIndex = (selectionIndex - 1 + box.contents.length) % box.contents.length
-					renderList()
-				}
-			} else if (e.key === "ArrowDown") {
-				e.preventDefault()
-				this.seBox.playMenu(3)
-				if (box.contents.length > 0) {
-					selectionIndex = (selectionIndex + 1) % box.contents.length
-					renderList()
-				}
-			}
-			// 出す：箱内の選択アイテムを取り出してインベントリへ
-			else if (e.key.toLowerCase() === "d") {
-				e.preventDefault()
-				const inventory = this.player.inventory
-				const maxInventory = CONFIG.INVENTORY_MAX
-				// インベントリがいっぱいなら出せない
-				if (inventory.length === maxInventory) {
-					this.message.add("これ以上出せない")
-				} else if (box.contents.length > 0) {
-					const item = box.removeItem(selectionIndex)
-					this.player.inventory.push(item)
-					if (selectionIndex >= box.contents.length) {
-						selectionIndex = Math.max(0, box.contents.length - 1)
-					}
-					renderList()
-				}
-			}
-			// 使う：箱内の選択アイテムを使用
-			else if (e.key.toLowerCase() === 'u') {
-				e.preventDefault()
-				if (box.contents.length > 0) {
-					const item = box.contents[selectionIndex]
-					cleanup()
-					renderList()
-					if (item.use) item.use(this).then(() => {
-						// 使用後、アイテムが消費されるなら削除する
-						box.contents.splice(selectionIndex, 1)
-						if (selectionIndex >= box.contents.length) {
-							selectionIndex = Math.max(0, box.contents.length - 1)
-						}
-						// 名前の隣の数字を更新
-						box.updateName()
-						// 使ったら箱を閉じてターンを進める
-						this.turn()
-					})
-				}
-			}
-			// 置く：箱内の選択アイテムを取り出して地面に設置
-			else if (e.key.toLowerCase() === "x") {
-				e.preventDefault()
-				if (box.contents.length > 0) {
-					const item = box.removeItem(selectionIndex)
-					item.x = this.player.x
-					item.y = this.player.y
-					this.items.push(item)
-					if (selectionIndex >= box.contents.length) {
-						selectionIndex = Math.max(0, box.contents.length - 1)
-					}
-					// 置いたら箱を閉じてターンを進める
-					cleanup()
-					renderList()
-					this.turn()
-				}
-			}
-			// Esc でオーバーレイを閉じる
-			else if (e.key === "Escape") {
-				e.preventDefault()
-				cleanup()
-			}
-			box.updateName()
-		}
-		// bind して Game インスタンスの this を保持
-		const boundOnKeyDown = onKeyDown.bind(this)
-		document.addEventListener("keydown", boundOnKeyDown)
-	
-		const cleanup = () => {
-			this.boxOverlayActive = false
-			document.removeEventListener("keydown", boundOnKeyDown)
-			overlay.remove()
-			box.updateName()
-			this.boxSelected = null
-			// オーバーレイ終了後、ゲームの再描画
-			this.render()
-		}
-	}
-	
 	turn() {
 		const syncTimeout = (time) => {
 			return new Promise((resolve) => {
@@ -1378,7 +1032,7 @@ class Game {
 			this.queueTimeout(() => {
 				this.enemyActionRefresh()
 				this.checkCollisions()
-				this.render()
+				this.renderer.render()
 			}, (this.actionCount + 1) * this.actionTime)
 		})
 	}
