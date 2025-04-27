@@ -1,0 +1,151 @@
+[
+	{
+		"name": "Player",
+		"superClass": "BaseEntity",
+		"methods": [
+			"constructor"
+		],
+		"children": []
+	},
+	{
+		"name": "Enemy",
+		"superClass": "BaseEntity",
+		"methods": [
+			"constructor",
+			"takeDamage"
+		],
+		"children": [
+			{
+				"name": "EnemyLarvae",
+				"superClass": "Enemy",
+				"methods": [
+					"constructor"
+				],
+				"children": []
+			},
+			{
+				"name": "EnemyAnt",
+				"superClass": "Enemy",
+				"methods": [
+					"constructor"
+				],
+				"children": []
+			},
+			{
+				"name": "EnemyCrayfish",
+				"superClass": "Enemy",
+				"methods": [
+					"constructor"
+				],
+				"children": []
+			},
+			{
+				"name": "EnemySlime",
+				"superClass": "Enemy",
+				"methods": [
+					"constructor",
+					"takeDamage"
+				],
+				"children": []
+			},
+			{
+				"name": "EnemyBat",
+				"superClass": "Enemy",
+				"methods": [
+					"constructor"
+				],
+				"children": []
+			},
+			{
+				"name": "EnemyGoblin",
+				"superClass": "Enemy",
+				"methods": [
+					"constructor"
+				],
+				"children": []
+			},
+			{
+				"name": "EnemySkeleton",
+				"superClass": "Enemy",
+				"methods": [
+					"constructor"
+				],
+				"children": []
+			},
+			{
+				"name": "EnemySpider",
+				"superClass": "Enemy",
+				"methods": [
+					"constructor"
+				],
+				"children": []
+			},
+			{
+				"name": "EnemyWizard",
+				"superClass": "Enemy",
+				"methods": [
+					"constructor"
+				],
+				"children": []
+			},
+			{
+				"name": "EnemyDragon",
+				"superClass": "Enemy",
+				"methods": [
+					"constructor"
+				],
+				"children": []
+			}
+		]
+	},
+	{
+		"name": "InventoryItem",
+		"superClass": "BaseEntity",
+		"methods": [
+			"constructor"
+		],
+		"children": [
+			{
+				"name": "BoxItem",
+				"superClass": "InventoryItem",
+				"methods": [
+					"constructor",
+					"updateName",
+					"insertItem",
+					"removeItem"
+				],
+				"children": []
+			},
+			{
+				"name": "MagicSpell",
+				"superClass": "InventoryItem",
+				"methods": [
+					"constructor"
+				],
+				"children": []
+			},
+			{
+				"name": "WeaponItem",
+				"superClass": "InventoryItem",
+				"methods": [
+					"constructor",
+					"equip",
+					"unEquip"
+				],
+				"children": []
+			},
+			{
+				"name": "ShootingItem",
+				"superClass": "InventoryItem",
+				"methods": [
+					"constructor",
+					"updateName",
+					"prepareShooting",
+					"waitForDirectionInput",
+					"shoot"
+				],
+				"children": []
+			}
+		]
+	}
+]
