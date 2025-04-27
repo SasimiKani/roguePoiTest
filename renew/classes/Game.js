@@ -996,67 +996,9 @@ class Game {
 		// 設定値の基準として使う値
 		const maxFloor = difficultySettings[CONFIG.DIFFICULTY].maxFloor // 最大階層からの割合で調整
 		const dif = CONFIG.DIFFICULTY // 難易度で調整
-		const SettingValues = {
-			easy: {
-				enemy: {min: 2, max: 4},
-				entity: {min: 1, max: 2},
-				maxItems: {min: 3, max: 5},
-				itemWeights: {
-					food: 40,
-					sushi: 40,
-					magic: 20,
-					niku: 20,
-					weapon: 20,
-					shooting: 20,
-					box: 10
-				}
-			},
-			normal: {
-				enemy: {min: 2, max: 4},
-				entity: {min: 1, max: 2},
-				maxItems: {min: 3, max: 4},
-				itemWeights: {
-					food: 40,
-					sushi: 40,
-					magic: 20,
-					niku: 20,
-					weapon: 20,
-					shooting: 15,
-					box: 8
-				}
-			},
-			normalPlus: {
-				enemy:    {min: 2, max: 4},
-				entity:   {min: 1, max: 2},
-				// ↓ 出現アイテム数を 1～3 に絞る
-				maxItems: {min: 2, max: 4},
-				itemWeights: {
-					food:     35,
-					sushi:    20,
-					magic:    10,
-					niku:     10,
-					weapon:   10,
-					shooting: 10,
-					box:      7 
-				}
-			},
-			hard: {
-				enemy: {min: 2, max: 4},
-				entity: {min: 1, max: 2},
-				maxItems: {min: 2, max: 4},
-				itemWeights: {
-					food:     30,
-					sushi:    20,
-					magic:    10,
-					niku:     10,
-					weapon:   7,
-					shooting: 10,
-					box:      5
-				}
-			}
-		}
+
 		// 難易度の設定値を取得
-		const sv = SettingValues[CONFIG.DIFFICULTY]
+		const sv = EntitySettingValues[CONFIG.DIFFICULTY]
 		
 		const lastRoom = this.map.rooms.at(-1)
 		this.stairs.x = lastRoom.x + 2
@@ -1115,33 +1057,9 @@ class Game {
 				}
 			} while (this.map.grid[y][x] !== ' ' || (x === this.player.x && y === this.player.y))
 			if (type === "sushi") {
-				arr.push(new InventoryItem(x, y, "すし", '🍣', async function(game) {
-					game.seBox.playEat()
-					game.player.hp += 5
-					if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp
-					EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+5", "heal")
-					game.message.add(`すしを食べて5ポイント回復`)
-
-					game.player.hunger += 5 // 食事ボーナス
-					if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
-					EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+5", "food")
-					game.message.add(`少しお腹がふくれた`)
-					// # MESSAGE
-				}))
+				arr.push(new HealItem(x, y, "すし", '🍣', 5, 5))
 			} else if (type === "niku") {
-				arr.push(new InventoryItem(x, y, "お肉", '🍖', async function(game) {
-					game.seBox.playEat()
-					game.player.hp += 10
-					if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp
-					EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+10", "heal")
-					game.message.add(`お肉を食べて10ポイント回復`)
-
-					game.player.hunger += 5 // 食事ボーナス
-					if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
-					EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+5", "food")
-					game.message.add(`少しお腹がふくれた`)
-					// # MESSAGE
-				}))
+				arr.push(new HealItem(x, y, "お肉", '🍖', 10, 5))
 			} else if (type === "weapon") {
 				var selection = randomInt(1, 2)
 				let bonus = randomInt(1, 3)
@@ -1159,66 +1077,6 @@ class Game {
 				//// 射撃武器
 				arr.push(new ShootingItem(x, y, "射撃-弓矢", '🏹', /* 数 */ 5, /* ダメージ */ 10, /* 距離 */ 8, "↑"))
 			} else if (type === "magic") {
-				const weightedMagics = [
-				//// 攻撃魔法
-					...Array(30).fill({name: "火の玉", tile: '🔥', damage: 20, area: 1, fallbackHeal: null}),
-					...Array(20).fill({name: "たつまき", tile: '🌪️', damage: 15, area: 2, fallbackHeal: null}),
-					...Array(10).fill({name: "大波", tile: '🌊', damage: 25, area: 4, fallbackHeal: null}),
-					...Array(5).fill({name: "カミナリ", tile: '⚡️', damage: 30, area: 1, fallbackHeal: null}),
-					...Array(1).fill({name: "エクスプロージョン", tile: '💥', damage: 50, area: 3, fallbackHeal: null}),
-					...Array(1).fill({name: "メテオ", tile: '🌠', damage: 30, area: 5, fallbackHeal: null}),
-				//// 回復魔法
-					...Array(10).fill({name: "リカバーオール", tile: '✨️', damage: null, area: null, fallbackHeal: 100}),
-					//// 補助魔法
-					...Array(10).fill({name: "ワープ", tile: '🌀', damage: null, area: null, fallbackHeal: null, effect: async (game) => {
-						// 現在部屋を除外してワープ先ルームを選ぶ
-						const otherRooms = game.map.rooms.filter(room =>
-							!(
-								game.player.x >= room.x &&
-								game.player.x <	room.x + room.w &&
-								game.player.y >= room.y &&
-								game.player.y <	room.y + room.h
-							)
-						);
-						if (otherRooms.length === 0) return; // 念のため
-					
-						const toRoom = otherRooms[randomInt(0, otherRooms.length - 1)];
-					
-						// 候補セルを収集
-						const candidates = [];
-						for (let ix = toRoom.x; ix < toRoom.x + toRoom.w; ix++) {
-							for (let iy = toRoom.y; iy < toRoom.y + toRoom.h; iy++) {
-								// 床タイルかつ敵がいない
-								if (
-									game.map.grid[iy][ix] === ' ' &&
-									!game.enemies.some(e => e.x === ix && e.y === iy)
-								) {
-									candidates.push({ x: ix, y: iy });
-								}
-							}
-						}
-					
-						// 候補が空ならフォールバック
-						if (candidates.length === 0) {
-							console.warn("ワープ先に使えるセルがありませんでした。ワープキャンセル");
-							return;
-						}
-					
-						// ランダムに選んで座標更新
-						const { x: toX, y: toY } = candidates[randomInt(0, candidates.length - 1)];
-						game.player.x = toX;
-						game.player.y = toY;
-					
-						// ■ 視界更新 ■
-						game.map.visible[toY][toX] = true;
-						game.map.revealRoom(toX, toY);
-						game.map.revealAround(toX, toY);
-					
-						// ターン進行・再描画
-						game.advanceTurn();
-						game.render();
-					}}),
-				]
 				let magic = weightedMagics.splice(randomInt(1, weightedMagics.length - 1), 1)[0]
 				arr.push(new MagicSpell(x, y, magic.name, magic.tile, magic.tile, {damage: magic.damage, player: this.player, area: magic.area, fallbackHeal: magic.fallbackHeal, effect: magic.effect}))
 			} else if (type === "entity") {
@@ -1229,23 +1087,9 @@ class Game {
 				arr.push(new EnemyClass(x, y, hp))
 			} else if (type === "food") {
 				if (Math.random() > 0.7) {
-					arr.push(new InventoryItem(x, y, "パン", '🥖', async function(game) {
-						game.seBox.playEat()
-						game.player.hunger += 20
-						if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
-						EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+20", "food")
-						game.message.add(`パンを食べて少しお腹がふくれた`)
-						// # MESSAGE
-					}))
+					arr.push(new FoodItem(x, y, "パン", '🥖', 20))
 				} else {
-					arr.push(new InventoryItem(x, y, "大きなパン", '🍞', async function(game) {
-						game.seBox.playEat()
-						game.player.hunger += 50
-						if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
-						EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, "+50", "food")
-						game.message.add(`大きなパンを食べてお腹がふくれた`)
-						// # MESSAGE
-					}))
+					arr.push(new FoodItem(x, y, "大きなパン", '🍞', 50))
 				}
 			} else if (type === "box") {
 				arr.push(new BoxItem(x, y, 5))

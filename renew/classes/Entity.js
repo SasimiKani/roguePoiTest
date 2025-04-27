@@ -169,6 +169,33 @@ class InventoryItem extends BaseEntity {
 		this.use = useFunction
 	}
 }
+class HealItem extends InventoryItem {
+	constructor(x, y, name, tile, healAmount, stuffAmount) {
+		super(x, y, name, tile, async function(game) {
+			game.seBox.playEat()
+			game.player.hp += healAmount
+			if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp
+			EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${healAmount}`, "heal")
+			game.message.add(`${name}を食べて${healAmount}ポイント回復`)
+
+			game.player.hunger += stuffAmount // 食事ボーナス
+			if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
+			EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${stuffAmount}`, "food")
+			game.message.add(`少しお腹がふくれた`)
+		})
+	}
+}
+class FoodItem extends InventoryItem {
+	constructor(x, y, name, tile, stuffAmount) {
+		super(x, y, name, tile, async function(game) {
+			game.seBox.playEat()
+			game.player.hunger += stuffAmount
+			if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
+			EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${stuffAmount}`, "food")
+			game.message.add(`${name}を食べて少しお腹がふくれた`)
+		})
+	}
+}
 
 class BoxItem extends InventoryItem {
 	constructor(x, y, capacity) {
