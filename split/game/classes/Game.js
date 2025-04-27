@@ -111,7 +111,7 @@ class Game {
 					this.bgmBox.playNormalPlus()
 					break
 				case "hard":
-					//this.bgmBox.playHard()
+					this.bgmBox.playHard()
 					break
 				}
 			})
