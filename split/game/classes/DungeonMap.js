@@ -59,8 +59,8 @@ class DungeonMap {
 		for (let i = 0; i < roomCount; i++) { this.createRoom(); }
 		for (let i = 0; i < this.rooms.length - 1; i++) { this.connectRooms(this.rooms[i], this.rooms[i + 1]); }
 	}
-	revealRoom(px, py) {
-		for (let room of this.rooms) {
+	revealRoom(px, py, rooms=this.rooms) {
+		for (let room of rooms) {
 			if (px >= room.x && px < room.x + room.w && py >= room.y && py < room.y + room.h) {
 				for (let i = room.y; i < room.y + room.h; i++) {
 					for (let j = room.x; j < room.x + room.w; j++) {
@@ -71,6 +71,12 @@ class DungeonMap {
 							if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height && this.grid[ny][nx] === ' ') {
 								this.visible[ny][nx] = true
 							}
+							// 重なった部屋を探す
+							this.revealRoom(nx, ny, rooms.filter(filterRoom => {
+								return !(filterRoom.x === room.x && filterRoom.y === room.y && filterRoom.w === room.w && filterRoom.h === room.h) && 
+								filterRoom.x <= room.x + room.w && room.x <= filterRoom.x + filterRoom.w &&
+								filterRoom.y <= room.y + room.h && room.y <= filterRoom.y + filterRoom.h
+							}))
 						}
 					}
 				}
