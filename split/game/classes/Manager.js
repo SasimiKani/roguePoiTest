@@ -754,7 +754,7 @@ class SEManager extends AudioManager {
 
 			{name: "./rsrc/se/se-eat.mp3", volume: 0.2},
 			{name: "./rsrc/se/se-lvup.mp3", volume: 0.2},
-			{name: "./rsrc/se/se-stairs.mp3", volume: 0.5},
+			{name: "./rsrc/se/se-stairs.mp3", volume: 0.4},
 			{name: "./rsrc/se/se-equip.mp3", volume: 0.5},
 			{name: "./rsrc/se/se-disarm.mp3", volume: 0.5},
 			{name: "./rsrc/se/se-magic.mp3", volume: 0.3},
