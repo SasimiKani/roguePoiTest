@@ -60,7 +60,7 @@ class DungeonMap {
 		for (let i = 0; i < this.rooms.length - 1; i++) { this.connectRooms(this.rooms[i], this.rooms[i + 1]); }
 	}
 	revealRoom(px, py, rooms=this.rooms) {
-		for (let room of rooms) {
+		for (let room of rooms.filter(room => !this.isReveal(room))) {
 			if (px >= room.x && px < room.x + room.w && py >= room.y && py < room.y + room.h) {
 				for (let i = room.y; i < room.y + room.h; i++) {
 					for (let j = room.x; j < room.x + room.w; j++) {
@@ -83,6 +83,16 @@ class DungeonMap {
 				return
 			}
 		}
+	}
+	isReveal(room) {
+		for (let i = room.y; i < room.y + room.h; i++) {
+			for (let j = room.x; j < room.x + room.w; j++) {
+				if (!this.visible[i][j]) {
+					return false
+				}
+			}
+		}
+		return true
 	}
 	revealAround(x, y) {
 		if (this.grid[y][x] === ' ') {
