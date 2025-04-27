@@ -700,7 +700,7 @@ class BGMManager extends AudioManager {
 			{name: "./rsrc/mus/difficulty.mp3", volume: 0.5},
 			{name: "./rsrc/mus/easy.mp3", volume: 0.5},
 			{name: "./rsrc/mus/normal.mp3", volume: 0.5},
-			//{name: "./rsrc/mus/normalPlus.mp3", volume: 0.5},
+			{name: "./rsrc/mus/normalPlus.mp3", volume: 0.5},
 			//{name: "./rsrc/mus/hard.mp3", volume: 0.5},
 			{name: "EOL", volume: 0.5},
 		]
