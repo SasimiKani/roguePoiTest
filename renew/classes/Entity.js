@@ -372,14 +372,13 @@ class WeaponItem extends InventoryItem {
 					this.unEquip(game)
 				} else if (game.player.weapon) {
 					this.unEquip(game, game.player.weapon)
-					game.timeoutSync(() => {
-						this.equip(game)
-					}, 400)
-					.then(() => resolve("ok"))
+					this.equip(game)
 				} else {
 					this.equip(game)
 				}
-				return
+				setTimeout(() => {
+					resolve("ok")
+				}, 400)
 			})
 		)
 		this.bonus = bonus
