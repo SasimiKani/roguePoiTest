@@ -90,7 +90,8 @@ class Game {
 		// ------------------------------
 		// ※ 以下はプレイヤー初期アイテムの例（必要に応じてコメント解除）
 		// ------------------------------
-		//this.player.inventory.push(new WeaponItem(0, 0, "伝説の剣", '⚔️', 1000));
+		this.player.inventory.push(new BoxItem(0, 0));
+		// this.player.inventory.push(new WeaponItem(0, 0, "伝説の剣", '⚔️', 1000));
 		// this.player.inventory.push(new ShootingItem(0, 0, "射撃-弓矢", '🏹', 5, 10, 8, "↑"));
 		// this.player.inventory.push(new BoxItem());
 		// this.player.inventory.push(new MagicSpell(0, 0, "炎", "🔥", "🔥", {damage: 20, area: 1, fallbackHeal: null}));
@@ -118,7 +119,6 @@ class Game {
 				}
 			})
 		})
-
 
 		switch (CONFIG.DIFFICULTY) {
 		case "easy":
@@ -243,217 +243,24 @@ class Game {
 		}*/
 		
 		// カーソル移動
-		if (event.key === 'ArrowUp') {
-			if (totalOptions > 0) {
-				this.seBox.playMenu(3)
-				this.inventorySelection = (this.inventorySelection - 1 + totalOptions) % totalOptions
-				this.renderer.render()
-			}
-			return
-		}
-		if (event.key === 'ArrowDown') {
-			if (totalOptions > 0) {
-				this.seBox.playMenu(3)
-				this.inventorySelection = (this.inventorySelection + 1) % totalOptions
-				this.renderer.render()
-			}
-			return
-		}
+		if (inventoryArrowUp(this, event, totalOptions)) return
+		if (inventoryArrowDown(this, event, totalOptions)) return
+			
 		// 以下、キーの処理
-		if (event.key === 'y') {
-			// アイテム整理（ソート）
-			this.seBox.playMenu(3)
-			let sortItems = this.player.inventory.sort((a, b) => {
-				if (a.constructor.name.localeCompare(b.constructor.name) === 0) {
-					return a.name.localeCompare(b.name)
-				} else {
-					return b.constructor.name.localeCompare(a.constructor.name)
-				}
-			})
-			this.player.inventory = sortItems
-			this.renderer.render()
-			return
-		}
+		if (inventoryY(this, event)) return
+		
 		// もしカーソルが足元アイテム（＝インベントリリストの最後の項目）を指している場合
 		if (this.groundItem && this.inventorySelection === this.player.inventory.length && !this.boxSelected) {
-			if (event.key === 'p') {
-				if (this.groundItem.tile === '🔼') return; // 足元が階段なら何もしない
-				this.seBox.playPickup()
-				// 足元アイテムを拾う
-				pickupItem(this, this.groundItem)
-				this.renderer.render()
-				return
-			}
-			if (event.key === 'u') {
-				// 足元が階段なら降りる
-				if (this.groundItem.tile === '🔼') {
-					this.inventoryOpen = false
-					this.groundItem = null
-					this.generateDungeon(true)
-					this.renderer.render()
-					EffectsManager.showFloorOverlay(this.gameContainer, this.floor)
-					return
-				}
-				// 足元アイテムを使用
-				else if (this.groundItem.use) {
-					this.inventoryOpen = false
-					this.renderer.render()
-					// インベントリがマックスで足元の武器を装備できない
-					if (this.groundItem instanceof WeaponItem && this.player.inventory.length >= CONFIG.INVENTORY_MAX) return
-					this.groundItem.use(this).then(()	=> {
-						// もし足元のアイテムが武器なら、使用後にインベントリへ追加
-						if (this.groundItem instanceof WeaponItem) {
-							if (this.player.inventory.length < CONFIG.INVENTORY_MAX) {
-								this.player.inventory.push(this.groundItem)
-							} else {
-								this.items.push(this.groundItem)
-							}
-						}
-						// 箱は消費しない
-						if (!(this.groundItem instanceof BoxItem)) {
-							this.groundItem = null
-						}
-					})
-				}
-				this.inventoryOpen = false
-				this.renderer.render()
-				return
-			}
-			if (event.key === 'x') {
-				return
-			}
-		} else {
-			// 通常の所持品の操作
-			if (event.key === 'u' && !this.boxSelected) {
-				let item = this.player.inventory[this.inventorySelection]
-				this.inventoryOpen = false
-				if (item && item.use) {
-					this.renderer.render()
-					// アイテムを使う
-					await item.use(this)
-					// 武器・箱じゃなければ消費する
-					if (!(item instanceof WeaponItem) && !(item instanceof BoxItem) &&
-							// 射撃じゃなければ消費、射撃でも数が0なら消費する
-							/// item = ShootingItem && item.stack === 0
-							/// !(item = ShootingItem)
-							(!(item instanceof ShootingItem) || item.stack === 0)) {
-						this.player.inventory.splice(this.inventorySelection, 1)
-						if (this.inventorySelection >= this.player.inventory.length) {
-							this.inventorySelection = this.player.inventory.length - 1
-						}
-					}
-					// 箱を見る以外ならターンを進める
-					if (!(item instanceof BoxItem)) {
-						this.turn()
-					}
-				}
-				this.renderer.render()
-				return
-			}
-			if (event.key === 'd' && !this.boxSelected) {
-				if (this.groundItem) return
-				let item = this.player.inventory[this.inventorySelection]
-				if (item) {
-					if (item instanceof WeaponItem && this.player.weapon === item) {
-						this.player.attack -= this.player.weapon.bonus
-						this.player.weapon = null
-						EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `装備解除-${item.bonus}`, "heal")
-						this.message.add(`${item.name}の装備を外した`)
-						// # MESSAGE
-					}
-					// ここ、アイテムを置く場合は足元に設置する
-					if (!this.groundItem) {
-						this.groundItem = item
-					} else {
-						item.x = this.player.x
-						item.y = this.player.y
-						this.items.push(item)
-					}
-					this.player.inventory.splice(this.inventorySelection, 1)
-					if (this.inventorySelection >= this.player.inventory.length) {
-						this.inventorySelection = this.player.inventory.length - 1
-					}
-				}
-				this.inventoryOpen = false
-				this.renderer.render()
-				return
-			}
-			if (event.key === 'x' && !this.boxSelected) {
-				if (this.groundItem.tile === '🔼') return; // 足元が階段なら何もしない
-				if (this.player.inventory.length === 0) return
-				// 交換処理（所持品内の交換など）
-				let invItem = this.player.inventory[this.inventorySelection]
-				// ここでは、通常交換処理（例：選択中のアイテムと足元アイテムの交換）はgroundItemが存在している場合のみ行う
-				if (this.groundItem) {
-					let temp = invItem
-					this.player.inventory[this.inventorySelection] = this.groundItem
-					this.groundItem = temp
-					EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "交換")
-					this.message.add(`${temp.name}と${this.player.inventory[this.inventorySelection].name}を交換した`)
-					this.seBox.playPickup()
-					// # MESSAGE
-					if (this.groundItem instanceof WeaponItem && this.player.weapon) {
-						// インベントリの装備している武器を交換したら外す
-						this.groundItem.use(this)
-					}
-				}
-				this.inventoryOpen = false
-				this.renderer.render()
-				return
-			}
-			if (event.key === 'i') { // 入れる操作
-				const selectedItem = this.player.inventory[this.inventorySelection] || this.groundItem
-				//console.group("選択中")
-				//console.log(selectedItem)
-				//console.groupEnd("選択中")
-				//console.group("足元")
-				//console.log(this.groundItem)
-				//console.groupEnd("足元")
-				//console.group("一致")
-				//console.log(this.groundItem === selectedItem)
-				//console.groupEnd("一致")
-				// 仮に、別途箱用の選択状態（this.boxSelected）があれば、その箱に入れる
-				if (this.boxSelected && !(selectedItem instanceof BoxItem)) {
-					if (this.boxSelected.insertItem(selectedItem)) {
-						if (selectedItem instanceof WeaponItem) {
-							// 箱に入れたので、装備を解除
-							selectedItem.use(this)
-						}
-						if (this.groundItem === selectedItem) {
-							// 足元のアイテムを入れたら足元を削除
-							this.groundItem = null
-						} else {
-							// 箱に入れたので、インベントリから削除
-							this.player.inventory.splice(this.inventorySelection, 1)
-						}
-						
-						// インベントリの参照を修正する
-						if (this.player.inventory.length <= this.inventorySelection) {
-							this.inventorySelection--
-						}
-						
-						this.boxSelected.updateName()
-						this.renderer.render()
-						return
-					} else {
-						EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "容量オーバー", "damage")
-						this.message.add(`これ以上入れられない`)
-						// # MESSAGE
-					}
-				} else if (this.boxSelected === selectedItem) {
-					this.boxSelected = null
-				} else if (selectedItem instanceof BoxItem) {
-					this.boxSelected = selectedItem
-				}
-				this.renderer.render()
-			}
-			if (event.key === 'Escape' || event.key === 'e') {
-				this.seBox.playMenu(4)
-				this.inventoryOpen = false
-				this.boxSelected = null
-				this.renderer.render()
-				return
-			}
+			if (inventoryGroundP(this, event)) return
+			if (inventoryGroundU(this, event)) return
+		} 
+		// 通常の所持品の操作
+		else {
+			if (await inventoryU(this, event)) return
+			if (inventoryD(this, event)) return
+			if (inventoryX(this, event)) return
+			if (inventoryI(this, event)) return
+			if (inventoryEscape(this, event)) return
 		}
 	}
 	

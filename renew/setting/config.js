@@ -147,7 +147,7 @@ const weightedMagics = [
     
         // ターン進行・再描画
         game.advanceTurn();
-        game.render();
+        game.renderer.render();
     }}),
 ]
 

@@ -201,12 +201,36 @@ class BoxItem extends InventoryItem {
 	constructor(x, y, capacity) {
 		// 箱を使うときは、箱の中身を確認するオーバーレイを開く
 		super(x, y, "箱", '📦', (game) => {
-			this.openBox(game)
+			this.game = game
+			this.openBox()
 		})
+
 		// 容量は5～10程度。未指定ならランダムに決定
 		this.capacity = capacity || randomInt(5, 10)
 		this.contents = []
 		this.name = `箱（${this.contents.length}/${this.capacity}）`
+
+		// オーバーレイ要素の生成
+		this.overlay = document.createElement("div")
+		this.overlay.className = "box-overlay"
+	
+		// タイトル：箱内のアイテム数と容量を表示
+		this.title = document.createElement("h3")
+		this.title.textContent = `箱の中身 (${this.contents.length}/${this.capacity})`
+		this.overlay.appendChild(this.title)
+	
+		// アイテム一覧表示用コンテナ（スクロール可能）
+		this.listContainer = document.createElement("div")
+		this.listContainer.className = "box-item-list-container"
+		this.list = document.createElement("ul")
+		this.list.className = "box-item-list"
+		this.listContainer.appendChild(this.list)
+		this.overlay.appendChild(this.listContainer)
+	
+		// 操作方法の説明
+		this.instructions = document.createElement("p")
+		this.instructions.textContent = "↑/↓: 選択	D: 出す	U: 使う	X: 置く	Esc: 閉じる"
+		this.overlay.appendChild(this.instructions)
 	}
 	
 	updateName() {
@@ -234,145 +258,60 @@ class BoxItem extends InventoryItem {
 	// ・出す：箱からアイテムを取り出しインベントリに戻す。
 	// ・使う：箱内のアイテムを使用する。
 	// ・置く：箱内のアイテムを取り出して地面に配置する。
-	openBox(Game) {
-		// 箱オーバーレイ中は通常操作を停止
-		game.boxOverlayActive = true
-		let selectionIndex = 0; // 現在選択中の箱内アイテムのインデックス
-	
-		// オーバーレイ要素の生成
-		const overlay = document.createElement("div")
-		overlay.className = "box-overlay"
-	
-		// タイトル：箱内のアイテム数と容量を表示
-		const title = document.createElement("h3")
-		title.textContent = `箱の中身 (${this.contents.length}/${this.capacity})`
-		overlay.appendChild(title)
-	
-		// アイテム一覧表示用コンテナ（スクロール可能）
-		const listContainer = document.createElement("div")
-		listContainer.className = "box-item-list-container"
-		const list = document.createElement("ul")
-		list.className = "box-item-list"
-		listContainer.appendChild(list)
-		overlay.appendChild(listContainer)
-	
-		// 操作方法の説明
-		const instructions = document.createElement("p")
-		instructions.textContent = "↑/↓: 選択	D: 出す	U: 使う	X: 置く	Esc: 閉じる"
-		overlay.appendChild(instructions)
-	
-		document.body.appendChild(overlay)
+	openBox() {
+		this.selectionIndex = 0; // 現在選択中の箱内アイテムのインデックス
+		
+		document.body.appendChild(this.overlay)
 	
 		// オーバーレイ内のリストを描画
-		function renderList() {
-			title.textContent = `箱の中身 (${this.contents.length}/${this.capacity})`
-			list.innerHTML = ""
-			this.contents.forEach((item, index) => {
-				const li = document.createElement("li")
-				li.textContent = `${item.tile} ${item.name}`
-				// カーソル位置の場合は背景色を変更
-				if (index === selectionIndex) {
-					li.style.backgroundColor = "#444"
-					li.style.color = "#fff"
-				}
-				list.appendChild(li)
-			})
-		}
-		renderList()
-	
-		// キーボード入力ハンドラ
-		function onKeyDown(e) {
-			if (!game.boxOverlayActive) return
-			// ↑/↓でカーソル移動
-			if (e.key === "ArrowUp") {
-				e.preventDefault()
-				game.seBox.playMenu(3)
-				if (this.contents.length > 0) {
-					selectionIndex = (selectionIndex - 1 + this.contents.length) % this.contents.length
-					renderList()
-				}
-			} else if (e.key === "ArrowDown") {
-				e.preventDefault()
-				game.seBox.playMenu(3)
-				if (this.contents.length > 0) {
-					selectionIndex = (selectionIndex + 1) % this.contents.length
-					renderList()
-				}
-			}
-			// 出す：箱内の選択アイテムを取り出してインベントリへ
-			else if (e.key.toLowerCase() === "d") {
-				e.preventDefault()
-				const inventory = game.player.inventory
-				const maxInventory = CONFIG.INVENTORY_MAX
-				// インベントリがいっぱいなら出せない
-				if (inventory.length === maxInventory) {
-					game.message.add("これ以上出せない")
-				} else if (this.contents.length > 0) {
-					const item = this.removeItem(selectionIndex)
-					game.player.inventory.push(item)
-					if (selectionIndex >= this.contents.length) {
-						selectionIndex = Math.max(0, this.contents.length - 1)
-					}
-					renderList()
-				}
-			}
-			// 使う：箱内の選択アイテムを使用
-			else if (e.key.toLowerCase() === 'u') {
-				e.preventDefault()
-				if (this.contents.length > 0) {
-					const item = this.contents[selectionIndex]
-					cleanup()
-					renderList()
-					if (item.use) item.use(game).then(() => {
-						// 使用後、アイテムが消費されるなら削除する
-						this.contents.splice(selectionIndex, 1)
-						if (selectionIndex >= this.contents.length) {
-							selectionIndex = Math.max(0, this.contents.length - 1)
-						}
-						// 名前の隣の数字を更新
-						this.updateName()
-						// 使ったら箱を閉じてターンを進める
-						game.turn()
-					})
-				}
-			}
-			// 置く：箱内の選択アイテムを取り出して地面に設置
-			else if (e.key.toLowerCase() === "x") {
-				e.preventDefault()
-				if (this.contents.length > 0) {
-					const item = this.removeItem(selectionIndex)
-					item.x = game.player.x
-					item.y = game.player.y
-					game.items.push(item)
-					if (selectionIndex >= this.contents.length) {
-						selectionIndex = Math.max(0, this.contents.length - 1)
-					}
-					// 置いたら箱を閉じてターンを進める
-					cleanup()
-					renderList()
-					game.turn()
-				}
-			}
-			// Esc でオーバーレイを閉じる
-			else if (e.key === "Escape") {
-				e.preventDefault()
-				cleanup()
-			}
-			this.updateName()
-		}
+		this.renderList()
+		
 		// bind して Game インスタンスの game を保持
-		const boundOnKeyDown = onKeyDown.bind(game)
-		document.addEventListener("keydown", boundOnKeyDown)
-	
-		const cleanup = () => {
-			game.boxOverlayActive = false
-			document.removeEventListener("keydown", boundOnKeyDown)
-			overlay.remove()
-			this.updateName()
-			game.boxSelected = null
-			// オーバーレイ終了後、ゲームの再描画
-			game.render()
-		}
+		this.boundOnKeyDown = this.onKeyDown.bind(this)
+		document.addEventListener("keydown", this.boundOnKeyDown)
+
+		// 箱オーバーレイ中は通常操作を停止
+		this.game.boxOverlayActive = true
+	}
+
+	// キーボード入力ハンドラ
+	onKeyDown = (e) => {
+		// ↑/↓でカーソル移動
+		if (inventoryBoxArrowUp(this, e)) return
+		if (inventoryBoxArrowDown(this, e)) return
+		// 出す：箱内の選択アイテムを取り出してインベントリへ
+		if (inventoryBoxD(this, e)) return
+		// 使う：箱内の選択アイテムを使用
+		if (inventoryBoxU(this, e)) return
+		// 置く：箱内の選択アイテムを取り出して地面に設置
+		if (inventoryBoxX(this, e)) return
+		// Esc でオーバーレイを閉じる
+		if (inventoryBoxEscape(this, e)) return
+	}
+
+	cleanup = () => {
+		this.game.boxOverlayActive = false
+		document.removeEventListener("keydown", this.boundOnKeyDown)
+		this.overlay.remove()
+		this.updateName()
+		this.game.boxSelected = null
+		// オーバーレイ終了後、ゲームの再描画
+		this.game.renderer.render()
+	}
+
+	renderList() {
+		this.title.textContent = `箱の中身 (${this.contents.length}/${this.capacity})`
+		this.list.innerHTML = ""
+		this.contents.forEach((item, index) => {
+			const li = document.createElement("li")
+			li.textContent = `${item.tile} ${item.name}`
+			// カーソル位置の場合は背景色を変更
+			if (index === this.selectionIndex) {
+				li.style.backgroundColor = "#444"
+				li.style.color = "#fff"
+			}
+			this.list.appendChild(li)
+		})
 	}
 }
 
