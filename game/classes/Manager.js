@@ -491,7 +491,7 @@ class InputManager {
 		this.init()
 		
 		this.lastInputTime = 0
-		this.inputInterval = 200 // ミリ秒単位、例えば100msごとに1回だけ処理
+		this.inputInterval = 170 // ミリ秒単位、例えば100msごとに1回だけ処理
 	}
 	init() {
 		// 定数定義（必要に応じて調整）

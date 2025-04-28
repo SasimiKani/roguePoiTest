@@ -176,24 +176,16 @@ const normalEnemyDefinitions = [
     new EnemyDefinition(EnemySkeleton, [19, 20], 1)
 ]
 const normalPlusEnemyDefinitions = [
-    // 幼虫：序盤だけ（1～10階）
     new EnemyDefinition(EnemyLarvae,   [ 1, 10], 20),
-    // アリ：中盤手前まで（5～18階）
     new EnemyDefinition(EnemyAnt,      [ 5, 18], 15),
-    // ザリガニ：中盤以降（10～25階）
     new EnemyDefinition(EnemyCrayfish, [10, 25], 10),
-    // スライム：中盤後半～（15～30階）
     new EnemyDefinition(EnemySlime,    [15, 30],  8),
-    // コウモリ：終盤手前（20～30階）
-    new EnemyDefinition(EnemyBat,      [20, 30],  6),
-    // ゴブリン：終盤寄り（25～30階）
-    new EnemyDefinition(EnemyGoblin,   [25, 30],  4),
-    // 骸骨：さらに深層（28～30階）
-    new EnemyDefinition(EnemySkeleton, [28, 30],  3),
-    // スパイダー以降は 30階のみ
-    new EnemyDefinition(EnemySpider,   [30, 30],  2),
-    new EnemyDefinition(EnemyWizard,   [30, 30],  2),
-    new EnemyDefinition(EnemyDragon,   [30, 30],  1)
+    new EnemyDefinition(EnemyBat,      [20, 40],  6),
+    new EnemyDefinition(EnemyGoblin,   [25, 40],  4),
+    new EnemyDefinition(EnemySkeleton, [28, 40],  3),
+    new EnemyDefinition(EnemySpider,   [30, 40],  2),
+    new EnemyDefinition(EnemyWizard,   [30, 40],  2),
+    new EnemyDefinition(EnemyDragon,   [40, 40],  1)
 ]
 const hardEnemyDefinitions = [
     new EnemyDefinition(EnemyLarvae, [1, 20], 20),

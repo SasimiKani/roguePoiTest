@@ -539,7 +539,7 @@ class Game {
 					return 
 				}
 				if (attacked) {
-					await this.timeoutSync(() => {}, this.actionTime)
+					await this.timeoutSync(() => {}, 300)
 				}
 				chain = chain.then(() => 
 					new Promise(resolve => {
@@ -607,7 +607,7 @@ class Game {
 			// # MESSAGE
 			this.score += 50
 
-			this.gainExp(enemy.exp)
+			await this.gainExp(enemy.exp)
 		}
 	}
 	
@@ -757,31 +757,34 @@ class Game {
 		this.player.exp += amount
 		const expToNext = this.player.level * 10
 		if (this.player.exp >= expToNext) {
-			await this.timeoutSync(async () => {
-				let upAtk, upHp
-				this.player.exp -= expToNext
-				this.player.level++
-				this.player.attack += (upAtk = randomInt(1, 2))
-				this.player.maxHp += (upHp = randomInt(2, 3))
-				this.player.healAmount++
-				this.player.hp = this.player.maxHp
-				await this.timeoutSync(() => {
-					this.seBox.playLVUP()
-					EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "LEVEL UP!", "heal")
-					this.message.add("レベルが上がった!")
+			return new Promise(resolve => {
+				this.timeoutSync(async () => {
+					let upAtk, upHp
+					this.player.exp -= expToNext
+					this.player.level++
+					this.player.attack += (upAtk = randomInt(1, 2))
+					this.player.maxHp += (upHp = randomInt(2, 3))
+					this.player.healAmount++
+					this.player.hp = this.player.maxHp
+					await this.timeoutSync(() => {
+						this.seBox.playLVUP()
+						EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "LEVEL UP!", "heal")
+						this.message.add("レベルが上がった!")
+					}, 300)
+					// # MESSAGE
+					await this.timeoutSync(() => {
+						EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `HP +${upHp}`, "heal")
+						this.message.add(`HP +${upHp}`)
+					}, 600)
+					// # MESSAGE
+					await this.timeoutSync(() => {
+						EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `攻撃力 +${upAtk}`, "heal")
+						this.message.add(`攻撃力 +${upAtk}`)
+					}, 600)
+					// # MESSAGE
+					resolve("ok")
 				}, 300)
-				// # MESSAGE
-				await this.timeoutSync(() => {
-					EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `HP +${upHp}`, "heal")
-					this.message.add(`HP +${upHp}`)
-				}, 600)
-				// # MESSAGE
-				await this.timeoutSync(() => {
-					EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `攻撃力 +${upAtk}`, "heal")
-					this.message.add(`攻撃力 +${upAtk}`)
-				}, 600)
-				// # MESSAGE
-			}, 300)
+			})
 		}
 	}
 	// プレイヤーがアイテムを食べた際の飢餓回復処理を行います。
