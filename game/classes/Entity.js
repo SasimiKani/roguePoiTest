@@ -169,17 +169,68 @@ class InventoryItem extends BaseEntity {
 		this.use = useFunction
 	}
 }
+class HealItem extends InventoryItem {
+	constructor(x, y, name, tile, healAmount, stuffAmount) {
+		super(x, y, name, tile, async function(game) {
+			game.seBox.playEat()
+			game.player.hp += healAmount
+			if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp
+			EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${healAmount}`, "heal")
+			game.message.add(`${name}を食べて${healAmount}ポイント回復`)
+
+			game.player.hunger += stuffAmount // 食事ボーナス
+			if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
+			EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${stuffAmount}`, "food")
+			game.message.add(`少しお腹がふくれた`)
+		})
+	}
+}
+class FoodItem extends InventoryItem {
+	constructor(x, y, name, tile, stuffAmount) {
+		super(x, y, name, tile, async function(game) {
+			game.seBox.playEat()
+			game.player.hunger += stuffAmount
+			if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
+			EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${stuffAmount}`, "food")
+			game.message.add(`${name}を食べて少しお腹がふくれた`)
+		})
+	}
+}
 
 class BoxItem extends InventoryItem {
 	constructor(x, y, capacity) {
 		// 箱を使うときは、箱の中身を確認するオーバーレイを開く
 		super(x, y, "箱", '📦', (game) => {
-			game.openBox(this)
+			this.game = game
+			this.openBox()
 		})
+
 		// 容量は5～10程度。未指定ならランダムに決定
 		this.capacity = capacity || randomInt(5, 10)
 		this.contents = []
 		this.name = `箱（${this.contents.length}/${this.capacity}）`
+
+		// オーバーレイ要素の生成
+		this.overlay = document.createElement("div")
+		this.overlay.className = "box-overlay"
+	
+		// タイトル：箱内のアイテム数と容量を表示
+		this.title = document.createElement("h3")
+		this.title.textContent = `箱の中身 (${this.contents.length}/${this.capacity})`
+		this.overlay.appendChild(this.title)
+	
+		// アイテム一覧表示用コンテナ（スクロール可能）
+		this.listContainer = document.createElement("div")
+		this.listContainer.className = "box-item-list-container"
+		this.list = document.createElement("ul")
+		this.list.className = "box-item-list"
+		this.listContainer.appendChild(this.list)
+		this.overlay.appendChild(this.listContainer)
+	
+		// 操作方法の説明
+		this.instructions = document.createElement("p")
+		this.instructions.textContent = "↑/↓: 選択	D: 出す	U: 使う	X: 置く	Esc: 閉じる"
+		this.overlay.appendChild(this.instructions)
 	}
 	
 	updateName() {
@@ -202,6 +253,65 @@ class BoxItem extends InventoryItem {
 			return this.contents.splice(index, 1)[0]
 		}
 		return null
+	}
+
+	// ・出す：箱からアイテムを取り出しインベントリに戻す。
+	// ・使う：箱内のアイテムを使用する。
+	// ・置く：箱内のアイテムを取り出して地面に配置する。
+	openBox() {
+		this.selectionIndex = 0; // 現在選択中の箱内アイテムのインデックス
+		
+		document.body.appendChild(this.overlay)
+	
+		// オーバーレイ内のリストを描画
+		this.renderList()
+		
+		// bind して Game インスタンスの game を保持
+		this.boundOnKeyDown = this.onKeyDown.bind(this)
+		document.addEventListener("keydown", this.boundOnKeyDown)
+
+		// 箱オーバーレイ中は通常操作を停止
+		this.game.boxOverlayActive = true
+	}
+
+	// キーボード入力ハンドラ
+	onKeyDown = (e) => {
+		// ↑/↓でカーソル移動
+		if (inventoryBoxArrowUp(this, e)) return
+		if (inventoryBoxArrowDown(this, e)) return
+		// 出す：箱内の選択アイテムを取り出してインベントリへ
+		if (inventoryBoxD(this, e)) return
+		// 使う：箱内の選択アイテムを使用
+		if (inventoryBoxU(this, e)) return
+		// 置く：箱内の選択アイテムを取り出して地面に設置
+		if (inventoryBoxX(this, e)) return
+		// Esc でオーバーレイを閉じる
+		if (inventoryBoxEscape(this, e)) return
+	}
+
+	cleanup = () => {
+		this.game.boxOverlayActive = false
+		document.removeEventListener("keydown", this.boundOnKeyDown)
+		this.overlay.remove()
+		this.updateName()
+		this.game.boxSelected = null
+		// オーバーレイ終了後、ゲームの再描画
+		this.game.renderer.render()
+	}
+
+	renderList() {
+		this.title.textContent = `箱の中身 (${this.contents.length}/${this.capacity})`
+		this.list.innerHTML = ""
+		this.contents.forEach((item, index) => {
+			const li = document.createElement("li")
+			li.textContent = `${item.tile} ${item.name}`
+			// カーソル位置の場合は背景色を変更
+			if (index === this.selectionIndex) {
+				li.style.backgroundColor = "#444"
+				li.style.color = "#fff"
+			}
+			this.list.appendChild(li)
+		})
 	}
 }
 
@@ -256,18 +366,21 @@ class MagicSpell extends InventoryItem {
 // WeaponItem クラス
 class WeaponItem extends InventoryItem {
 	constructor(x, y, name, tile, bonus) {
-		super(x, y, name, tile, async (game) => {
-			if (game.player.weapon === this) {
-				this.unEquip(game)
-			} else if (game.player.weapon) {
-				this.unEquip(game, game.player.weapon)
-				game.queueTimeout(() => {
+		super(x, y, name, tile, async (game) => 
+			new Promise(resolve => {
+				if (game.player.weapon === this) {
+					this.unEquip(game)
+				} else if (game.player.weapon) {
+					this.unEquip(game, game.player.weapon)
 					this.equip(game)
+				} else {
+					this.equip(game)
+				}
+				setTimeout(() => {
+					resolve("ok")
 				}, 400)
-			} else {
-				this.equip(game)
-			}
-		})
+			})
+		)
 		this.bonus = bonus
 	}
 	
