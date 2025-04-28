@@ -140,18 +140,6 @@ class Game {
 		}, 300)
 	}
 	
-	// ターン進行中の非同期処理（タイマー）の管理を行い、指定した遅延で処理を実行します。
-	queueTimeout(callback, delay) {
-		this.acceptingInput = false
-		const id = setTimeout(() => {
-			callback()
-			this.timeoutQueue = this.timeoutQueue.filter(t => t !== id)
-			if (this.timeoutQueue.length === 0) this.acceptingInput = true
-			this.renderer.render()
-		}, delay)
-		this.timeoutQueue.push(id)
-	}
-
 	// ターン進行中の同期処理を行い、指定した遅延で処理を実行します。
 	async timeoutSync(callback, delay) {
 		//////console.log("timeoutSync " + delay)
@@ -858,28 +846,5 @@ class Game {
 		
 		// 難易度選択マップに戻る
 		selector = new DifficultySelector(this.myIcon)
-	}
-	
-	turn() {
-		const syncTimeout = (time) => {
-			return new Promise((resolve) => {
-				setTimeout(() => { resolve("ok"); }, time)
-			})
-		}
-		// 待ってからターンを進める
-		syncTimeout(async () => {
-			this.advanceTurn()
-			await this.timeoutSync(() => {
-				this.enemyAttackPhase()
-			}, this.actionTime)
-			await this.timeoutSync(() => {
-				this.enemyMovementPhase(this.player.x, this.player.y)
-			}, this.actionTime)
-			await this.timeoutSync(() => {
-				this.enemyActionRefresh()
-				this.checkCollisions()
-				this.renderer.render()
-			}, this.actionTime)
-		}, this.actionTime)
 	}
 }
