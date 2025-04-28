@@ -366,18 +366,22 @@ class MagicSpell extends InventoryItem {
 // WeaponItem クラス
 class WeaponItem extends InventoryItem {
 	constructor(x, y, name, tile, bonus) {
-		super(x, y, name, tile, async (game) => {
-			if (game.player.weapon === this) {
-				this.unEquip(game)
-			} else if (game.player.weapon) {
-				this.unEquip(game, game.player.weapon)
-				game.queueTimeout(() => {
+		super(x, y, name, tile, async (game) => 
+			new Promise(resolve => {
+				if (game.player.weapon === this) {
+					this.unEquip(game)
+				} else if (game.player.weapon) {
+					this.unEquip(game, game.player.weapon)
+					game.timeoutSync(() => {
+						this.equip(game)
+					}, 400)
+					.then(() => resolve("ok"))
+				} else {
 					this.equip(game)
-				}, 400)
-			} else {
-				this.equip(game)
-			}
-		})
+				}
+				return
+			})
+		)
 		this.bonus = bonus
 	}
 	

@@ -683,7 +683,7 @@ class AudioManager {
 	}
 
 	debugLog(text) {
-		//console.log(text)
+		/////console.log(text)
 	}
 
 	stopBGM() {

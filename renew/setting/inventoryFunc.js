@@ -110,7 +110,7 @@ async function inventoryU(game, e) {
             }
             // 箱を見る以外ならターンを進める
             if (!(item instanceof BoxItem)) {
-                game.turn()
+                game.updateData({ tx: game.player.x, ty: game.player.y })
             }
         }
         game.renderer.render()
@@ -285,7 +285,7 @@ function inventoryBoxU(box, e) {
                 // 名前の隣の数字を更新
                 box.updateName()
                 // 使ったら箱を閉じてターンを進める
-                box.game.turn()
+                box.game.updateData({ tx: game.player.x, ty: game.player.y })
             })
         }
     }
@@ -306,7 +306,7 @@ function inventoryBoxX(box, e) {
             // 置いたら箱を閉じてターンを進める
             box.cleanup(box.game)
             box.renderList()
-            box.game.turn()
+            box.game.updateData({ tx: game.player.x, ty: game.player.y })
         }
     }
     return e.key.toLowerCase() === "x"

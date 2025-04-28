@@ -6,77 +6,77 @@ class Game {
 		// ------------------------------
 		// 基本設定とプレイヤー初期化
 		// ------------------------------
-		this.myIcon = myIcon;
-		this.isPlay = true;
-		this.initialHP = CONFIG.INITIAL_HP;
+		this.myIcon = myIcon
+		this.isPlay = true
+		this.initialHP = CONFIG.INITIAL_HP
 		// プレイヤーの生成とアイコンの設定
-		this.player = new Player(0, 0, this.initialHP);
-		this.player.tile = myIcon;
+		this.player = new Player(0, 0, this.initialHP)
+		this.player.tile = myIcon
 
 		// ------------------------------
 		// キー入力関連の初期化
 		// ------------------------------
-		this.keyX = 0;
-		this.keyY = 0;
-		this.keysDown = {};
-		this.acceptingInput = true;
-		this.ctrlPressed = false;
+		this.keyX = 0
+		this.keyY = 0
+		this.keysDown = {}
+		this.acceptingInput = true
+		this.ctrlPressed = false
 
 		// ------------------------------
 		// ゲーム進行管理
 		// ------------------------------
-		this.actionCount = 0;
-		this.actionTime = 400;
-		this.score = 0;
-		this.floor = 1;
-		this.isGameOver = false;
+		this.actionCount = 0
+		this.actionTime = 400
+		this.score = 0
+		this.floor = 1
+		this.isGameOver = false
 
 		// ------------------------------
 		// マップ・画面関連設定
 		// ------------------------------
-		this.width = CONFIG.WIDTH;
-		this.height = CONFIG.HEIGHT;
-		this.map = new DungeonMap(this.width, this.height);
-		this.gameContainer = document.getElementById("game");
-		this.minimapContainer = document.getElementById("minimap");
+		this.width = CONFIG.WIDTH
+		this.height = CONFIG.HEIGHT
+		this.map = new DungeonMap(this.width, this.height)
+		this.gameContainer = document.getElementById("game")
+		this.minimapContainer = document.getElementById("minimap")
 
 		// ------------------------------
 		// サイクル管理
 		// ------------------------------
 		// 敵生成、休息、空腹の各サイクル（初期値と設定値）
-		this.generateEnemyCycle = [0, CONFIG.GENERATE_ENEMY_CYCLE];
-		this.restCycle = [0, CONFIG.REST_CYCLE];
-		this.hungerCycle = [0, CONFIG.HUNGER_CYCLE];
+		this.generateEnemyCycle = [0, CONFIG.GENERATE_ENEMY_CYCLE]
+		this.restCycle = [0, CONFIG.REST_CYCLE]
+		this.hungerCycle = [0, CONFIG.HUNGER_CYCLE]
 		// 休息サイクルを表示
-		document.getElementById("restCycle").innerText = CONFIG.REST_CYCLE;
+		document.getElementById("restCycle").innerText = CONFIG.REST_CYCLE
 
 		// ------------------------------
 		// アイテム・敵・その他のオブジェクト
 		// ------------------------------
-		this.timeoutQueue = [];
-		this.items = [];
-		this.gems = [];
-		this.enemies = [];
-		this.stairs = { x: 0, y: 0 };
-		this.boxSelected = null;
+		this.timeoutQueue = []
+		this.items = []
+		this.gems = []
+		this.enemies = []
+		this.stairs = { x: 0, y: 0 }
+		this.boxSelected = null
 		// 足元にあるアイテム（存在する場合）
-		this.groundItem = null;
+		this.groundItem = null
 		// インベントリ状態（所持品＋足元アイテムがある場合は1つ追加）
-		this.inventorySelection = 0;
-		this.inventoryOpen = false;
-		this.boxOverlayActive = false;
+		this.inventorySelection = 0
+		this.inventoryOpen = false
+		this.boxOverlayActive = false
 
 		// ------------------------------
 		// UI関連の初期化
 		// ------------------------------
 		this.renderer = new Renderer(this)
-		this.uiManager = new UIManager();
+		this.uiManager = new UIManager()
 
 		// ------------------------------
 		// ダンジョン生成と初期描画
 		// ------------------------------
-		this.generateDungeon(false);
-		this.renderer.render();
+		this.generateDungeon(false)
+		this.renderer.render()
 
 		// ------------------------------
 		// メッセージの初期化
@@ -90,11 +90,11 @@ class Game {
 		// ------------------------------
 		// ※ 以下はプレイヤー初期アイテムの例（必要に応じてコメント解除）
 		// ------------------------------
-		this.player.inventory.push(new BoxItem(0, 0));
-		// this.player.inventory.push(new WeaponItem(0, 0, "伝説の剣", '⚔️', 1000));
-		// this.player.inventory.push(new ShootingItem(0, 0, "射撃-弓矢", '🏹', 5, 10, 8, "↑"));
-		// this.player.inventory.push(new BoxItem());
-		// this.player.inventory.push(new MagicSpell(0, 0, "炎", "🔥", "🔥", {damage: 20, area: 1, fallbackHeal: null}));
+		// this.player.inventory.push(new BoxItem(0, 0))
+		// this.player.inventory.push(new WeaponItem(0, 0, "伝説の剣", '⚔️', 1000))
+		// this.player.inventory.push(new ShootingItem(0, 0, "射撃-弓矢", '🏹', 5, 10, 8, "↑"))
+		// this.player.inventory.push(new BoxItem())
+		// this.player.inventory.push(new MagicSpell(0, 0, "炎", "🔥", "🔥", {damage: 20, area: 1, fallbackHeal: null}))
 		
 		EffectsManager.showFloorOverlay(this.gameContainer, this.floor)
 		
@@ -136,9 +136,10 @@ class Game {
 		}
 
 		setTimeout(() => {
-			new InputManager(this)
+			this.inputManager = new InputManager(this)
 		}, 300)
 	}
+	
 	// ターン進行中の非同期処理（タイマー）の管理を行い、指定した遅延で処理を実行します。
 	queueTimeout(callback, delay) {
 		this.acceptingInput = false
@@ -149,6 +150,20 @@ class Game {
 			this.renderer.render()
 		}, delay)
 		this.timeoutQueue.push(id)
+	}
+
+	// ターン進行中の同期処理を行い、指定した遅延で処理を実行します。
+	async timeoutSync(callback, delay) {
+		//////console.log("timeoutSync " + delay)
+		this.inputManager.lastInputTime = Date.now() * 2
+		return new Promise(resolve => {
+			setTimeout(() => {
+				callback()
+				this.renderer.render()
+				this.inputManager.lastInputTime = Date.now() + 200
+				resolve("ok")
+			}, delay)
+		})
 	}
 	
 	/* 2. 入力処理 */
@@ -192,7 +207,7 @@ class Game {
 		return null
 	}
 	// ゲーム中のキー入力を処理し、通常の移動や攻撃、インベントリ表示などを分岐します。
-	processInput(event) {
+	async processInput(event) {
 		if (!this.isPlay) return
 		if (this.isGameOver || !this.acceptingInput || this.boxOverlayActive || this.isAwaitingShootingDirection) return
 
@@ -207,17 +222,17 @@ class Game {
 			// カーソル初期値は0
 			this.inventorySelection = 0
 			this.renderer.render()
-			return;
+			return
 		}
 		if (this.inventoryOpen) {
 			this.processInventoryInput(event)
-			return;
+			return
 		}
 		if (window.overlayActive) { return; }
 		const inputResult = this.computeInput(event)
 		if (!inputResult) { return; }
 		this.advanceTurn()
-		this.updateData(inputResult)
+		await this.updateData(inputResult)
 		this.renderer.render()
 	}
 	// インベントリが開いている場合の入力（カーソル移動、使用、置く、交換、入れるなど）を処理します。
@@ -279,7 +294,7 @@ class Game {
 		for (let i = 0; i < this.enemies.length; i++) {
 			if (this.enemies[i].x === tx && this.enemies[i].y === ty) {
 				attacked = true
-				this.damageEnemy(this.enemies[i], i)
+				await this.damageEnemy(this.enemies[i], i)
 				break
 			}
 		}
@@ -322,7 +337,7 @@ class Game {
 			if (item.x === this.player.x && item.y === this.player.y) {
 				// アイテムを拾う
 				if (!this.ctrlPressed && !pickupItem(this, item)) {
-					this.message.add(`${item.name}を拾った`);
+					this.message.add(`${item.name}を拾った`)
 					this.seBox.playPickup()
 					return false; // マップ上から削除
 				} else {
@@ -339,22 +354,28 @@ class Game {
 			return true; // マップ上に残す
 		})
 		this.checkHunger()
+
+		this.renderer.render()
 		
 		// 敵の最大行動回数を取得
 		let maxAction = Math.max(...(this.enemies.map(e => e.maxAction)))
+		const promises = []
 		for (var i=0; i<maxAction; i++) {
-			await new Promise((resolve) => {
-				if (attacked) {
-					this.enemyAttackPhase()
-					this.enemyMovementPhase(tx, ty, attacked)
-				} else {
-					this.enemyMovementPhase(tx, ty)
-					this.enemyAttackPhase()
-				}
-				resolve()
-			})
-			this.queueTimeout(() => { this.enemyActionRefresh(); }, this.actionCount * this.actionTime)
+			promises.push(
+				new Promise(async (resolve) => {
+					if (attacked) {
+						await this.enemyAttackPhase(attacked)
+						this.enemyMovementPhase(tx, ty, attacked)
+					} else {
+						this.enemyMovementPhase(tx, ty)
+						await this.enemyAttackPhase(attacked)
+					}
+					resolve()
+				})
+			)
 		}
+		await Promise.all(promises)
+		this.enemyActionRefresh()
 		this.checkCollisions()
 		if (this.generateEnemyCycle[0] === 0) {
 			this.placeEntities(this.enemies, randomInt(1, 3), "enemy")
@@ -364,7 +385,7 @@ class Game {
 	checkHunger() {
 		if (this.hungerCycle[0] === 0) { this.player.hunger--; if (this.player.hunger < 0) this.player.hunger = 0; }
 		if (this.player.hunger === 0) {
-			this.player.hp--; EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "餓死", "damage");
+			this.player.hp--; EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "餓死", "damage")
 			this.message.add(`空腹でダメージを受けた`)
 			this.seBox.playDamageMe()
 			// # MESSAGE
@@ -397,13 +418,13 @@ class Game {
 				// ゲームオーバー時に終了処理を実行
 				this.destroy()
 			}
-		}, this.actionCount * this.actionTime)
+		}, this.actionTime)
 	}
 	// 敵の移動のために、プレイヤーまでの経路を探索します（経路探索アルゴリズム）。
 	findPath(startX, startY, targetX, targetY) {
-		const queue = [{ x: startX, y: startY, path: [] }];
-		const visited = new Set();
-		visited.add(`${startX},${startY}`);
+		const queue = [{ x: startX, y: startY, path: [] }]
+		const visited = new Set()
+		visited.add(`${startX},${startY}`)
 		
 		const directions = [
 			{ dx: 1, dy: 0 },
@@ -414,32 +435,32 @@ class Game {
 			{ dx: -1, dy: -1 },
 			{ dx: 1, dy: -1 },
 			{ dx: -1, dy: 1 }
-		];
+		]
 		
 		while (queue.length > 0) {
-			const current = queue.shift();
+			const current = queue.shift()
 			// ゴールに到達したら経路を返す
 			if (current.x === targetX && current.y === targetY) {
-				return current.path;
+				return current.path
 			}
 			
 			for (const d of directions) {
-				const nx = current.x + d.dx;
-				const ny = current.y + d.dy;
+				const nx = current.x + d.dx
+				const ny = current.y + d.dy
 				
 				// グリッド外は除外
-				if (nx < 0 || ny < 0 || nx >= this.width || ny >= this.height) continue;
+				if (nx < 0 || ny < 0 || nx >= this.width || ny >= this.height) continue
 				// 壁なら除外（この条件はグリッドデータと MAP_TILE.WALL の値が一致している前提）
-				if (this.map.grid[ny][nx] === MAP_TILE.WALL) continue;
+				if (this.map.grid[ny][nx] === MAP_TILE.WALL) continue
 				
-				const key = `${nx},${ny}`;
+				const key = `${nx},${ny}`
 				if (!visited.has(key)) {
-					visited.add(key);
-					queue.push({ x: nx, y: ny, path: current.path.concat([{ x: nx, y: ny }]) });
+					visited.add(key)
+					queue.push({ x: nx, y: ny, path: current.path.concat([{ x: nx, y: ny }]) })
 				}
 			}
 		}
-		return null;
+		return null
 	}
 	// 敵の移動処理を行い、プレイヤーとの距離や障害物を考慮して移動先を決定します。
 	enemyMovementPhase(nextPlayerX, nextPlayerY, attacked = false) {
@@ -514,41 +535,57 @@ class Game {
 		return path
 	}
 	// プレイヤーに隣接している敵が攻撃を仕掛ける処理を実行します。
-	enemyAttackPhase() {
-		this.enemies.forEach((enemy) => {
-			if (enemy.hp <= 0 || enemy.action === 0) {
-				this.x = this.y = -1
-				return
-			}
-			const dx = Math.abs(enemy.x - this.player.x)
-			const dy = Math.abs(enemy.y - this.player.y)
-			if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
-				enemy.action--
-				this.queueTimeout(() => {
-					this.player.hp -= enemy.atk
-					if (this.player.hp < 0) this.player.hp = 0
-					EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me")
-					this.message.add(`${enemy.name}の攻撃　${enemy.atk}ダメージ`)
-					this.seBox.playDamageMe()
-					// # MESSAGE
-				}, this.actionCount * this.actionTime)
-				this.actionCount++
-			}
-			else if (dx === 1 && dy === 1) {
-				if (this.map.grid[this.player.y][enemy.x] !== MAP_TILE.WALL &&
-						this.map.grid[enemy.y][this.player.x] !== MAP_TILE.WALL) {
-					enemy.action--
-					this.queueTimeout(() => {
-						this.player.hp -= enemy.atk
-						if (this.player.hp < 0) this.player.hp = 0
-						EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me")
-						this.message.add(`${enemy.name}の攻撃　${enemy.atk}ダメージ`)
-						this.seBox.playDamageMe()
-						// # MESSAGE
-					}, this.actionCount * this.actionTime)
-					this.actionCount++
+	async enemyAttackPhase(attacked) {
+		return new Promise(resolve => {
+			let chain = Promise.resolve()
+	
+			this.enemies.forEach(async (enemy) => {
+				if (enemy.hp <= 0 || enemy.action === 0) {
+					this.x = this.y = -1
+					return
 				}
-			}
+				const dx = Math.abs(enemy.x - this.player.x)
+				const dy = Math.abs(enemy.y - this.player.y)
+				if (dx > 1 || dy > 1) {
+					this.x = this.y = -1
+					return 
+				}
+				if (attacked) {
+					await this.timeoutSync(() => {}, this.actionTime)
+				}
+				chain = chain.then(() => 
+					new Promise(resolve => {
+						if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
+							enemy.action--
+							this.player.hp -= enemy.atk
+							if (this.player.hp < 0) this.player.hp = 0
+							EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me")
+							this.message.add(`${enemy.name}の攻撃　${enemy.atk}ダメージ`)
+							// # MESSAGE
+							this.seBox.playDamageMe()
+							this.actionCount++
+						}
+						else if (dx === 1 && dy === 1) {
+							if (this.map.grid[this.player.y][enemy.x] !== MAP_TILE.WALL &&
+									this.map.grid[enemy.y][this.player.x] !== MAP_TILE.WALL) {
+								enemy.action--
+								this.player.hp -= enemy.atk
+								if (this.player.hp < 0) this.player.hp = 0
+								EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me")
+								this.message.add(`${enemy.name}の攻撃　${enemy.atk}ダメージ`)
+								// # MESSAGE
+								this.seBox.playDamageMe()
+								this.actionCount++
+							}
+						}
+						this.timeoutSync(() => {
+							resolve("ok")
+						}, this.actionTime)
+					})
+				)
+			})
+
+			chain.then(() => resolve("ok"))
 		})
 	}
 	// 各敵の行動回数などのリセットを行い、次ターンへの準備をします。
@@ -556,7 +593,7 @@ class Game {
 		this.enemies.forEach((enemy) => { enemy.action = enemy.maxAction; })
 	}
 	// プレイヤーの攻撃により、敵にダメージを与え、敵の体力がゼロになった場合の処理（スコア加算、EXP獲得、エフェクト表示など）を実施します。
-	damageEnemy(enemy, index) {
+	async damageEnemy(enemy, index) {
 		var hor = this.keyX, ver = this.keyY
 		if (this.player.weapon)
 			EffectsManager.showAttackMotionWeapon(this.gameContainer, hor, ver, this.player.weapon.tile)
@@ -573,16 +610,16 @@ class Game {
 			EffectsManager.showEffect(this.gameContainer, this.player, enemy.x, enemy.y, "💥", "explosion")
 			// # MESSAGE
 			this.enemies.splice(index, 1)
-			this.score += 50
-			this.gainExp(enemy.exp)
-			setTimeout(() => {
+
+			await this.timeoutSync(() => {
 				this.message.add(`${enemy.name}を倒した`)
-				setTimeout(() => {
-					EffectsManager.showEffect(this.gameContainer, this.player, enemy.x, enemy.y, `+${enemy.exp} EXP`, "heal")
-					this.message.add(`経験値を${enemy.exp}ポイント得た`)
-					// # MESSAGE
-				}, 300)
 			}, 300)
+			EffectsManager.showEffect(this.gameContainer, this.player, enemy.x, enemy.y, `+${enemy.exp} EXP`, "heal")
+			this.message.add(`経験値を${enemy.exp}ポイント得た`)
+			// # MESSAGE
+			this.score += 50
+
+			this.gainExp(enemy.exp)
 		}
 	}
 	
@@ -728,33 +765,35 @@ class Game {
 	
 	/* 6. プレイヤー・敵の相互作用 */
 	// 敵を倒した際に、経験値を加算し、レベルアップ条件に応じた能力向上を処理します。
-	gainExp(amount) {
+	async gainExp(amount) {
 		this.player.exp += amount
 		const expToNext = this.player.level * 10
 		if (this.player.exp >= expToNext) {
-			let upAtk, upHp
-			this.player.exp -= expToNext
-			this.player.level++
-			this.player.attack += (upAtk = randomInt(1, 2))
-			this.player.maxHp += (upHp = randomInt(2, 3))
-			this.player.healAmount++
-			this.player.hp = this.player.maxHp
-			this.queueTimeout(() => {
-				this.seBox.playLVUP()
-				EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "LEVEL UP!", "heal");
-				this.message.add("レベルが上がった!")
-			}, 1100)
-			// # MESSAGE
-			this.queueTimeout(() => {
-				EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `HP +${upHp}`, "heal");
-				this.message.add(`HP +${upHp}`)
-			}, 1600)
-			// # MESSAGE
-			this.queueTimeout(() => {
-				EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `攻撃力 +${upAtk}`, "heal");
-				this.message.add(`攻撃力 +${upAtk}`)
-			}, 2100)
-			// # MESSAGE
+			await this.timeoutSync(async () => {
+				let upAtk, upHp
+				this.player.exp -= expToNext
+				this.player.level++
+				this.player.attack += (upAtk = randomInt(1, 2))
+				this.player.maxHp += (upHp = randomInt(2, 3))
+				this.player.healAmount++
+				this.player.hp = this.player.maxHp
+				await this.timeoutSync(() => {
+					this.seBox.playLVUP()
+					EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "LEVEL UP!", "heal")
+					this.message.add("レベルが上がった!")
+				}, 300)
+				// # MESSAGE
+				await this.timeoutSync(() => {
+					EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `HP +${upHp}`, "heal")
+					this.message.add(`HP +${upHp}`)
+				}, 600)
+				// # MESSAGE
+				await this.timeoutSync(() => {
+					EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `攻撃力 +${upAtk}`, "heal")
+					this.message.add(`攻撃力 +${upAtk}`)
+				}, 600)
+				// # MESSAGE
+			}, 300)
 		}
 	}
 	// プレイヤーがアイテムを食べた際の飢餓回復処理を行います。
@@ -815,7 +854,7 @@ class Game {
 		this.bgmBox.stopBGM()
 		
 		// グリッドを削除
-		switchGrid(this.gameContainer, false);
+		switchGrid(this.gameContainer, false)
 		
 		// 難易度選択マップに戻る
 		selector = new DifficultySelector(this.myIcon)
@@ -828,19 +867,19 @@ class Game {
 			})
 		}
 		// 待ってからターンを進める
-		syncTimeout(400).then(() => {
+		syncTimeout(async () => {
 			this.advanceTurn()
-			this.queueTimeout(() => {
+			await this.timeoutSync(() => {
 				this.enemyAttackPhase()
-			}, this.actionCount * this.actionTime)
-			this.queueTimeout(() => {
+			}, this.actionTime)
+			await this.timeoutSync(() => {
 				this.enemyMovementPhase(this.player.x, this.player.y)
-			}, this.actionCount * this.actionTime)
-			this.queueTimeout(() => {
+			}, this.actionTime)
+			await this.timeoutSync(() => {
 				this.enemyActionRefresh()
 				this.checkCollisions()
 				this.renderer.render()
-			}, (this.actionCount + 1) * this.actionTime)
-		})
+			}, this.actionTime)
+		}, this.actionTime)
 	}
 }
