@@ -701,6 +701,7 @@ class BGMManager extends AudioManager {
 			{name: "./rsrc/mus/easy.mp3", volume: 0.5},
 			{name: "./rsrc/mus/normal.mp3", volume: 0.5},
 			{name: "./rsrc/mus/normalPlus.mp3", volume: 0.5},
+			{name: "./rsrc/mus/normalPlus2.mp3", volume: 0.5},
 			{name: "./rsrc/mus/hard.mp3", volume: 0.5},
 			{name: "EOL", volume: 0.5},
 		]
@@ -733,6 +734,10 @@ class BGMManager extends AudioManager {
 
 	playNormalPlus() {
 		this.playBGM("./rsrc/mus/normalPlus.mp3")
+	}
+
+	playNormalPlus2() {
+		this.playBGM("./rsrc/mus/normalPlus2.mp3")
 	}
 
 	playHard() {
