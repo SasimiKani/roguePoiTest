@@ -425,6 +425,7 @@ class MagicSpell extends InventoryItem {
 						///// console.log("showMagicEffectCircle End")
 			
 						game.timeoutSync(()=>{
+							game.actionProgress = false
 							resolve("ok")
 						}, 400)
 					})
@@ -432,6 +433,7 @@ class MagicSpell extends InventoryItem {
 					options.effect(game).then(() => {
 			
 						game.timeoutSync(()=>{
+							game.actionProgress = false
 							resolve("ok")
 						}, 400)
 					})
