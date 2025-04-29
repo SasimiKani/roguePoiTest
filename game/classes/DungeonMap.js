@@ -51,6 +51,8 @@ class DungeonMap {
 					return randomInt(4, 7)
 				case "hard":
 					return randomInt(5, 8)
+				case "hardPlus":
+					return randomInt(4, 9)
 				default:
 					return randomInt(3, 8)
 			}

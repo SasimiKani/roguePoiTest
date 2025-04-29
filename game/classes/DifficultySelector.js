@@ -18,7 +18,8 @@ class DifficultySelector {
 			{ x: 3, y: 3, difficulty: "easy", tile: difficultySettings.easy.wallEmoji, text: "森レベル" },
 			{ x: 11, y: 3, difficulty: "normal", tile: difficultySettings.normal.wallEmoji, text: "山レベル" },
 			{ x: 3, y: 11, difficulty: "normalPlus", tile: difficultySettings.normalPlus.wallEmoji, text: "雪原レベル" },
-			{ x: 11, y: 11, difficulty: "hard", tile: difficultySettings.hard.wallEmoji, text: "火山レベル" }
+			{ x: 11, y: 11, difficulty: "hard", tile: difficultySettings.hard.wallEmoji, text: "火山レベル" },
+			{ x: 7, y: 13, difficulty: "hardPlus", tile: difficultySettings.hardPlus.wallEmoji, text: "海底レベル" }
 		]
 		this.options.forEach(opt => {
 			for (var pos of [[-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0]]) {

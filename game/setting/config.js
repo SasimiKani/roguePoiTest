@@ -3,7 +3,8 @@ const difficultySettings = {
 	easy:	 { name: "森レベル", wallEmoji: "🌳", maxFloor: 10, revealLv: 5 },
 	normal: { name: "山レベル", wallEmoji: "⛰️", maxFloor: 20, revealLv: 3 },
 	normalPlus:	 { name: "雪原レベル", wallEmoji: "⬜️", maxFloor: 40, revealLv: 7 },
-	hard:	 { name: "火山レベル", wallEmoji: "🌋", maxFloor: 99, revealLv: 2 }
+	hard:	 { name: "火山レベル", wallEmoji: "🌋", maxFloor: 99, revealLv: 2 },
+	hardPlus:	 { name: "海底レベル", wallEmoji: "🪸", maxFloor: 500, revealLv: 4 }
 }
 
 /** 共通値設定 */
@@ -74,6 +75,20 @@ const EntitySettingValues = {
         }
     },
     hard: {
+        enemy: {min: 2, max: 4},
+        entity: {min: 1, max: 2},
+        maxItems: {min: 2, max: 4},
+        itemWeights: {
+            food:     30,
+            sushi:    20,
+            magic:    10,
+            niku:     10,
+            weapon:   7,
+            shooting: 10,
+            box:      5
+        }
+    },
+    hardPlus: {
         enemy: {min: 2, max: 4},
         entity: {min: 1, max: 2},
         maxItems: {min: 2, max: 4},
@@ -188,6 +203,18 @@ const normalPlusEnemyDefinitions = [
     new EnemyDefinition(EnemyDragon,   [40, 40],  1)
 ]
 const hardEnemyDefinitions = [
+    new EnemyDefinition(EnemyLarvae, [1, 20], 20),
+    new EnemyDefinition(EnemyAnt, [2, 20], 30),
+    new EnemyDefinition(EnemyCrayfish, [4, 40], 15),
+    new EnemyDefinition(EnemySlime, [8, 50], 15),
+    new EnemyDefinition(EnemyBat, [12, null], 10),
+    new EnemyDefinition(EnemyGoblin, [16, null], 7),
+    new EnemyDefinition(EnemySkeleton, [19, null], 7),
+    new EnemyDefinition(EnemySpider, [24, null], 5),
+    new EnemyDefinition(EnemyWizard, [30, null], 5),
+    new EnemyDefinition(EnemyDragon, [50, null], 1)
+]
+const hardPlusEnemyDefinitions = [
     new EnemyDefinition(EnemyLarvae, [1, 20], 20),
     new EnemyDefinition(EnemyAnt, [2, 20], 30),
     new EnemyDefinition(EnemyCrayfish, [4, 40], 15),

@@ -117,6 +117,9 @@ class Game {
 				case "hard":
 					this.bgmBox.playHard()
 					break
+				case "hardPlus":
+					this.bgmBox.playHard()
+					break
 				}
 			})
 		})
@@ -132,6 +135,10 @@ class Game {
 			break
 		case "hard":
 			EffectsManager.showFieldEffect(this.gameContainer, "🔥", 10)
+			//this.bgmBox.playNormal()
+			break
+		case "hardPlus":
+			//EffectsManager.showFieldEffect(this.gameContainer, "🔥", 10)
 			//this.bgmBox.playNormal()
 			break
 		}
@@ -311,6 +318,29 @@ class Game {
 				this.generateDungeon(true)
 				this.renderer.render()
 				EffectsManager.showFloorOverlay(this.gameContainer, this.floor)
+
+				switch (CONFIG.DIFFICULTY) {
+					case "hardPlus":
+						if (this.floor % 5 === 0) {
+							// BGM切り替え
+							const blobs = Object.entries(this.bgmBox.playList)
+								.map(file => [file[0], Object.values(file[1])[0]])
+								.filter(bgm => bgm[0] !== "./rsrc/mus/difficulty.mp3") // セレクト画面は除く
+							/////// console.log(blobs)
+
+							const currentBGM = this.bgmBox.player.src
+							const BGMs = blobs.filter(BGM => BGM[1] !== currentBGM)
+							/////// console.log(BGMs)
+							/////// console.log(BGMs[randomInt(0, BGMs.length - 1)][0])
+							this.bgmBox.playBGM(BGMs[randomInt(0, BGMs.length - 1)][0])
+
+							// 視界切り替え
+							CONFIG.REVEALLV = randomInt(2, 7)
+						}
+						break
+					default:
+						break
+				 }
 			}, () => {
 				this.seBox.playMenu(4)
 				// 「キャンセル」を選んだ場合、必要に応じてプレイヤー位置を戻すなどの処理
@@ -569,7 +599,7 @@ class Game {
 						}
 						this.timeoutSync(() => {
 							resolve("ok")
-						}, this.actionTime)
+						}, this.actionTime / 2)
 					})
 				)
 			})

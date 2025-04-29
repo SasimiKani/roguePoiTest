@@ -17,6 +17,9 @@ function enemyList(floor, difficulty, freq) {
 		case "hard":
 			enemyDefinitions = hardEnemyDefinitions
 			break
+		case "hardPlus":
+			enemyDefinitions = hardPlusEnemyDefinitions
+			break
 		default:
 			enemyDefinitions = defaultEnemyDefinitions
 	}
