@@ -103,29 +103,7 @@ class Enemy extends BaseEntity {
 
 class EnemyLarvae extends Enemy { static floorRange = [1, 5]
 	constructor(x, y, hp) {
-		super("Larvae", x, y, hp, 5, 1, '🐛'
-			// 個別スキル
-			/*
-			,[
-				{
-					name: "いもむしスキル",
-					range: 1,
-					func: (game) => {
-						game.message.add("いもむしです")
-					},
-					duration: 0
-				},
-				{
-					name: "いもむしスキル2",
-					range: 2,
-					func: (game) => {
-						game.message.add("いもむし遠いです")
-					},
-					duration: 0
-				},
-			]
-			*/
-		)
+		super("Larvae", x, y, hp, 5, 1, '🐛')
 	}
 }
 
@@ -193,6 +171,10 @@ class EnemyDragon extends Enemy { static floorRange = [10, null]
 		super("Dragon", x, y, hp + 30, 50, 10, '🐉')
 		this.magicDamage = 2
 		this.action = this.maxAction = 2 // ニ回行動
+		this.breathAtk = 7
+		this.skills = [
+			Skill.offensiveBreath(this)
+		]
 	}
 }
 class EnemyRat extends Enemy {

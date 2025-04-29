@@ -388,16 +388,16 @@ class Game {
 		////////console.log("敵行動開始")
 		this.actionProgress = true
 		
+		let chain = Promise.resolve()
 		for (var i=0; i<maxAction; i++) {
-			promises.push(
-				new Promise(async (resolve) => {
-					await this.enemyAttackPhase()
-					this.enemyMovementPhase(tx, ty, attacked)
-					resolve()
-				})
-			)
+			chain = chain.then(async () => {
+				await this.enemyAttackPhase()
+				this.enemyMovementPhase(tx, ty, attacked)
+				this.renderer.render()
+			})
 		}
-		await Promise.all(promises)
+		//await Promise.all(promises)
+		await chain
 		this.enemyActionRefresh()
 		
 		if (this.player.hp > 0) {

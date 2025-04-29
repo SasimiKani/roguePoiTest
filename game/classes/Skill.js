@@ -1,4 +1,7 @@
 class Skill {
+    /**
+     * スライムがプルプルするだけの技 
+     */
     static actionPurupuru = (enemy) => ({
         name: "行動",
         range: 1,
@@ -9,6 +12,7 @@ class Skill {
     })
 
     /**
+     * 魔法を打つ技
      * 必須フィールド；this.magicAtk
      */
     static offensiveMagic = (enemy) => ({
@@ -26,5 +30,29 @@ class Skill {
             game.seBox.playDamageMe()
         },
         duration: 500
+    })
+
+    /**
+     * ドラゴンブレス
+     * 必須フィールド；this.breathAtk
+     */
+    static offensiveBreath = (enemy) => ({
+        name: "ドラゴンブレス",
+        range: 5,
+        func: async (game) => {
+            const container = game.gameContainer
+            const player = game.player
+            const range = 5
+            const projectileEmoji = "🔥"
+            EffectsManager.showEnemyShootingEffect(container, player, enemy, range, projectileEmoji).then(() => {
+                game.player.hp -= enemy.breathAtk
+                if (game.player.hp < 0) game.player.hp = 0
+    
+                EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `-${enemy.breathAtk}`, "damage-me")
+                game.message.add(`${enemy.breathAtk}ダメージ`)
+                game.seBox.playDamageMe()
+            })
+        },
+        duration: 600
     })
 }

@@ -288,6 +288,65 @@ class EffectsManager {
 	}
 		
 	/**
+	 * 敵の位置からプレイヤーに弾が一直線に飛ぶエフェクトを表示する
+	 * @param {HTMLElement} container ゲーム画面のコンテナ要素
+	 * @param {Player} player プレイヤーオブジェクト（描画上は中央と仮定）
+	 * @param {{ex:number, ey:number}} enemy 敵オブジェクト
+	 * @param {number} range 射程（タイル数）
+	 * @param {string} projectileEmoji 弾の絵文字（例："●"）
+	 * @param {Object} options オプション（factor: タイル1単位あたりのピクセル数、duration: アニメーション時間）
+	 */
+	static showEnemyShootingEffect(container, player, enemy, range, projectileEmoji, options = {}) {
+		return new Promise(resolve => {
+			const fontSize = CONFIG.FONT_SIZE;
+			const factor = options.factor || fontSize; // タイル1単位あたりのピクセル数
+			const duration = options.duration || 0.3; // アニメーション時間（秒）
+	
+			// container の位置情報
+			const rect = container.getBoundingClientRect();
+	
+			// プレイヤーの中心座標（画面中央）
+			const playerX = rect.left + window.scrollX + rect.width / 2 - (fontSize / 2) - 3;
+			const playerY = rect.top + window.scrollY + rect.height / 2 - fontSize + 3;
+	
+			// 敵の座標を画面座標に変換
+			const startX = rect.left + window.scrollX + rect.width / 2 + ((enemy.x - player.x) * factor) - (fontSize / 2)
+			const startY = rect.top + window.scrollY + rect.height / 2 + ((enemy.y - player.y) * factor) - fontSize
+	
+			// 飛ばす距離（プレイヤーまで）
+			const targetOffsetX = playerX - startX;
+			const targetOffsetY = playerY - startY;
+	
+			// 飛ぶ角度（上を0°とする）
+			const th = Math.atan2(targetOffsetY, targetOffsetX) * 180 / Math.PI + 90;
+	
+			// プロジェクタイル要素を作成
+			const projectile = document.createElement("div");
+			projectile.className = "shooting-projectile";
+			projectile.textContent = projectileEmoji || "●";
+			projectile.style.fontSize = `${fontSize}px`;
+			projectile.style.position = "absolute";
+			projectile.style.left = `${startX}px`;
+			projectile.style.top = `${startY}px`;
+			projectile.style.transition = `transform ${duration}s ease-in`;
+			projectile.style.zIndex = "3000";
+			projectile.style.transform = "translate(0, 0)" + ` rotate(${th}deg)`;
+			document.body.appendChild(projectile);
+	
+			// 少し待ってから移動開始（再描画のためのタイムアウト）
+			setTimeout(() => {
+				projectile.style.transform = `translate(${targetOffsetX}px, ${targetOffsetY}px) rotate(${th}deg)`;
+			}, 10);
+	
+			// アニメーション終了後に要素を削除
+			setTimeout(() => {
+				projectile.remove();
+				resolve()
+			}, duration * 1000 + 20);
+		})
+	}
+
+	/**
 	 * フロアオーバーレイを表示する
 	 * @param {HTMLElement} container ゲーム画面のコンテナ要素
 	 * @param {number} floor 現在のフロア
