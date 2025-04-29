@@ -45,8 +45,10 @@ function inventoryGroundP(game, e) {
     if (e.key === 'p') {
         if (game.groundItem.tile === '🔼') return; // 足元が階段なら何もしない
         game.seBox.playPickup()
+        game.message.add(`${item.name}を拾った`)
         // 足元アイテムを拾う
         pickupItem(game, game.groundItem)
+        game.updateData({ tx: game.player.x, ty: game.player.y })
         game.renderer.render()
     }
     return e.key === 'p'
@@ -77,8 +79,14 @@ function inventoryGroundU(game, e) {
                     }
                 }
                 // 箱は消費しない
-                if (!(game.groundItem instanceof BoxItem)) {
+                if (!(game.groundItem instanceof BoxItem) &&
+                        // 射撃じゃなければ消費、射撃でも数が0なら消費する
+                        (!(game.groundItem instanceof ShootingItem) || game.groundItem.stack === 0)) {
                     game.groundItem = null
+                }
+                // 箱を見る以外ならターンを進める
+                if (!(game.groundItem instanceof BoxItem)) {
+                    game.updateData({ tx: game.player.x, ty: game.player.y })
                 }
             })
         }
@@ -100,8 +108,6 @@ async function inventoryU(game, e) {
             // 武器・箱じゃなければ消費する
             if (!(item instanceof WeaponItem) && !(item instanceof BoxItem) &&
                     // 射撃じゃなければ消費、射撃でも数が0なら消費する
-                    /// item = ShootingItem && item.stack === 0
-                    /// !(item = ShootingItem)
                     (!(item instanceof ShootingItem) || item.stack === 0)) {
                 game.player.inventory.splice(game.inventorySelection, 1)
                 if (game.inventorySelection >= game.player.inventory.length) {
@@ -133,6 +139,8 @@ function inventoryD(game, e) {
             // ここ、アイテムを置く場合は足元に設置する
             if (!game.groundItem) {
                 game.groundItem = item
+                game.message.add(`${item.name}を足元に置いた`)
+                game.updateData({ tx: game.player.x, ty: game.player.y })
             } else {
                 item.x = game.player.x
                 item.y = game.player.y
@@ -168,6 +176,7 @@ function inventoryX(game, e) {
                 // インベントリの装備している武器を交換したら外す
                 game.groundItem.use(game)
             }
+            game.updateData({ tx: game.player.x, ty: game.player.y })
         }
         game.inventoryOpen = false
         game.renderer.render()
@@ -303,7 +312,8 @@ function inventoryBoxU(box, e) {
 function inventoryBoxX(box, e) {
     if (e.key.toLowerCase() === "x") {
         e.preventDefault()
-        if (box.contents.length > 0) {
+        if (box.contents.length > 0 && !box.game.groundItem) {
+            box.game.groundItem = box.contents[box.selectionIndex]
             const item = box.removeItem(box.selectionIndex)
             item.x = box.game.player.x
             item.y = box.game.player.y
@@ -314,7 +324,8 @@ function inventoryBoxX(box, e) {
             // 置いたら箱を閉じてターンを進める
             box.cleanup(box.game)
             box.renderList()
-            box.game.updateData({ tx: game.player.x, ty: game.player.y })
+            box.game.message.add(`${item.name}を足元に置いた`)
+            box.game.updateData({ tx: box.game.player.x, ty: box.game.player.y })
         }
     }
     return e.key.toLowerCase() === "x"

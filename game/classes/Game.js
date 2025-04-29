@@ -230,6 +230,7 @@ class Game {
 			if (!inputResult) { return; }
 			this.advanceTurn()
 			await this.updateData(inputResult)
+			this.keyX = this.keyY = 0
 		} catch (e) {
 			console.error(e)
 		} finally {
@@ -362,6 +363,8 @@ class Game {
 				
 				return
 			}
+			// 移動してきたときはアイテムを拾う
+			if (this.keyX || this.keyY) {
 			this.items = this.items.filter(item => {
 				if (item.x === this.player.x && item.y === this.player.y) {
 					// アイテムを拾う
@@ -382,6 +385,7 @@ class Game {
 				}
 				return true; // マップ上に残す
 			})
+			}
 			this.checkHunger()
 
 			this.renderer.render()
