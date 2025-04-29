@@ -201,7 +201,7 @@ class EnemyWizard extends Enemy { static floorRange = [10, null]
 						if (game.player.hp < 0) game.player.hp = 0
 
 						EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `-${this.magicAtk}`, "damage-me")
-						game.message.add(`${this.name}の攻撃　${this.magicAtk}ダメージ`)
+						game.message.add(`${this.magicAtk}ダメージ`)
 						game.seBox.playDamageMe()
 					},
 					duration: 500
