@@ -183,7 +183,9 @@ function inventoryI(game, e) {
             if (game.boxSelected.insertItem(selectedItem)) {
                 if (selectedItem instanceof WeaponItem) {
                     // 箱に入れたので、装備を解除
-                    selectedItem.use(game)
+                    if (game.player.weapon === selectedItem) {
+                        selectedItem.use(game)
+                    }
                 }
                 if (game.groundItem === selectedItem) {
                     // 足元のアイテムを入れたら足元を削除
@@ -276,17 +278,23 @@ function inventoryBoxU(box, e) {
             const item = box.contents[box.selectionIndex]
             box.cleanup(box.game)
             box.renderList()
-            if (item.use) item.use(box.game).then(() => {
-                // 使用後、アイテムが消費されるなら削除する
-                box.contents.splice(box.selectionIndex, 1)
-                if (box.selectionIndex >= box.contents.length) {
-                    box.selectionIndex = Math.max(0, box.contents.length - 1)
-                }
-                // 名前の隣の数字を更新
-                box.updateName()
-                // 使ったら箱を閉じてターンを進める
-                box.game.updateData({ tx: box.game.player.x, ty: box.game.player.y })
-            })
+            // 武器類は使えない
+            if (!(item instanceof WeaponItem) && !(item instanceof ShootingItem)) {
+                if (item.use) item.use(box.game).then(() => {
+                    // 使用後、アイテムが消費されるなら削除する
+                    box.contents.splice(box.selectionIndex, 1)
+                    if (box.selectionIndex >= box.contents.length) {
+                        box.selectionIndex = Math.max(0, box.contents.length - 1)
+                    }
+                    // 名前の隣の数字を更新
+                    box.updateName()
+                    // 使ったら箱を閉じてターンを進める
+                    box.game.updateData({ tx: box.game.player.x, ty: box.game.player.y })
+                    box.game.renderer.render()
+                })
+            } else {
+                box.game.message.add(`${item.name}は箱の中で使えない`)
+            }
         }
     }
     return e.key.toLowerCase() === 'u'
