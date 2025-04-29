@@ -285,7 +285,7 @@ function inventoryBoxU(box, e) {
                 // 名前の隣の数字を更新
                 box.updateName()
                 // 使ったら箱を閉じてターンを進める
-                box.game.updateData({ tx: game.player.x, ty: game.player.y })
+                box.game.updateData({ tx: box.game.player.x, ty: box.game.player.y })
             })
         }
     }

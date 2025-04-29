@@ -91,11 +91,10 @@ class Game {
 		// ------------------------------
 		// ※ 以下はプレイヤー初期アイテムの例（必要に応じてコメント解除）
 		// ------------------------------
-		// this.player.inventory.push(new BoxItem(0, 0))
+		 this.player.inventory.push(new BoxItem(0, 0))
 		// this.player.inventory.push(new WeaponItem(0, 0, "伝説の剣", '⚔️', 1000))
 		// this.player.inventory.push(new ShootingItem(0, 0, "射撃-弓矢", '🏹', 5, 10, 8, "↑"))
-		// this.player.inventory.push(new BoxItem())
-		// this.player.inventory.push(new MagicSpell(0, 0, "炎", "🔥", "🔥", {damage: 20, area: 1, fallbackHeal: null}))
+		// this.player.inventory.push(new MagicSpell(0, 0, "炎", "🔥", "🔥", {damage: 20, player: this.player, area: 1, fallbackHeal: null}))
 		
 		EffectsManager.showFloorOverlay(this.gameContainer, this.floor)
 		
