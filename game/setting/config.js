@@ -1,10 +1,10 @@
 /** 難易度設定 */
 const difficultySettings = {
-	easy:	 { name: "森レベル", wallEmoji: "🌳", maxFloor: 10, revealLv: 5 },
-	normal: { name: "山レベル", wallEmoji: "⛰️", maxFloor: 20, revealLv: 3 },
-	normalPlus:	 { name: "雪原レベル", wallEmoji: "⬜️", maxFloor: 40, revealLv: 7 },
-	hard:	 { name: "火山レベル", wallEmoji: "🌋", maxFloor: 99, revealLv: 2 },
-	hardPlus:	 { name: "海底レベル", wallEmoji: "🪸", maxFloor: 500, revealLv: 4 }
+	easy:	 { name: "森レベル", wallEmoji: "🌳", wallSubEmoji: "🌲", maxFloor: 10, revealLv: 5 },
+	normal: { name: "山レベル", wallEmoji: "⛰️", wallSubEmoji: "🌳", maxFloor: 20, revealLv: 3 },
+	normalPlus:	 { name: "雪原レベル", wallEmoji: "⬜️", wallSubEmoji: "🟦", maxFloor: 40, revealLv: 7 },
+	hard:	 { name: "火山レベル", wallEmoji: "🌋", wallSubEmoji: "🏔️", maxFloor: 99, revealLv: 2 },
+	hardPlus:	 { name: "海底レベル", wallEmoji: "🪸", wallSubEmoji: "🐚", maxFloor: 500, revealLv: 4 }
 }
 
 /** 共通値設定 */
@@ -26,6 +26,7 @@ const CONFIG = {
 
 const MAP_TILE = {
 	WALL: difficultySettings.easy.wallEmoji,
+	SUB_WALL: difficultySettings.easy.wallSubEmoji,
 	STEPS: '🔼'
 }
 

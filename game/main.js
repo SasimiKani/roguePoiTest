@@ -43,6 +43,7 @@ function startDungeonGame(difficulty, myIcon="😊") {
 	CONFIG.DIFFICULTY = difficulty
 	CONFIG.REVEALLV = difficultySettings[difficulty].revealLv
 	MAP_TILE.WALL = difficultySettings[difficulty].wallEmoji
+	MAP_TILE.SUB_WALL = difficultySettings[difficulty].wallSubEmoji
 	setTimeout(() => {
 		document.querySelector("button#change-icon").style.display = "none"
 		selector.bgmBox.stopBGM()

@@ -2,6 +2,11 @@ class Renderer {
     constructor(game) {
         this.game = game
     }
+
+	isSubWallPos(tile, x, y) {
+		return  tile == MAP_TILE.WALL &&
+			((x + y * 10) % 59 == 0 || (x + y * 10) % 71 == 0)
+	}
     
 	renderMainView() {
 		let html = ''
@@ -12,7 +17,7 @@ class Renderer {
 			for (let x = startX; x <= this.game.player.x + radius; x++) {
 				let tile = MAP_TILE.WALL
 				if (x >= 0 && x < this.game.width && y >= 0 && y < this.game.height) {
-					if (!this.game.map.visible[y][x]) { html += `<span class="wall ${CONFIG.DIFFICULTY}">${MAP_TILE.WALL}</span>`; continue; }
+					if (!this.game.map.visible[y][x]) { html += `<span class="wall ${CONFIG.DIFFICULTY}">${this.isSubWallPos(MAP_TILE.WALL, x, y) ? MAP_TILE.SUB_WALL : MAP_TILE.WALL}</span>`; continue; }
 					else if (this.game.player.x === x && this.game.player.y === y) tile = this.game.player.tile
 					else {
 						let drawn = false
@@ -31,7 +36,7 @@ class Renderer {
 						}
 					}
 				}
-				html += `<span class="${CONFIG.DIFFICULTY}">${tile}</span>`
+				html += `<span class="${CONFIG.DIFFICULTY}">${this.isSubWallPos(tile, x, y) ? MAP_TILE.SUB_WALL : tile}</span>`
 			}
 			html += '<br>'
 		}
