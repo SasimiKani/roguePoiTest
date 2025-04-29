@@ -83,8 +83,8 @@ class EffectsManager {
 			for (let i = 0; i < numParticles; i++) {
 				const angle = Math.random() * 2 * Math.PI; // 0～2πの角度
 				const distance = Math.random() * area * factor + CONFIG.FONT_SIZE; // 0～area*factor ピクセルの距離
-				const dx = Math.cos((i * 360 / numParticles) * Math.PI / 180) * distance - CONFIG.FONT_SIZE / 2
-				const dy = Math.sin((i * 360 / numParticles) * Math.PI / 180) * distance - CONFIG.FONT_SIZE / 2
+				const dx = Math.cos((i * 360 / numParticles) * Math.PI / 180) * distance - CONFIG.FONT_SIZE / 2 + (centerX - player.x) * CONFIG.FONT_SIZE
+				const dy = Math.sin((i * 360 / numParticles) * Math.PI / 180) * distance - CONFIG.FONT_SIZE / 2 + (centerY - player.y) * CONFIG.FONT_SIZE
 				
 				const particle = document.createElement("div")
 				particle.className = "magic-particle"
@@ -602,7 +602,9 @@ class MessageManager {
 			clearTimeout(this.timeout)
 		}
 		if (this.text.split("\n").length >= this.maxLine) {
-			this.clear()
+			const tmp = this.text.split("\n")
+			tmp.splice(0, 1)
+			this.text = tmp.join("\n")
 		}
 		this.text = this.text === "" ? text : `${this.text}\n${text}`
 		this.update()

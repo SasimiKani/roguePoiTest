@@ -27,6 +27,7 @@ class Game {
 		// ------------------------------
 		this.actionCount = 0
 		this.actionTime = 400
+		this.actionProgress = false
 		this.score = 0
 		this.floor = 1
 		this.isGameOver = false
@@ -204,7 +205,7 @@ class Game {
 	}
 	// ゲーム中のキー入力を処理し、通常の移動や攻撃、インベントリ表示などを分岐します。
 	async processInput(event) {
-		if (!this.isPlay) return
+		if (!this.isPlay || this.actionProgress) return
 		if (this.isGameOver || !this.acceptingInput || this.boxOverlayActive || this.isAwaitingShootingDirection) return
 
 		this.ctrlPressed = event.ctrlKey
@@ -379,22 +380,31 @@ class Game {
 		// 敵の最大行動回数を取得
 		let maxAction = Math.max(...(this.enemies.map(e => e.maxAction)))
 		const promises = []
+		
+		if (attacked) {
+			await this.timeoutSync(() => {}, 400)
+		}
+		
+		////////console.log("敵行動開始")
+		this.actionProgress = true
+		
 		for (var i=0; i<maxAction; i++) {
 			promises.push(
 				new Promise(async (resolve) => {
-					if (attacked) {
-						await this.enemyAttackPhase(attacked)
-						this.enemyMovementPhase(tx, ty, attacked)
-					} else {
-						this.enemyMovementPhase(tx, ty)
-						await this.enemyAttackPhase(attacked)
-					}
+					await this.enemyAttackPhase()
+					this.enemyMovementPhase(tx, ty, attacked)
 					resolve()
 				})
 			)
 		}
 		await Promise.all(promises)
 		this.enemyActionRefresh()
+		
+		if (this.player.hp > 0) {
+			this.actionProgress = false
+			////////console.log("敵行動終了")
+		}
+		
 		this.checkCollisions()
 		if (this.generateEnemyCycle[0] === 0) {
 			this.placeEntities(this.enemies, randomInt(1, 3), "enemy")
@@ -554,7 +564,7 @@ class Game {
 		return path
 	}
 	// プレイヤーに隣接している敵が攻撃を仕掛ける処理を実行します。
-	async enemyAttackPhase(attacked) {
+	async enemyAttackPhase() {
 		return new Promise(resolve => {
 			let chain = Promise.resolve()
 	
@@ -565,41 +575,59 @@ class Game {
 				}
 				const dx = Math.abs(enemy.x - this.player.x)
 				const dy = Math.abs(enemy.y - this.player.y)
-				if (dx > 1 || dy > 1) {
+				const vsc = enemy.validSkillCount(this.player) // 射程範囲内のスキルがあるか
+				if ((dx > 1 || dy > 1) && vsc === 0) {
 					this.x = this.y = -1
 					return 
 				}
-				if (attacked) {
-					await this.timeoutSync(() => {}, 300)
+
+				// 行動を決定（攻撃範囲外なら通常攻撃を除外）
+				const index = randomInt((dx > 1 || dy > 1) ? 0 : -1, enemy.validSkillCount(this.player) - 1)
+
+				const action = async () => {
+					enemy.action--
+					this.actionCount++
+
+					//////console.group("射程範囲内スキル")
+					//////console.log(enemy.validRangeSkills(this.player))
+					//////console.log(enemy.validSkillCount(this.player))
+					//////console.groupEnd("射程範囲内スキル")
+
+					// 通常攻撃
+					if (index === -1) {
+						await enemy.attack(this)
+					}
+					// 個別スキル
+					else {
+						//////console.log("スキル開始")
+						await enemy.skill(this, index)
+						//////console.log("スキル終了")
+					}
 				}
+
 				chain = chain.then(() => 
-					new Promise(resolve => {
-						if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
-							enemy.action--
-							this.player.hp -= enemy.atk
-							if (this.player.hp < 0) this.player.hp = 0
-							EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me")
-							this.message.add(`${enemy.name}の攻撃　${enemy.atk}ダメージ`)
-							// # MESSAGE
-							this.seBox.playDamageMe()
-							this.actionCount++
-						}
-						else if (dx === 1 && dy === 1) {
-							if (this.map.grid[this.player.y][enemy.x] !== MAP_TILE.WALL &&
-									this.map.grid[enemy.y][this.player.x] !== MAP_TILE.WALL) {
-								enemy.action--
-								this.player.hp -= enemy.atk
-								if (this.player.hp < 0) this.player.hp = 0
-								EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `-${enemy.atk}`, "damage-me")
-								this.message.add(`${enemy.name}の攻撃　${enemy.atk}ダメージ`)
-								// # MESSAGE
-								this.seBox.playDamageMe()
-								this.actionCount++
+					new Promise(async resolve => {
+						//////console.log("アクション開始")
+						if (index == -1) {
+							// 通常攻撃
+							if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
+								await action()
 							}
+							else if (dx === 1 && dy === 1) {
+								if (this.map.grid[this.player.y][enemy.x] !== MAP_TILE.WALL &&
+										this.map.grid[enemy.y][this.player.x] !== MAP_TILE.WALL) {
+									await action()
+								}
+							}
+						} else {
+							// 個別スキル
+							if (dy === 0 || dx === 0 || dx === dy) {
+								await action()
+							}
+							this.timeoutSync(() => {}, this.actionTime)
 						}
-						this.timeoutSync(() => {
-							resolve("ok")
-						}, this.actionTime)
+						resolve("ok")
+						//////console.log("アクション終了")
 					})
 				)
 			})

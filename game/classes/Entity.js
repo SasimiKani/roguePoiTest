@@ -26,7 +26,7 @@ class Player extends BaseEntity {
 // Base Enemy クラス
 class Enemy extends BaseEntity {
 	static floorRange = [1, 3]
-	constructor(name, x, y, hp, exp, atk = 1, tile = '👾') {
+	constructor(name, x, y, hp, exp, atk = 1, tile = '👾', skills) {
 		super(x, y, tile)
 		this.name = name
 		this.hp = hp
@@ -34,9 +34,68 @@ class Enemy extends BaseEntity {
 		this.exp = exp
 		this.action = 1
 		this.maxAction = 1
+
+		/**
+		 * [{name, range, func, duration}, ...]
+		 * 
+		 * rangeで射程範囲を設定して
+		 * プレイヤーとの位置関係で行動を決定する
+		 * 整数値：自座標からの直線距離
+		 * 
+		 * durationに待ち時間ミリ秒を設定できる
+		 */
+		this.skills = skills || []
 	}
 	takeDamage(damage) {
 		this.hp -= damage
+	}
+
+	// 通常攻撃
+	async attack(game) {
+		game.player.hp -= this.atk
+		if (game.player.hp < 0) game.player.hp = 0
+		EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `-${this.atk}`, "damage-me")
+		game.message.add(`${this.name}の攻撃　${this.atk}ダメージ`)
+		game.seBox.playDamageMe()
+
+		await game.timeoutSync(()=>{}, 400)
+	}
+
+	// スキル射程範囲取得
+	get skillRange() {
+		return this.skills.map(skill => skill.range)
+	}
+
+	// 射程範囲内スキル取得
+	validRangeSkills(player) {
+		return this.skills.filter(skill => {
+			const px = player.x, py = player.y
+			const ex = this.x, ey = this.y
+			const dx = Math.abs(px - ex), dy = Math.abs(py - ey)
+			
+			return (dx === dy && dx <= skill.range) ||
+					(dy === 0 && dx <= skill.range) ||
+					(dx === 0 && dy <= skill.range)
+		})
+	}
+
+	// スキル数取得
+	get skillCount() {
+		return this.skills.length
+	}
+	// スキル数取得（射程範囲内）
+	validSkillCount(player) {
+		return this.validRangeSkills(player).length
+	}
+
+	// 個別スキル
+	async skill(game, index) {
+		const skill = this.validRangeSkills(game.player)[index]
+		game.message.add(`${this.name}の${skill.name}`)
+		await skill.func(game)
+		
+		await game.timeoutSync(()=>{
+		}, skill.duration || 0)
 	}
 }
 
@@ -44,7 +103,29 @@ class Enemy extends BaseEntity {
 
 class EnemyLarvae extends Enemy { static floorRange = [1, 5]
 	constructor(x, y, hp) {
-		super("Larvae", x, y, hp, 5, 1, '🐛')
+		super("Larvae", x, y, hp, 5, 1, '🐛'
+			// 個別スキル
+			/*
+			,[
+				{
+					name: "いもむしスキル",
+					range: 1,
+					func: (game) => {
+						game.message.add("いもむしです")
+					},
+					duration: 0
+				},
+				{
+					name: "いもむしスキル2",
+					range: 2,
+					func: (game) => {
+						game.message.add("いもむし遠いです")
+					},
+					duration: 0
+				},
+			]
+			*/
+		)
 	}
 }
 
@@ -62,7 +143,18 @@ class EnemyCrayfish extends Enemy { static floorRange = [3, 9]
 
 class EnemySlime extends Enemy { static floorRange = [5, 8]
 	constructor(x, y, hp) {
-		super("Slime", x, y, hp + 5, 7, 1, '🟩')
+		super("Slime", x, y, hp + 5, 7, 1, '🟩'
+			,[
+				{
+					name: "行動",
+					range: 1,
+					func: (game) => {
+						game.message.add("プルプルしている")
+					},
+					duration: 0
+				}
+			]
+		)
 	}
 	//takeDamage(damage) {
 	//	super.takeDamage(damage)
@@ -96,7 +188,27 @@ class EnemySpider extends Enemy { static floorRange = [10, null]
 
 class EnemyWizard extends Enemy { static floorRange = [10, null]
 	constructor(x, y, hp) {
-		super("Wizard", x, y, hp + 12, 25, 5, '🧙')
+		super("Wizard", x, y, hp + 12, 25, 2, '🧙'
+			,[
+				{
+					name: "魔法攻撃",
+					range: 1,
+					func: async (game) => {
+						game.seBox.playMagic()
+						await EffectsManager.showMagicEffectCircle(game.gameContainer, game.player, this.x, this.y, 1, "🔥")
+
+						game.player.hp -= this.magicAtk
+						if (game.player.hp < 0) game.player.hp = 0
+
+						EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `-${this.magicAtk}`, "damage-me")
+						game.message.add(`${this.name}の攻撃　${this.magicAtk}ダメージ`)
+						game.seBox.playDamageMe()
+					},
+					duration: 500
+				}
+			]
+		)
+		this.magicAtk = 8
 	}
 }
 
@@ -182,6 +294,8 @@ class HealItem extends InventoryItem {
 			if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
 			EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${stuffAmount}`, "food")
 			game.message.add(`少しお腹がふくれた`)
+
+			await game.timeoutSync(()=>{}, 400)
 		})
 	}
 }
@@ -193,6 +307,8 @@ class FoodItem extends InventoryItem {
 			if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
 			EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${stuffAmount}`, "food")
 			game.message.add(`${name}を食べて少しお腹がふくれた`)
+			
+			await game.timeoutSync(()=>{}, 400)
 		})
 	}
 }
@@ -319,6 +435,7 @@ class BoxItem extends InventoryItem {
 class MagicSpell extends InventoryItem {
 	constructor(x, y, name, tile, emoji, options) {
 		super(x, y, name, tile, async (game) => {
+			game.actionProgress = true
 			game.seBox.playMagic()
 			game.message.add(`${this.name}を使った`)
 			return new Promise((resolve) => {
@@ -348,11 +465,17 @@ class MagicSpell extends InventoryItem {
 							EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${this.fallbackHeal}`, "heal")
 						}
 						///// console.log("showMagicEffectCircle End")
-						resolve("ok")
+			
+						game.timeoutSync(()=>{
+							resolve("ok")
+						}, 400)
 					})
 				} else {
 					options.effect(game).then(() => {
-						resolve("ok")
+			
+						game.timeoutSync(()=>{
+							resolve("ok")
+						}, 400)
 					})
 				}
 			})
