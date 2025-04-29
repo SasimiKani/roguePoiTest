@@ -365,26 +365,26 @@ class Game {
 			}
 			// 移動してきたときはアイテムを拾う
 			if (this.keyX || this.keyY) {
-			this.items = this.items.filter(item => {
-				if (item.x === this.player.x && item.y === this.player.y) {
-					// アイテムを拾う
-					if (!this.ctrlPressed && !pickupItem(this, item)) {
-						this.message.add(`${item.name}を拾った`)
-						this.seBox.playPickup()
-						return false; // マップ上から削除
-					} else {
-						// 拾わなかった場合の処理
-						if (!this.groundItem) {
-							this.groundItem = item
-							EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `${this.groundItem.name}に乗った`)
-							this.message.add(`${this.groundItem.name}に乗った`)
-							// # MESSAGE
+				this.items = this.items.filter(item => {
+					if (item.x === this.player.x && item.y === this.player.y) {
+						// アイテムを拾う
+						if (!this.ctrlPressed && !pickupItem(this, item)) {
+							this.message.add(`${item.name}を拾った`)
+							this.seBox.playPickup()
 							return false; // マップ上から削除
+						} else {
+							// 拾わなかった場合の処理
+							if (!this.groundItem) {
+								this.groundItem = item
+								EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `${this.groundItem.name}に乗った`)
+								this.message.add(`${this.groundItem.name}に乗った`)
+								// # MESSAGE
+								return false; // マップ上から削除
+							}
 						}
 					}
-				}
-				return true; // マップ上に残す
-			})
+					return true; // マップ上に残す
+				})
 			}
 			this.checkHunger()
 
@@ -523,13 +523,13 @@ class Game {
 						this.map.grid[enemy.y][this.player.x] !== MAP_TILE.WALL) return
 			}
 			
-			let path = this.findPath(enemy.x, enemy.y, this.player.x, this.player.y)
+			let path = enemy.searchAlgo(this, enemy.x, enemy.y, this.player.x, this.player.y)
 			if (path && path.length > 0) {
 				let candidate = path[0]
 				// もし候補セルが既に occupied に含まれている場合
 				if (occupied.has(`${candidate.x},${candidate.y}`)) {
 					// そのセルを壁として扱い、再計算する
-					let altPath = this.findPathWithExtraBlocker(enemy.x, enemy.y, this.player.x, this.player.y, candidate)
+					let altPath = this.findPathWithExtraBlocker(enemy, enemy.x, enemy.y, this.player.x, this.player.y, candidate)
 					if (altPath && altPath.length > 0) {
 						candidate = altPath[0]
 						path = altPath
@@ -569,13 +569,13 @@ class Game {
 		})
 	}
 	// 補助メソッド：指定したブロッカーセルを壁として扱い再計算する
-	findPathWithExtraBlocker(startX, startY, targetX, targetY, blocker) {
+	findPathWithExtraBlocker(enemy, startX, startY, targetX, targetY, blocker) {
 		// map.grid をコピーして、ブロッカーセルを壁に設定
 		const tempGrid = this.map.grid.map(row => row.slice())
 		tempGrid[blocker.y][blocker.x] = MAP_TILE.WALL
 		const originalGrid = this.map.grid
 		this.map.grid = tempGrid
-		const path = this.findPath(startX, startY, targetX, targetY)
+		const path = enemy.searchAlgo(this, startX, startY, targetX, targetY)
 		this.map.grid = originalGrid
 		return path
 	}
@@ -830,36 +830,43 @@ class Game {
 	// 敵を倒した際に、経験値を加算し、レベルアップ条件に応じた能力向上を処理します。
 	async gainExp(amount) {
 		this.player.exp += amount
-		const expToNext = this.player.level * 10
-		if (this.player.exp >= expToNext) {
-			return new Promise(resolve => {
-				this.timeoutSync(async () => {
-					let upAtk, upHp
-					this.player.exp -= expToNext
-					this.player.level++
-					this.player.attack += (upAtk = randomInt(1, 2))
-					this.player.maxHp += (upHp = randomInt(2, 3))
-					this.player.healAmount++
-					this.player.hp = this.player.maxHp
-					await this.timeoutSync(() => {
-						this.seBox.playLVUP()
-						EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "LEVEL UP!", "heal")
-						this.message.add("レベルが上がった!")
+		let expToNext = this.player.level * 10
+		let chain = Promise.resolve()
+		
+		while (this.player.exp >= expToNext) {
+			this.player.exp -= expToNext
+			this.player.level++
+
+			chain = chain.then(async () =>
+				new Promise(resolve => {
+					this.timeoutSync(async () => {
+						let upAtk, upHp
+						this.player.attack += (upAtk = randomInt(1, 2))
+						this.player.maxHp += (upHp = randomInt(2, 3))
+						this.player.healAmount++
+						this.player.hp = this.player.maxHp
+						await this.timeoutSync(() => {
+							this.seBox.playLVUP()
+							EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "LEVEL UP!", "heal")
+							this.message.add("レベルが上がった!")
+						}, 300)
+						// # MESSAGE
+						await this.timeoutSync(() => {
+							EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `HP +${upHp}`, "heal")
+							this.message.add(`HP +${upHp}`)
+						}, 600)
+						// # MESSAGE
+						await this.timeoutSync(() => {
+							EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `攻撃力 +${upAtk}`, "heal")
+							this.message.add(`攻撃力 +${upAtk}`)
+						}, 600)
+						// # MESSAGE
+						resolve("ok")
 					}, 300)
-					// # MESSAGE
-					await this.timeoutSync(() => {
-						EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `HP +${upHp}`, "heal")
-						this.message.add(`HP +${upHp}`)
-					}, 600)
-					// # MESSAGE
-					await this.timeoutSync(() => {
-						EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `攻撃力 +${upAtk}`, "heal")
-						this.message.add(`攻撃力 +${upAtk}`)
-					}, 600)
-					// # MESSAGE
-					resolve("ok")
-				}, 300)
-			})
+				})
+			)
+
+			expToNext = this.player.level * 10
 		}
 	}
 	// プレイヤーがアイテムを食べた際の飢餓回復処理を行います。

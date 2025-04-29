@@ -45,6 +45,12 @@ class Enemy extends BaseEntity {
 		 * durationに待ち時間ミリ秒を設定できる
 		 */
 		this.skills = []
+
+		/**
+		 * 探索アルゴリズム
+		 * デフォルトは経路探索
+		 */
+		this.searchAlgo = SearchAlgorithm.routePlanning
 	}
 	takeDamage(damage) {
 		this.hp -= damage
@@ -119,6 +125,13 @@ class EnemyCrayfish extends Enemy { static floorRange = [3, 9]
 	}
 }
 
+class EnemyCrab extends Enemy { static floorRange = [3, 9]
+	constructor(x, y, hp) {
+		super("Crab", x, y, hp + 5, 100, 1, '🦀')
+		this.searchAlgo = SearchAlgorithm.routeFlee
+	}
+}
+
 class EnemySlime extends Enemy { static floorRange = [5, 8]
 	constructor(x, y, hp) {
 		super("Slime", x, y, hp + 5, 7, 1, '🟩')
@@ -135,6 +148,7 @@ class EnemySlime extends Enemy { static floorRange = [5, 8]
 class EnemyBat extends Enemy { static floorRange = [7, 12]
 	constructor(x, y, hp) {
 		super("Bat", x, y, hp, 10, 2, '🦇')
+		this.searchAlgo = SearchAlgorithm.randomRoute
 	}
 }
 
@@ -396,39 +410,54 @@ class MagicSpell extends InventoryItem {
 			game.actionProgress = true
 			game.seBox.playMagic()
 			game.message.add(`${this.name}を使った`)
-			return new Promise((resolve) => {
+			return new Promise(async (resolve) => {
 				let affected = false
 				if (!options.effect) {
 					//EffectsManager.showMagicEffect(game.gameContainer, game.player, game.player.x, game.player.y, this.area, this.emoji || "✨")
 					///// console.log("showMagicEffectCircle Start")
-					EffectsManager.showMagicEffectCircle(game.gameContainer, game.player, game.player.x, game.player.y, this.area, this.emoji || "✨").then(() => {
-						for (let i = game.enemies.length - 1; i >= 0; i--) {
-							let enemy = game.enemies[i]
-							if (Math.abs(enemy.x - game.player.x) <= this.area &&
-									Math.abs(enemy.y - game.player.y) <= this.area) {
-								enemy.hp -= this.damage
-								EffectsManager.showEffect(game.gameContainer, game.player, enemy.x, enemy.y, `-${this.damage}`, "damage")
-								affected = true
-								if (enemy.hp <= 0) {
-									EffectsManager.showEffect(game.gameContainer, game.player, enemy.x, enemy.y, "💥", "explosion")
-									game.enemies.splice(i, 1)
-									game.score += 50
-									game.gainExp(5)
-								}
+					await EffectsManager.showMagicEffectCircle(game.gameContainer, game.player, game.player.x, game.player.y, this.area, this.emoji || "✨")
+					
+					for (let i = game.enemies.length - 1; i >= 0; i--) {
+						let enemy = game.enemies[i]
+						if (Math.abs(enemy.x - game.player.x) <= this.area &&
+								Math.abs(enemy.y - game.player.y) <= this.area) {
+							enemy.hp -= this.damage
+							EffectsManager.showEffect(game.gameContainer, game.player, enemy.x, enemy.y, `-${this.damage}`, "damage")
+							affected = SVGComponentTransferFunctionElement
+
+							let hitEnemy = game.enemies[i]
+		
+							if (hitEnemy.hp <= 0) {
+								const idx = game.enemies.indexOf(hitEnemy)
+				
+								EffectsManager.showEffect(game.gameContainer, game.player, hitEnemy.x, hitEnemy.y, "💥", "explosion")
+								// # MESSAGE
+								game.enemies.splice(i, 1)
+					
+								await game.timeoutSync(() => {
+									game.message.add(`${hitEnemy.name}を倒した`)
+								}, 300)
+								EffectsManager.showEffect(game.gameContainer, game.player, hitEnemy.x, hitEnemy.y, `+${hitEnemy.exp} EXP`, "heal")
+								game.message.add(`経験値を${hitEnemy.exp}ポイント得た`)
+								// # MESSAGE
+								game.score += 50
+					
+								console.log(hitEnemy)
+								await game.gainExp(hitEnemy.exp)
 							}
 						}
-						if (this.fallbackHeal && !affected) {
-							game.player.hp += this.fallbackHeal
-							if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp
-							EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${this.fallbackHeal}`, "heal")
-						}
-						///// console.log("showMagicEffectCircle End")
-			
-						game.timeoutSync(()=>{
-							game.actionProgress = false
-							resolve("ok")
-						}, 400)
-					})
+					}
+					if (this.fallbackHeal && !affected) {
+						game.player.hp += this.fallbackHeal
+						if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp
+						EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${this.fallbackHeal}`, "heal")
+					}
+					///// console.log("showMagicEffectCircle End")
+		
+					game.timeoutSync(()=>{
+						game.actionProgress = false
+						resolve("ok")
+					}, 400)
 				} else {
 					options.effect(game).then(() => {
 			
@@ -532,8 +561,8 @@ class ShootingItem extends InventoryItem {
 		game.isAwaitingShootingDirection = false
 		EffectsManager.hideShootingPrompt(game.gameContainer)
 		// 射撃実行
-		this.shoot(game, direction)
 		game.message.add(`${this.name}を撃った`)
+		await this.shoot(game, direction)
 	}
 	
 	/**
@@ -587,7 +616,7 @@ class ShootingItem extends InventoryItem {
 	 * @param {Game} game - ゲームインスタンス
 	 * @param {{dx:number, dy:number}} direction - 射撃方向
 	 */
-	shoot(game, direction) {
+	async shoot(game, direction) {
 		game.seBox.playArrow()
 		// 射撃エフェクト
 		EffectsManager.showShootingLineEffect(
@@ -622,14 +651,24 @@ class ShootingItem extends InventoryItem {
 			let damage = Math.round(this.damage + game.player.attack * 0.2)
 			hitEnemy.hp -= damage
 			EffectsManager.showEffect(game.gameContainer, game.player, hitEnemy.x, hitEnemy.y, `-${damage}`, "damage")
+			game.message.add(`${hitEnemy.name}に${damage}ダメージ`)
+			
 			if (hitEnemy.hp <= 0) {
-				EffectsManager.showEffect(game.gameContainer, game.player, hitEnemy.x, hitEnemy.y, "💥", "explosion")
 				const idx = game.enemies.indexOf(hitEnemy)
-				if (idx >= 0) {
-					game.enemies.splice(idx, 1)
-					game.score += 50
-					game.gainExp(5)
-				}
+
+				EffectsManager.showEffect(game.gameContainer, game.player, hitEnemy.x, hitEnemy.y, "💥", "explosion")
+				// # MESSAGE
+				game.enemies.splice(idx, 1)
+	
+				await game.timeoutSync(() => {
+					game.message.add(`${hitEnemy.name}を倒した`)
+				}, 300)
+				EffectsManager.showEffect(game.gameContainer, game.player, hitEnemy.x, hitEnemy.y, `+${hitEnemy.exp} EXP`, "heal")
+				game.message.add(`経験値を${hitEnemy.exp}ポイント得た`)
+				// # MESSAGE
+				game.score += 50
+	
+				await game.gainExp(hitEnemy.exp)
 			}
 		}
 	}
