@@ -517,10 +517,14 @@ class Game {
 			
 			let dx = Math.abs(enemy.x - this.player.x)
 			let dy = Math.abs(enemy.y - this.player.y)
-			if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) return
-			else if (dx === 1 && dy === 1) {
-				if (this.map.grid[this.player.y][enemy.x] !== MAP_TILE.WALL &&
-						this.map.grid[enemy.y][this.player.x] !== MAP_TILE.WALL) return
+
+			// 逃げる敵以外
+			if (!enemy.searchAlgo == SearchAlgorithm.routeFlee) {
+				if (((dx === 1 && dy === 0) || (dx === 0 && dy === 1))) return
+				else if (dx === 1 && dy === 1) {
+					if (this.map.grid[this.player.y][enemy.x] !== MAP_TILE.WALL &&
+							this.map.grid[enemy.y][this.player.x] !== MAP_TILE.WALL) return
+				}
 			}
 			
 			let path = enemy.searchAlgo(this, enemy.x, enemy.y, this.player.x, this.player.y)
@@ -585,6 +589,11 @@ class Game {
 			let chain = Promise.resolve()
 	
 			this.enemies.forEach(async (enemy) => {
+				// 逃げる敵は攻撃しない
+				if (enemy.searchAlgo == SearchAlgorithm.routeFlee) {
+					return
+				}
+				
 				if (enemy.hp <= 0 || enemy.action === 0) {
 					this.x = this.y = -1
 					return

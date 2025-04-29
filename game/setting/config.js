@@ -219,7 +219,7 @@ const hardPlusEnemyDefinitions = [
     new EnemyDefinition(EnemyLarvae,   [1, 20], 20),
     new EnemyDefinition(EnemyAnt,      [2, 20], 30),
     new EnemyDefinition(EnemyCrayfish, [4, 40], 15),
-    new EnemyDefinition(EnemyCrab,     [10, null], 1),
+    new EnemyDefinition(EnemyCrab,     [5, null], 1),
     new EnemyDefinition(EnemySlime,    [8, 50], 15),
     new EnemyDefinition(EnemyBat,      [12, null], 10),
     new EnemyDefinition(EnemyGoblin,   [16, null], 7),

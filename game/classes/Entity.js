@@ -129,6 +129,7 @@ class EnemyCrab extends Enemy { static floorRange = [3, 9]
 	constructor(x, y, hp) {
 		super("Crab", x, y, hp + 5, 100, 1, '🦀')
 		this.searchAlgo = SearchAlgorithm.routeFlee
+		this.action = this.maxAction = 2 // ニ回行動
 	}
 }
 
