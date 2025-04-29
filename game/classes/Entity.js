@@ -26,7 +26,7 @@ class Player extends BaseEntity {
 // Base Enemy クラス
 class Enemy extends BaseEntity {
 	static floorRange = [1, 3]
-	constructor(name, x, y, hp, exp, atk = 1, tile = '👾', skills) {
+	constructor(name, x, y, hp, exp, atk = 1, tile = '👾') {
 		super(x, y, tile)
 		this.name = name
 		this.hp = hp
@@ -44,7 +44,7 @@ class Enemy extends BaseEntity {
 		 * 
 		 * durationに待ち時間ミリ秒を設定できる
 		 */
-		this.skills = skills || []
+		this.skills = []
 	}
 	takeDamage(damage) {
 		this.hp -= damage
@@ -143,18 +143,10 @@ class EnemyCrayfish extends Enemy { static floorRange = [3, 9]
 
 class EnemySlime extends Enemy { static floorRange = [5, 8]
 	constructor(x, y, hp) {
-		super("Slime", x, y, hp + 5, 7, 1, '🟩'
-			,[
-				{
-					name: "行動",
-					range: 1,
-					func: (game) => {
-						game.message.add("プルプルしている")
-					},
-					duration: 0
-				}
-			]
-		)
+		super("Slime", x, y, hp + 5, 7, 1, '🟩')
+		this.skills = [
+			Skill.actionPurupuru(this)
+		]
 	}
 	//takeDamage(damage) {
 	//	super.takeDamage(damage)
@@ -188,27 +180,11 @@ class EnemySpider extends Enemy { static floorRange = [10, null]
 
 class EnemyWizard extends Enemy { static floorRange = [10, null]
 	constructor(x, y, hp) {
-		super("Wizard", x, y, hp + 12, 25, 2, '🧙'
-			,[
-				{
-					name: "魔法攻撃",
-					range: 1,
-					func: async (game) => {
-						game.seBox.playMagic()
-						await EffectsManager.showMagicEffectCircle(game.gameContainer, game.player, this.x, this.y, 1, "🔥")
-
-						game.player.hp -= this.magicAtk
-						if (game.player.hp < 0) game.player.hp = 0
-
-						EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `-${this.magicAtk}`, "damage-me")
-						game.message.add(`${this.magicAtk}ダメージ`)
-						game.seBox.playDamageMe()
-					},
-					duration: 500
-				}
-			]
-		)
+		super("Wizard", x, y, hp + 12, 25, 2, '🧙')
 		this.magicAtk = 8
+		this.skills = [
+			Skill.offensiveMagic(this)
+		]
 	}
 }
 

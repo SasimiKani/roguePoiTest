@@ -2,8 +2,8 @@
 const difficultySettings = {
 	easy:	 { name: "森レベル", wallEmoji: "🌳", wallSubEmoji: "🌲", maxFloor: 10, revealLv: 5 },
 	normal: { name: "山レベル", wallEmoji: "⛰️", wallSubEmoji: "🌳", maxFloor: 20, revealLv: 3 },
-	normalPlus:	 { name: "雪原レベル", wallEmoji: "⬜️", wallSubEmoji: "🟦", maxFloor: 40, revealLv: 7 },
-	hard:	 { name: "火山レベル", wallEmoji: "🌋", wallSubEmoji: "🏔️", maxFloor: 99, revealLv: 2 },
+	normalPlus:	 { name: "雪原レベル", wallEmoji: "⬜️", wallSubEmoji: "❄️", maxFloor: 40, revealLv: 7 },
+	hard:	 { name: "火山レベル", wallEmoji: "🌋", wallSubEmoji: "🪨", maxFloor: 99, revealLv: 2 },
 	hardPlus:	 { name: "海底レベル", wallEmoji: "🪸", wallSubEmoji: "🐚", maxFloor: 500, revealLv: 4 }
 }
 
@@ -177,18 +177,18 @@ class EnemyDefinition {
 }
 
 const easyEnemyDefinitions = [
-    new EnemyDefinition(EnemyLarvae, [1, 5], 5),
-    new EnemyDefinition(EnemyAnt, [3, 7], 4),
+    new EnemyDefinition(EnemyLarvae,   [1, 5], 5),
+    new EnemyDefinition(EnemyAnt,      [3, 7], 4),
     new EnemyDefinition(EnemyCrayfish, [4, 10], 3),
-    new EnemyDefinition(EnemySlime, [6, 10], 1)
+    new EnemyDefinition(EnemySlime,    [6, 10], 1)
 ]
 const normalEnemyDefinitions = [
-    new EnemyDefinition(EnemyLarvae, [1, 4], 5),
-    new EnemyDefinition(EnemyAnt, [2, 5], 4),
+    new EnemyDefinition(EnemyLarvae,   [1, 4], 5),
+    new EnemyDefinition(EnemyAnt,      [2, 5], 4),
     new EnemyDefinition(EnemyCrayfish, [4, 8], 4),
-    new EnemyDefinition(EnemySlime, [8, 10], 3),
-    new EnemyDefinition(EnemyBat, [12, 18], 2),
-    new EnemyDefinition(EnemyGoblin, [16, 20], 1),
+    new EnemyDefinition(EnemySlime,    [8, 10], 3),
+    new EnemyDefinition(EnemyBat,      [12, 18], 2),
+    new EnemyDefinition(EnemyGoblin,   [16, 20], 1),
     new EnemyDefinition(EnemySkeleton, [19, 20], 1)
 ]
 const normalPlusEnemyDefinitions = [
@@ -204,27 +204,27 @@ const normalPlusEnemyDefinitions = [
     new EnemyDefinition(EnemyDragon,   [40, 40],  1)
 ]
 const hardEnemyDefinitions = [
-    new EnemyDefinition(EnemyLarvae, [1, 20], 20),
-    new EnemyDefinition(EnemyAnt, [2, 20], 30),
+    new EnemyDefinition(EnemyLarvae,   [1, 20], 20),
+    new EnemyDefinition(EnemyAnt,      [2, 20], 30),
     new EnemyDefinition(EnemyCrayfish, [4, 40], 15),
-    new EnemyDefinition(EnemySlime, [8, 50], 15),
-    new EnemyDefinition(EnemyBat, [12, null], 10),
-    new EnemyDefinition(EnemyGoblin, [16, null], 7),
+    new EnemyDefinition(EnemySlime,    [8, 50], 15),
+    new EnemyDefinition(EnemyBat,      [12, null], 10),
+    new EnemyDefinition(EnemyGoblin,   [16, null], 7),
     new EnemyDefinition(EnemySkeleton, [19, null], 7),
-    new EnemyDefinition(EnemySpider, [24, null], 5),
-    new EnemyDefinition(EnemyWizard, [30, null], 5),
-    new EnemyDefinition(EnemyDragon, [50, null], 1)
+    new EnemyDefinition(EnemySpider,   [24, null], 5),
+    new EnemyDefinition(EnemyWizard,   [30, null], 5),
+    new EnemyDefinition(EnemyDragon,   [50, null], 1)
 ]
 const hardPlusEnemyDefinitions = [
-    new EnemyDefinition(EnemyLarvae, [1, 20], 20),
-    new EnemyDefinition(EnemyAnt, [2, 20], 30),
+    new EnemyDefinition(EnemyLarvae,   [1, 20], 20),
+    new EnemyDefinition(EnemyAnt,      [2, 20], 30),
     new EnemyDefinition(EnemyCrayfish, [4, 40], 15),
-    new EnemyDefinition(EnemySlime, [8, 50], 15),
-    new EnemyDefinition(EnemyBat, [12, null], 10),
-    new EnemyDefinition(EnemyGoblin, [16, null], 7),
+    new EnemyDefinition(EnemySlime,    [8, 50], 15),
+    new EnemyDefinition(EnemyBat,      [12, null], 10),
+    new EnemyDefinition(EnemyGoblin,   [16, null], 7),
     new EnemyDefinition(EnemySkeleton, [19, null], 7),
-    new EnemyDefinition(EnemySpider, [24, null], 5),
-    new EnemyDefinition(EnemyWizard, [30, null], 5),
-    new EnemyDefinition(EnemyDragon, [50, null], 1)
+    new EnemyDefinition(EnemySpider,   [24, null], 5),
+    new EnemyDefinition(EnemyWizard,   [30, null], 5),
+    new EnemyDefinition(EnemyDragon,   [50, null], 1)
 ]
 const defaultEnemyDefinitions = [ new EnemyDefinition(EnemyLarvae, [1, null]) ]
