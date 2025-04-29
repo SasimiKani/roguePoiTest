@@ -599,7 +599,7 @@ class Game {
 						}
 						this.timeoutSync(() => {
 							resolve("ok")
-						}, this.actionTime / 2)
+						}, this.actionTime)
 					})
 				)
 			})
