@@ -91,7 +91,7 @@ class Game {
 		// ------------------------------
 		// ※ 以下はプレイヤー初期アイテムの例（必要に応じてコメント解除）
 		// ------------------------------
-		 this.player.inventory.push(new BoxItem(0, 0))
+		// this.player.inventory.push(new BoxItem(0, 0))
 		// this.player.inventory.push(new WeaponItem(0, 0, "伝説の剣", '⚔️', 1000))
 		// this.player.inventory.push(new ShootingItem(0, 0, "射撃-弓矢", '🏹', 5, 10, 8, "↑"))
 		// this.player.inventory.push(new MagicSpell(0, 0, "炎", "🔥", "🔥", {damage: 20, player: this.player, area: 1, fallbackHeal: null}))
@@ -200,78 +200,87 @@ class Game {
 			if (this.map.grid[this.player.y + dy]?.[this.player.x + dx] === MAP_TILE.WALL) return null
 			return { tx: this.player.x + dx, ty: this.player.y + dy }
 		}
-		return null
+	
 	}
 	// ゲーム中のキー入力を処理し、通常の移動や攻撃、インベントリ表示などを分岐します。
 	async processInput(event) {
-		if (!this.isPlay || this.actionProgress) return
-		if (this.isGameOver || !this.acceptingInput || this.boxOverlayActive || this.isAwaitingShootingDirection) return
+		try {
+			if (!this.isPlay || this.actionProgress) return
+			if (this.isGameOver || !this.acceptingInput || this.boxOverlayActive || this.isAwaitingShootingDirection) return
 
-		this.ctrlPressed = event.ctrlKey
-		if (!window.overlayActive && !this.inventoryOpen && event.key === 'o') {
-			this.seBox.playMenu(2)
-			EffectsManager.showGiveUpConfirmationKeyboard(this)
-		}
-		if (event.key === 'e') {
-			this.inventoryOpen = !this.inventoryOpen
-			this.seBox.playMenu(this.inventoryOpen ? 2 : 4)
-			// カーソル初期値は0
-			this.inventorySelection = 0
+			this.ctrlPressed = event.ctrlKey
+			if (!window.overlayActive && !this.inventoryOpen && event.key === 'o') {
+				this.seBox.playMenu(2)
+				EffectsManager.showGiveUpConfirmationKeyboard(this)
+			}
+			if (event.key === 'e') {
+				this.inventoryOpen = !this.inventoryOpen
+				this.seBox.playMenu(this.inventoryOpen ? 2 : 4)
+				// カーソル初期値は0
+				this.inventorySelection = 0
+				this.renderer.render()
+				return
+			}
+			if (this.inventoryOpen) {
+				this.processInventoryInput(event)
+				return
+			}
+			if (window.overlayActive) { return; }
+			const inputResult = this.computeInput(event)
+			if (!inputResult) { return; }
+			this.advanceTurn()
+			await this.updateData(inputResult)
+		} catch (e) {
+			console.error(e)
+		} finally {
 			this.renderer.render()
-			return
 		}
-		if (this.inventoryOpen) {
-			this.processInventoryInput(event)
-			return
-		}
-		if (window.overlayActive) { return; }
-		const inputResult = this.computeInput(event)
-		if (!inputResult) { return; }
-		this.advanceTurn()
-		await this.updateData(inputResult)
-		this.renderer.render()
 	}
 	// インベントリが開いている場合の入力（カーソル移動、使用、置く、交換、入れるなど）を処理します。
 	async processInventoryInput(event) {
-		// まず、選択範囲は所持品リスト＋足元アイテム（ある場合）
-		const totalOptions = this.player.inventory.length + (this.groundItem ? 1 : 0)
-		
-		// デバッグ用コマンド： 'w' キーで階段ワープ
-		/*if (event.key === 'w') {
-			// プレイヤーを階段の位置にワープ
-			this.player.x = this.stairs.x
-			this.player.y = this.stairs.y
-			// マップの視界を更新（階段周辺を見えるようにする）
-			this.map.revealRoom(this.player.x, this.player.y)
-			this.map.revealAround(this.player.x, this.player.y)
-			// エフェクトを表示してデバッグ感を出す（例：WARP 表示）
-			EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "WARP", "heal")
-			// # MESSAGE
-			// ターンを進めたり、レンダリングを更新
-			this.advanceTurn()
-			this.renderer.render()
-			return
-		}*/
-		
-		// カーソル移動
-		if (inventoryArrowUp(this, event, totalOptions)) return
-		if (inventoryArrowDown(this, event, totalOptions)) return
+		try {
+			// まず、選択範囲は所持品リスト＋足元アイテム（ある場合）
+			const totalOptions = this.player.inventory.length + (this.groundItem ? 1 : 0)
 			
-		// 以下、キーの処理
-		if (inventoryY(this, event)) return
-		
-		// もしカーソルが足元アイテム（＝インベントリリストの最後の項目）を指している場合
-		if (this.groundItem && this.inventorySelection === this.player.inventory.length && !this.boxSelected) {
-			if (inventoryGroundP(this, event)) return
-			if (inventoryGroundU(this, event)) return
-		} 
-		// 通常の所持品の操作
-		else {
-			if (await inventoryU(this, event)) return
-			if (inventoryD(this, event)) return
-			if (inventoryX(this, event)) return
-			if (inventoryI(this, event)) return
-			if (inventoryEscape(this, event)) return
+			// デバッグ用コマンド： 'w' キーで階段ワープ
+			/*if (event.key === 'w') {
+				// プレイヤーを階段の位置にワープ
+				this.player.x = this.stairs.x
+				this.player.y = this.stairs.y
+				// マップの視界を更新（階段周辺を見えるようにする）
+				this.map.revealRoom(this.player.x, this.player.y)
+				this.map.revealAround(this.player.x, this.player.y)
+				// エフェクトを表示してデバッグ感を出す（例：WARP 表示）
+				EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, "WARP", "heal")
+				// # MESSAGE
+				// ターンを進めたり、レンダリングを更新
+				this.advanceTurn()
+				this.renderer.render()
+				return
+			}*/
+			
+			// カーソル移動
+			if (inventoryArrowUp(this, event, totalOptions)) return
+			if (inventoryArrowDown(this, event, totalOptions)) return
+				
+			// 以下、キーの処理
+			if (inventoryY(this, event)) return
+			
+			// もしカーソルが足元アイテム（＝インベントリリストの最後の項目）を指している場合
+			if (this.groundItem && this.inventorySelection === this.player.inventory.length && !this.boxSelected) {
+				if (inventoryGroundP(this, event)) return
+				if (inventoryGroundU(this, event)) return
+			} 
+			// 通常の所持品の操作
+			else {
+				if (await inventoryU(this, event)) return
+				if (inventoryD(this, event)) return
+				if (inventoryX(this, event)) return
+				if (inventoryI(this, event)) return
+				if (inventoryEscape(this, event)) return
+			}
+		} catch (e) {
+			console.error(e)
 		}
 	}
 	
@@ -283,130 +292,134 @@ class Game {
 	}
 	// プレイヤーの移動や攻撃後のゲーム状態（敵へのダメージ、アイテム取得、マップの視界更新など）を更新します。
 	async updateData(inputResult) {
-		if (!inputResult) return
-		this.actionCount = 0
-		const { tx, ty } = inputResult
-		let attacked = false
-		for (let i = 0; i < this.enemies.length; i++) {
-			if (this.enemies[i].x === tx && this.enemies[i].y === ty) {
-				attacked = true
-				await this.damageEnemy(this.enemies[i], i)
-				break
-			}
-		}
-		// 移動前に、もし足元にアイテムがあれば、プレイヤーの現在位置に残す
-		if (!attacked && (this.keyX || this.keyY) && this.map.grid[ty]?.[tx] !== MAP_TILE.WALL &&
-				!this.enemies.some(e => e.x === tx && e.y === ty)) {
-			if (this.groundItem) {
-				 this.groundItem.x = this.player.x
-				 this.groundItem.y = this.player.y
-				 this.items.push(this.groundItem)
-				 this.groundItem = null
-			}
-			this.player.x = tx
-			this.player.y = ty
-			this.map.visible[ty][tx] = true
-			this.map.revealRoom(tx, ty)
-			this.map.revealAround(tx, ty)
-		}
-		if (!attacked && (this.keyX || this.keyY) && this.player.x === this.stairs.x && this.player.y === this.stairs.y) {
-			this.seBox.playMenu(2)
-			// ここで選択肢のオーバーレイを表示
-			EffectsManager.showStairConfirmationKeyboard(() => {
-				// 「降りる」を選んだ場合
-				this.seBox.playStair()
-				this.generateDungeon(true)
-				this.renderer.render()
-				EffectsManager.showFloorOverlay(this.gameContainer, this.floor)
-
-				switch (CONFIG.DIFFICULTY) {
-					case "hardPlus":
-						if (this.floor % 5 === 0) {
-							// BGM切り替え
-							const blobs = Object.entries(this.bgmBox.playList)
-								.map(file => [file[0], Object.values(file[1])[0]])
-								.filter(bgm => bgm[0] !== "./rsrc/mus/difficulty.mp3") // セレクト画面は除く
-							/////// console.log(blobs)
-
-							const currentBGM = this.bgmBox.player.src
-							const BGMs = blobs.filter(BGM => BGM[1] !== currentBGM)
-							/////// console.log(BGMs)
-							/////// console.log(BGMs[randomInt(0, BGMs.length - 1)][0])
-							this.bgmBox.playBGM(BGMs[randomInt(0, BGMs.length - 1)][0])
-
-							// 視界切り替え
-							CONFIG.REVEALLV = randomInt(2, 7)
-						}
-						break
-					default:
-						break
-				 }
-			}, () => {
-				this.seBox.playMenu(4)
-				// 「キャンセル」を選んだ場合、必要に応じてプレイヤー位置を戻すなどの処理
-				this.groundItem = new BaseEntity(tx, ty, '🔼')
-				
-				// 例: 現在の位置から少しずらす（ここは実装に合わせて調整）
-				this.renderer.render()
-			})
-			
-			return
-		}
-		this.items = this.items.filter(item => {
-			if (item.x === this.player.x && item.y === this.player.y) {
-				// アイテムを拾う
-				if (!this.ctrlPressed && !pickupItem(this, item)) {
-					this.message.add(`${item.name}を拾った`)
-					this.seBox.playPickup()
-					return false; // マップ上から削除
-				} else {
-					// 拾わなかった場合の処理
-					if (!this.groundItem) {
-						this.groundItem = item
-						EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `${this.groundItem.name}に乗った`)
-						this.message.add(`${this.groundItem.name}に乗った`)
-						// # MESSAGE
-						return false; // マップ上から削除
-					}
+		try {
+			if (!inputResult) return
+			this.actionCount = 0
+			const { tx, ty } = inputResult
+			let attacked = false
+			for (let i = 0; i < this.enemies.length; i++) {
+				if (this.enemies[i].x === tx && this.enemies[i].y === ty) {
+					attacked = true
+					await this.damageEnemy(this.enemies[i], i)
+					break
 				}
 			}
-			return true; // マップ上に残す
-		})
-		this.checkHunger()
+			// 移動前に、もし足元にアイテムがあれば、プレイヤーの現在位置に残す
+			if (!attacked && (this.keyX || this.keyY) && this.map.grid[ty]?.[tx] !== MAP_TILE.WALL &&
+					!this.enemies.some(e => e.x === tx && e.y === ty)) {
+				if (this.groundItem) {
+					this.groundItem.x = this.player.x
+					this.groundItem.y = this.player.y
+					this.items.push(this.groundItem)
+					this.groundItem = null
+				}
+				this.player.x = tx
+				this.player.y = ty
+				this.map.visible[ty][tx] = true
+				this.map.revealRoom(tx, ty)
+				this.map.revealAround(tx, ty)
+			}
+			if (!attacked && (this.keyX || this.keyY) && this.player.x === this.stairs.x && this.player.y === this.stairs.y) {
+				this.seBox.playMenu(2)
+				// ここで選択肢のオーバーレイを表示
+				EffectsManager.showStairConfirmationKeyboard(() => {
+					// 「降りる」を選んだ場合
+					this.seBox.playStair()
+					this.generateDungeon(true)
+					this.renderer.render()
+					EffectsManager.showFloorOverlay(this.gameContainer, this.floor)
 
-		this.renderer.render()
-		
-		// 敵の最大行動回数を取得
-		let maxAction = Math.max(...(this.enemies.map(e => e.maxAction)))
-		const promises = []
-		
-		if (attacked) {
-			await this.timeoutSync(() => {}, 400)
-		}
-		
-		////////console.log("敵行動開始")
-		this.actionProgress = true
-		
-		let chain = Promise.resolve()
-		for (var i=0; i<maxAction; i++) {
-			chain = chain.then(async () => {
-				await this.enemyAttackPhase()
-				this.enemyMovementPhase(tx, ty, attacked)
-				this.renderer.render()
+					switch (CONFIG.DIFFICULTY) {
+						case "hardPlus":
+							if (this.floor % 5 === 0) {
+								// BGM切り替え
+								const blobs = Object.entries(this.bgmBox.playList)
+									.map(file => [file[0], Object.values(file[1])[0]])
+									.filter(bgm => bgm[0] !== "./rsrc/mus/difficulty.mp3") // セレクト画面は除く
+								/////// console.log(blobs)
+
+								const currentBGM = this.bgmBox.player.src
+								const BGMs = blobs.filter(BGM => BGM[1] !== currentBGM)
+								/////// console.log(BGMs)
+								/////// console.log(BGMs[randomInt(0, BGMs.length - 1)][0])
+								this.bgmBox.playBGM(BGMs[randomInt(0, BGMs.length - 1)][0])
+
+								// 視界切り替え
+								CONFIG.REVEALLV = randomInt(2, 7)
+							}
+							break
+						default:
+							break
+					}
+				}, () => {
+					this.seBox.playMenu(4)
+					// 「キャンセル」を選んだ場合、必要に応じてプレイヤー位置を戻すなどの処理
+					this.groundItem = new BaseEntity(tx, ty, '🔼')
+					
+					// 例: 現在の位置から少しずらす（ここは実装に合わせて調整）
+					this.renderer.render()
+				})
+				
+				return
+			}
+			this.items = this.items.filter(item => {
+				if (item.x === this.player.x && item.y === this.player.y) {
+					// アイテムを拾う
+					if (!this.ctrlPressed && !pickupItem(this, item)) {
+						this.message.add(`${item.name}を拾った`)
+						this.seBox.playPickup()
+						return false; // マップ上から削除
+					} else {
+						// 拾わなかった場合の処理
+						if (!this.groundItem) {
+							this.groundItem = item
+							EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `${this.groundItem.name}に乗った`)
+							this.message.add(`${this.groundItem.name}に乗った`)
+							// # MESSAGE
+							return false; // マップ上から削除
+						}
+					}
+				}
+				return true; // マップ上に残す
 			})
-		}
-		//await Promise.all(promises)
-		await chain
-		this.enemyActionRefresh()
-		
-		if (this.player.hp > 0) {
-			this.actionProgress = false
-			////////console.log("敵行動終了")
-		}
-		
-		this.checkCollisions()
-		if (this.generateEnemyCycle[0] === 0) {
-			this.placeEntities(this.enemies, randomInt(1, 3), "enemy")
+			this.checkHunger()
+
+			this.renderer.render()
+			
+			// 敵の最大行動回数を取得
+			let maxAction = Math.max(...(this.enemies.map(e => e.maxAction)))
+			const promises = []
+			
+			if (attacked) {
+				await this.timeoutSync(() => {}, 400)
+			}
+			
+			////////console.log("敵行動開始")
+			this.actionProgress = true
+			
+			let chain = Promise.resolve()
+			for (var i=0; i<maxAction; i++) {
+				chain = chain.then(async () => {
+					await this.enemyAttackPhase()
+					this.enemyMovementPhase(tx, ty, attacked)
+					this.renderer.render()
+				})
+			}
+			//await Promise.all(promises)
+			await chain
+			this.enemyActionRefresh()
+			
+			if (this.player.hp > 0) {
+				this.actionProgress = false
+				////////console.log("敵行動終了")
+			}
+			
+			this.checkCollisions()
+			if (this.generateEnemyCycle[0] === 0) {
+				this.placeEntities(this.enemies, randomInt(1, 3), "enemy")
+			}
+		} catch (e) {
+			console.error(e)
 		}
 	}
 	// プレイヤーの飢餓状態を管理し、一定タイミングで飢えによるダメージなどを適用します。
