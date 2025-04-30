@@ -133,6 +133,34 @@ class EnemyCrab extends Enemy { static floorRange = [3, 9]
 	}
 }
 
+class EnemyFish extends Enemy { static floorRange = [3, 9]
+	constructor(x, y, hp) {
+		super("フィッシュ", x, y, hp, 6, 1, '🐟️')
+		this.searchAlgo = SearchAlgorithm.routeFlee
+	}
+}
+
+class EnemyTropicalfish extends Enemy { static floorRange = [3, 9]
+	constructor(x, y, hp) {
+		super("トロピカフィッシュ", x, y, hp + 5, 10, 1, '🐠')
+		this.searchAlgo = SearchAlgorithm.routeFlee
+	}
+}
+
+class EnemyHarisenbon extends Enemy { static floorRange = [3, 9]
+	constructor(x, y, hp) {
+		super("ハリセンボン", x, y, hp + 10, 18, 1, '🐡')
+		this.searchAlgo = SearchAlgorithm.routeFlee
+	}
+}
+
+class EnemyShark extends Enemy { static floorRange = [3, 9]
+	constructor(x, y, hp) {
+		super("シャーク", x, y, hp + 20, 25, 1, '🦈')
+		this.searchAlgo = SearchAlgorithm.routeFlee
+	}
+}
+
 class EnemySlime extends Enemy { static floorRange = [5, 8]
 	constructor(x, y, hp) {
 		super("スライム", x, y, hp + 5, 7, 1, '🟩')
