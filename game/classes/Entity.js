@@ -25,7 +25,7 @@ class Player extends BaseEntity {
 // Enemy.js
 // Base Enemy クラス
 class Enemy extends BaseEntity {
-	static floorRange = [1, 3]
+
 	constructor(name, x, y, hp, exp, atk = 1, tile = '👾') {
 		super(x, y, tile)
 		this.name = name
@@ -107,25 +107,25 @@ class Enemy extends BaseEntity {
 
 // 敵クラス群
 
-class EnemyLarvae extends Enemy { static floorRange = [1, 5]
+class EnemyLarvae extends Enemy {
 	constructor(x, y, hp) {
 		super("イモムシ", x, y, hp, 5, 1, '🐛')
 	}
 }
 
-class EnemyAnt extends Enemy { static floorRange = [2, 7]
+class EnemyAnt extends Enemy {
 	constructor(x, y, hp) {
 		super("アリ", x, y, hp + 2, 6, 2, '🐜')
 	}
 }
 
-class EnemyCrayfish extends Enemy { static floorRange = [3, 9]
+class EnemyCrayfish extends Enemy {
 	constructor(x, y, hp) {
 		super("ザリガニ", x, y, hp + 3, 8, 3, '🦞')
 	}
 }
 
-class EnemyCrab extends Enemy { static floorRange = [3, 9]
+class EnemyCrab extends Enemy {
 	constructor(x, y, hp) {
 		super("カニ", x, y, hp + 5, 100, 1, '🦀')
 		this.searchAlgo = SearchAlgorithm.routeFlee
@@ -133,35 +133,35 @@ class EnemyCrab extends Enemy { static floorRange = [3, 9]
 	}
 }
 
-class EnemyFish extends Enemy { static floorRange = [3, 9]
+class EnemyFish extends Enemy {
 	constructor(x, y, hp) {
 		super("フィッシュ", x, y, hp, 6, 1, '🐟️')
 		this.searchAlgo = SearchAlgorithm.routeFlee
 	}
 }
 
-class EnemyTropicalfish extends Enemy { static floorRange = [3, 9]
+class EnemyTropicalfish extends Enemy {
 	constructor(x, y, hp) {
 		super("トロピカフィッシュ", x, y, hp + 5, 10, 1, '🐠')
 		this.searchAlgo = SearchAlgorithm.routeFlee
 	}
 }
 
-class EnemyHarisenbon extends Enemy { static floorRange = [3, 9]
+class EnemyHarisenbon extends Enemy {
 	constructor(x, y, hp) {
 		super("ハリセンボン", x, y, hp + 10, 18, 1, '🐡')
 		this.searchAlgo = SearchAlgorithm.routeFlee
 	}
 }
 
-class EnemyShark extends Enemy { static floorRange = [3, 9]
+class EnemyShark extends Enemy {
 	constructor(x, y, hp) {
 		super("シャーク", x, y, hp + 20, 25, 1, '🦈')
 		this.searchAlgo = SearchAlgorithm.routeFlee
 	}
 }
 
-class EnemySlime extends Enemy { static floorRange = [5, 8]
+class EnemySlime extends Enemy {
 	constructor(x, y, hp) {
 		super("スライム", x, y, hp + 5, 7, 1, '🟩')
 		this.skills = [
@@ -174,32 +174,32 @@ class EnemySlime extends Enemy { static floorRange = [5, 8]
 	//}
 }
 
-class EnemyBat extends Enemy { static floorRange = [7, 12]
+class EnemyBat extends Enemy {
 	constructor(x, y, hp) {
 		super("コウモリ", x, y, hp, 10, 2, '🦇')
 		this.searchAlgo = SearchAlgorithm.randomRoute
 	}
 }
 
-class EnemyGoblin extends Enemy { static floorRange = [8, 13]
+class EnemyGoblin extends Enemy {
 	constructor(x, y, hp) {
 		super("ゴブリン", x, y, hp + 8, 16, 4, '👹')
 	}
 }
 
-class EnemySkeleton extends Enemy { static floorRange = [10, null]
+class EnemySkeleton extends Enemy {
 	constructor(x, y, hp) {
 		super("スケルトン", x, y, hp + 10, 19, 4, '💀')
 	}
 }
 
-class EnemySpider extends Enemy { static floorRange = [10, null]
+class EnemySpider extends Enemy {
 	constructor(x, y, hp) {
 		super("クモ", x, y, hp + 8, 18, 3, '🕷️')
 	}
 }
 
-class EnemyWizard extends Enemy { static floorRange = [10, null]
+class EnemyWizard extends Enemy {
 	constructor(x, y, hp) {
 		super("ウィザード", x, y, hp + 12, 25, 2, '🧙')
 		this.magicAtk = 8
@@ -209,7 +209,7 @@ class EnemyWizard extends Enemy { static floorRange = [10, null]
 	}
 }
 
-class EnemyDragon extends Enemy { static floorRange = [10, null]
+class EnemyDragon extends Enemy {
 	constructor(x, y, hp) {
 		super("ドラゴン", x, y, hp + 30, 50, 10, '🐉')
 		this.magicDamage = 2
@@ -221,7 +221,6 @@ class EnemyDragon extends Enemy { static floorRange = [10, null]
 	}
 }
 class EnemyRat extends Enemy {
-	static floorRange = [1, 3]
 	constructor(x, y, hp) {
 		// 小型で素早いが、攻撃力は低め
 		super("ラット", x, y, hp, 3, 2, '🐀')
@@ -229,7 +228,6 @@ class EnemyRat extends Enemy {
 }
 
 class EnemyZombie extends Enemy {
-	static floorRange = [2, 6]
 	constructor(x, y, hp) {
 		// ゆっくり動くが、hpに余裕を持たせた敵
 		super("ゾンビ", x, y, hp + 4, 5, 1, '🧟')
@@ -237,7 +235,6 @@ class EnemyZombie extends Enemy {
 }
 
 class EnemyVampire extends Enemy {
-	static floorRange = [5, 10]
 	constructor(x, y, hp) {
 		// 中～高レベル向け。hpと攻撃力が上昇し、ダメージ吸収（吸血）効果を追加
 		super("バンパイア", x, y, hp + 8, 12, 3, '🧛')
@@ -250,7 +247,6 @@ class EnemyVampire extends Enemy {
 }
 
 class EnemyOgre extends Enemy {
-	static floorRange = [7, 12]
 	constructor(x, y, hp) {
 		// 高いhpと攻撃力を持つが、行動数や移動速度は低め
 		super("オーガ", x, y, hp + 20, 22, 1, '🧌')
@@ -258,7 +254,6 @@ class EnemyOgre extends Enemy {
 }
 
 class EnemyGhost extends Enemy {
-	static floorRange = [8, 13]
 	constructor(x, y, hp) {
 		// 高速で動くが、耐久性は低い。後に壁通過や透明化の特殊効果を実装することも可能
 		super("ゴースト", x, y, hp, 15, 4, '👻')
@@ -266,7 +261,6 @@ class EnemyGhost extends Enemy {
 }
 
 class EnemyElemental extends Enemy {
-	static floorRange = [10, null]
 	constructor(x, y, hp) {
 		// 高難易度用。魔法耐性や特殊な魔法攻撃を加えることで、戦略を要する敵に
 		super("エレメンタル", x, y, hp + 15, 30, 3, '🔥')
