@@ -530,8 +530,20 @@ class Game {
 			let path = enemy.searchAlgo(this, enemy.x, enemy.y, this.player.x, this.player.y)
 			if (path && path.length > 0) {
 				let candidate = path[0]
+				// もし候補セルにプレイヤーがいる場合
+				if (this.player.x === candidate.x && this.player.y === candidate.y) {
+					// そのセルを壁として扱い、再計算する
+					let altPath = this.findPathWithExtraBlocker(enemy, enemy.x, enemy.y, this.player.x, this.player.y, candidate)
+					if (altPath && altPath.length > 0) {
+						candidate = altPath[0]
+						path = altPath
+					} else {
+						// 再計算でも通れなければ、この敵は動かさない
+						return
+					}
+				}
 				// もし候補セルが既に occupied に含まれている場合
-				if (occupied.has(`${candidate.x},${candidate.y}`)) {
+				else if (occupied.has(`${candidate.x},${candidate.y}`)) {
 					// そのセルを壁として扱い、再計算する
 					let altPath = this.findPathWithExtraBlocker(enemy, enemy.x, enemy.y, this.player.x, this.player.y, candidate)
 					if (altPath && altPath.length > 0) {
