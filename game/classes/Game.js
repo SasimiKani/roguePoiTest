@@ -813,6 +813,24 @@ class Game {
 			} else if (type === "weapon") {
 				var selection = randomInt(1, 2)
 				let bonus = randomInt(1, 3)
+
+				switch (CONFIG.DIFFICULTY) {
+					case "hard":
+						if (30 <= this.floor && this.floor <= 74) {
+							selection = randomInt(2, 3)
+						} else if (75 <= this.floor) {
+							selection = randomInt(3, 4)
+						}
+						break
+					case "hardPlus":
+						if (30 <= this.floor && this.floor <= 74) {
+							selection = randomInt(2, 3)
+						} else if (75 <= this.floor) {
+							selection = randomInt(3, 4)
+						}
+						break
+				}
+
 				switch (selection) {
 				case 1:
 					bonus = randomInt(1, 3)
@@ -821,6 +839,18 @@ class Game {
 				case 2:
 					bonus = randomInt(2, 5)
 					arr.push(new WeaponItem(x, y, `武器-斧 (+${bonus})`, '🪓', bonus))
+					break
+				case 3:
+					bonus = randomInt(4, 8)
+					arr.push(new WeaponItem(x, y, `武器-ハンマー (+${bonus})`, '⚒️', bonus))
+					break
+				case 4:
+					bonus = randomInt(5, 10)
+					arr.push(new WeaponItem(x, y, `武器-ノコギリ (+${bonus})`, '🪚', bonus))
+					break
+				case 5:
+					bonus = randomInt(7, 15)
+					arr.push(new WeaponItem(x, y, `武器-強い剣 (+${bonus})`, '⚔️', bonus))
 					break
 				}
 			} else if (type === "shooting") {
