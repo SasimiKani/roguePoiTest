@@ -141,20 +141,20 @@ class EnemyFish extends Enemy {
 
 class EnemyTropicalfish extends Enemy {
 	constructor(x, y, hp) {
-		super("トロピカフィッシュ", x, y, hp + 5, 10, 1, '🐠')
+		super("トロピカフィッシュ", x, y, hp + 7, 10, 1, '🐠')
 		this.searchAlgo = SearchAlgorithm.randomRoute
 	}
 }
 
 class EnemyHarisenbon extends Enemy {
 	constructor(x, y, hp) {
-		super("ハリセンボン", x, y, hp + 10, 18, 1, '🐡')
+		super("ハリセンボン", x, y, hp + 15, 18, 3, '🐡')
 	}
 }
 
 class EnemyShark extends Enemy {
 	constructor(x, y, hp) {
-		super("シャーク", x, y, hp + 20, 25, 1, '🦈')
+		super("シャーク", x, y, hp + 20, 25, 6, '🦈')
 		this.action = this.maxAction = 2 // ニ回行動
 	}
 }
