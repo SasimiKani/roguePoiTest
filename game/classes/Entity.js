@@ -136,21 +136,19 @@ class EnemyCrab extends Enemy {
 class EnemyFish extends Enemy {
 	constructor(x, y, hp) {
 		super("フィッシュ", x, y, hp, 6, 1, '🐟️')
-		this.searchAlgo = SearchAlgorithm.routeFlee
 	}
 }
 
 class EnemyTropicalfish extends Enemy {
 	constructor(x, y, hp) {
 		super("トロピカフィッシュ", x, y, hp + 5, 10, 1, '🐠')
-		this.searchAlgo = SearchAlgorithm.routeFlee
+		this.searchAlgo = SearchAlgorithm.randomRoute
 	}
 }
 
 class EnemyHarisenbon extends Enemy {
 	constructor(x, y, hp) {
 		super("ハリセンボン", x, y, hp + 10, 18, 1, '🐡')
-		this.searchAlgo = SearchAlgorithm.routeFlee
 	}
 }
 
@@ -158,6 +156,7 @@ class EnemyShark extends Enemy {
 	constructor(x, y, hp) {
 		super("シャーク", x, y, hp + 20, 25, 1, '🦈')
 		this.searchAlgo = SearchAlgorithm.routeFlee
+		this.action = this.maxAction = 2 // ニ回行動
 	}
 }
 

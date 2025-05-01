@@ -421,6 +421,7 @@ class Game {
 			this.checkCollisions()
 			if (this.generateEnemyCycle[0] === 0) {
 				this.placeEntities(this.enemies, randomInt(1, 3), "enemy")
+				///////console.log(JSON.stringify(this.enemies.map(enemy => enemy.tile)))
 			}
 		} catch (e) {
 			console.error(e)
