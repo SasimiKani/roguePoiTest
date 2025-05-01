@@ -216,16 +216,14 @@ const hardEnemyDefinitions = [
     new EnemyDefinition(EnemyDragon,   [50, null], 1)
 ]
 const hardPlusEnemyDefinitions = [
-    new EnemyDefinition(EnemyLarvae,      [1, 20], 10),
-    new EnemyDefinition(EnemyAnt,         [2, 20], 30),
-    new EnemyDefinition(EnemyCrayfish,    [4, 40], 15),
-    new EnemyDefinition(EnemyCrab,        [5, null], 1),
     new EnemyDefinition(EnemyFish,        [1, 20], 20),
-    new EnemyDefinition(EnemyTropicalfish,[5, 30], 20),
-    new EnemyDefinition(EnemyHarisenbon,  [20, 50], 20),
+    new EnemyDefinition(EnemyTropicalfish,[2, 30], 20),
+    new EnemyDefinition(EnemyCrayfish,    [4, 40], 30),
+    new EnemyDefinition(EnemyCrab,        [5, null], 1),
+    new EnemyDefinition(EnemyHarisenbon,  [15, null], 20),
     new EnemyDefinition(EnemyShark,       [30, null], 10),
-    new EnemyDefinition(EnemySlime,       [8, 50], 15),
-    new EnemyDefinition(EnemyBat,         [12, null], 10),
+    new EnemyDefinition(EnemySlime,       [8, 50], 10),
+    new EnemyDefinition(EnemyBat,         [12, null], 5),
     new EnemyDefinition(EnemyGoblin,      [16, null], 7),
     new EnemyDefinition(EnemySkeleton,    [19, null], 7),
     new EnemyDefinition(EnemySpider,      [24, null], 5),

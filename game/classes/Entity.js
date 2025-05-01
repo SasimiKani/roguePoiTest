@@ -127,7 +127,7 @@ class EnemyCrayfish extends Enemy {
 
 class EnemyCrab extends Enemy {
 	constructor(x, y, hp) {
-		super("カニ", x, y, hp + 5, 100, 1, '🦀')
+		super("カニ", x, y, hp + 30, 100, 1, '🦀')
 		this.searchAlgo = SearchAlgorithm.routeFlee
 		this.action = this.maxAction = 2 // ニ回行動
 	}
