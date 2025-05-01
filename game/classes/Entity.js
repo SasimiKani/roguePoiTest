@@ -155,7 +155,6 @@ class EnemyHarisenbon extends Enemy {
 class EnemyShark extends Enemy {
 	constructor(x, y, hp) {
 		super("シャーク", x, y, hp + 20, 25, 1, '🦈')
-		this.searchAlgo = SearchAlgorithm.routeFlee
 		this.action = this.maxAction = 2 // ニ回行動
 	}
 }
