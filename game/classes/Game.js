@@ -984,4 +984,79 @@ class Game {
 		// 難易度選択マップに戻る
 		selector = new DifficultySelector(this.myIcon)
 	}
+
+	/* 9. 中断セーブ */
+	save() {
+		const difficulty = CONFIG.DIFFICULTY
+		const data = Serializer.serialize(this)
+		localStorage.removeItem(difficulty)
+		localStorage.setItem(difficulty, data)
+		alert("中断データをセーブしました！")
+		this.destroy()
+	}
+
+	/* 10. ロード */
+	load() {
+		this.gameContainer = document.getElementById("game")
+		this.minimapContainer = document.getElementById("minimap")
+
+		document.getElementById("restCycle").innerText = CONFIG.REST_CYCLE
+
+		this.uiManager = new UIManager()
+		this.message = new MessageManager(this)
+		this.message.clear()
+
+		EffectsManager.showFloorOverlay(this.gameContainer, this.floor)
+		
+		// BGM
+		this.bgmBox = new BGMManager()
+		this.seBox = new SEManager()
+		this.seBox.loadfile().then(() => {
+			this.bgmBox.loadfile().then(() => {
+				switch (CONFIG.DIFFICULTY) {
+				case "easy":
+					this.bgmBox.playEasy()
+					break
+				case "normal":
+					this.bgmBox.playNormal()
+					break
+				case "normalPlus":
+					//this.bgmBox.playNormalPlus()
+					this.bgmBox.playNormalPlus2()
+					break
+				case "hard":
+					this.bgmBox.playHard()
+					break
+				case "hardPlus":
+					this.bgmBox.playHard()
+					break
+				}
+			})
+		})
+
+		switch (CONFIG.DIFFICULTY) {
+		case "easy":
+			break
+		case "normal":
+			break
+		case "normalPlus":
+			EffectsManager.showFieldEffect(this.gameContainer, "❄", 50)
+			//this.bgmBox.playNormal()
+			break
+		case "hard":
+			EffectsManager.showFieldEffect(this.gameContainer, "🔥", 10)
+			//this.bgmBox.playNormal()
+			break
+		case "hardPlus":
+			//EffectsManager.showFieldEffect(this.gameContainer, "🔥", 10)
+			//this.bgmBox.playNormal()
+			break
+		}
+
+		setTimeout(() => {
+			this.inputManager = new InputManager(this)
+		}, 300)
+		
+		this.renderer.render()
+	}
 }

@@ -474,7 +474,7 @@ class EffectsManager {
 	}
 	
 	/**
-	 * ゲーム終了確認用オーバーレイ（諦める or 続ける）
+	 * ゲーム終了確認用オーバーレイ（諦める or 続ける or 中断セーブ）
 	 * オーバーレイ中はグローバルフラグでゲーム操作を停止する（インベントリ表示時と同様）
 	 * 「諦める」を選んだ場合は game.destroy() を呼び出し、「続ける」を選んだ場合はオーバーレイを閉じる
 	 */
@@ -515,8 +515,19 @@ class EffectsManager {
 			cleanup();
 		});
 	
+	
+		// 「中断」オプション（Enterキーまたはクリックでオーバーレイを閉じる）
+		const saveOption = document.createElement("div");
+		saveOption.className = "giveup-option save";
+		saveOption.textContent = /*"Enter: */"中断";
+		saveOption.addEventListener("click", () => {
+			cleanup();
+			game.save()
+		});
+	
 		optionsContainer.appendChild(giveUpOption);
 		optionsContainer.appendChild(continueOption);
+		optionsContainer.appendChild(saveOption);
 		dialog.appendChild(optionsContainer);
 		overlay.appendChild(dialog);
 		document.body.appendChild(overlay);

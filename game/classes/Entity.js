@@ -50,7 +50,7 @@ class Enemy extends BaseEntity {
 		 * 探索アルゴリズム
 		 * デフォルトは経路探索
 		 */
-		this.searchAlgo = SearchAlgorithm.routePlanning
+		this.searchAlgo = (game, startX, startY, targetX, targetY) => SearchAlgorithm.routePlanning(game, startX, startY, targetX, targetY)
 	}
 	takeDamage(damage) {
 		this.hp -= damage
@@ -128,7 +128,7 @@ class EnemyCrayfish extends Enemy {
 class EnemyCrab extends Enemy {
 	constructor(x, y, hp) {
 		super("カニ", x, y, hp + 30, 100, 1, '🦀')
-		this.searchAlgo = SearchAlgorithm.routeFlee
+		this.searchAlgo = (game, startX, startY, targetX, targetY) => SearchAlgorithm.routeFlee(game, startX, startY, targetX, targetY)
 		this.action = this.maxAction = 2 // ニ回行動
 	}
 }
@@ -142,7 +142,7 @@ class EnemyFish extends Enemy {
 class EnemyTropicalfish extends Enemy {
 	constructor(x, y, hp) {
 		super("トロピカフィッシュ", x, y, hp + 7, 10, 1, '🐠')
-		this.searchAlgo = SearchAlgorithm.randomRoute
+		this.searchAlgo = (game, startX, startY, targetX, targetY) => SearchAlgorithm.randomRoute(game, startX, startY, targetX, targetY)
 	}
 }
 
@@ -175,7 +175,7 @@ class EnemySlime extends Enemy {
 class EnemyBat extends Enemy {
 	constructor(x, y, hp) {
 		super("コウモリ", x, y, hp, 10, 2, '🦇')
-		this.searchAlgo = SearchAlgorithm.randomRoute
+		this.searchAlgo = (game, startX, startY, targetX, targetY) => SearchAlgorithm.randomRoute(game, startX, startY, targetX, targetY)
 	}
 }
 
@@ -278,31 +278,36 @@ class HealItem extends InventoryItem {
 	constructor(x, y, name, tile, healAmount, stuffAmount) {
 		super(x, y, name, tile, async function(game) {
 			game.seBox.playEat()
-			game.player.hp += healAmount
+			game.player.hp += this.healAmount
 			if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp
-			EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${healAmount}`, "heal")
-			game.message.add(`${name}を食べて${healAmount}ポイント回復`)
+			EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${this.healAmount}`, "heal")
+			game.message.add(`${name}を食べて${this.healAmount}ポイント回復`)
 
-			game.player.hunger += stuffAmount // 食事ボーナス
+			game.player.hunger += this.stuffAmount // 食事ボーナス
 			if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
-			EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${stuffAmount}`, "food")
+			EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${this.stuffAmount}`, "food")
 			game.message.add(`少しお腹がふくれた`)
 
 			await game.timeoutSync(()=>{}, 400)
 		})
+
+		this.healAmount = healAmount
+		this.stuffAmount = stuffAmount
 	}
 }
 class FoodItem extends InventoryItem {
 	constructor(x, y, name, tile, stuffAmount) {
 		super(x, y, name, tile, async function(game) {
 			game.seBox.playEat()
-			game.player.hunger += stuffAmount
+			game.player.hunger += this.stuffAmount
 			if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
-			EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${stuffAmount}`, "food")
+			EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${this.stuffAmount}`, "food")
 			game.message.add(`${name}を食べて少しお腹がふくれた`)
 			
 			await game.timeoutSync(()=>{}, 400)
 		})
+
+		this.stuffAmount = stuffAmount
 	}
 }
 
@@ -310,6 +315,7 @@ class BoxItem extends InventoryItem {
 	constructor(x, y, capacity) {
 		// 箱を使うときは、箱の中身を確認するオーバーレイを開く
 		super(x, y, "箱", '📦', (game) => {
+			console.log(this)
 			this.game = game
 			this.openBox()
 		})

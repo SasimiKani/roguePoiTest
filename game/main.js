@@ -44,6 +44,22 @@ function startDungeonGame(difficulty, myIcon="😊") {
 	CONFIG.REVEALLV = difficultySettings[difficulty].revealLv
 	MAP_TILE.WALL = difficultySettings[difficulty].wallEmoji
 	MAP_TILE.SUB_WALL = difficultySettings[difficulty].wallSubEmoji
+
+	if (!!localStorage[difficulty]) {
+		// 中断データがある場合
+		const res = confirm("中断データから再開しますか？")
+		if (res) {
+			setTimeout(() => {
+				document.querySelector("button#change-icon").style.display = "none"
+				selector.bgmBox.stopBGM()
+				const data = localStorage.getItem(difficulty)
+				const game = Serializer.deserialize(data)
+				game.load()
+			}, 300)
+			return
+		}
+	}
+
 	setTimeout(() => {
 		document.querySelector("button#change-icon").style.display = "none"
 		selector.bgmBox.stopBGM()
