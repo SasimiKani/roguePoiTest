@@ -315,7 +315,7 @@ class BoxItem extends InventoryItem {
 	constructor(x, y, capacity) {
 		// 箱を使うときは、箱の中身を確認するオーバーレイを開く
 		super(x, y, "箱", '📦', (game) => {
-			/////console.log(this)
+			////console.log(this)
 			this.game = game
 			this.openBox()
 		})
@@ -441,7 +441,7 @@ class MagicSpell extends InventoryItem {
 				let affected = false
 				if (!options.effect) {
 					//EffectsManager.showMagicEffect(game.gameContainer, game.player, game.player.x, game.player.y, this.area, this.emoji || "✨")
-					///// console.log("showMagicEffectCircle Start")
+					////console.log("showMagicEffectCircle Start")
 					await EffectsManager.showMagicEffectCircle(game.gameContainer, game.player, game.player.x, game.player.y, this.area, this.tile || "✨")
 					
 					for (let i = game.enemies.length - 1; i >= 0; i--) {
@@ -469,7 +469,7 @@ class MagicSpell extends InventoryItem {
 								// # MESSAGE
 								game.score += 50
 					
-								/////console.log(hitEnemy)
+								////console.log(hitEnemy)
 								await game.gainExp(hitEnemy.exp)
 							}
 						}
@@ -479,7 +479,7 @@ class MagicSpell extends InventoryItem {
 						if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp
 						EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${this.fallbackHeal}`, "heal")
 					}
-					///// console.log("showMagicEffectCircle End")
+					////console.log("showMagicEffectCircle End")
 		
 					game.timeoutSync(()=>{
 						game.actionProgress = false

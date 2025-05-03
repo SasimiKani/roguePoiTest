@@ -150,7 +150,7 @@ class Game {
 	
 	// ターン進行中の同期処理を行い、指定した遅延で処理を実行します。
 	async timeoutSync(callback, delay) {
-		//////console.log("timeoutSync " + delay)
+		////console.log("timeoutSync " + delay)
 		this.inputManager.lastInputTime = Date.now() * 2
 		return new Promise(resolve => {
 			setTimeout(() => {
@@ -337,12 +337,12 @@ class Game {
 								const blobs = Object.entries(this.bgmBox.playList)
 									.map(file => [file[0], Object.values(file[1])[0]])
 									.filter(bgm => bgm[0] !== "./rsrc/mus/difficulty.mp3") // セレクト画面は除く
-								/////// console.log(blobs)
+								////console.log(blobs)
 
 								const currentBGM = this.bgmBox.player.src
 								const BGMs = blobs.filter(BGM => BGM[1] !== currentBGM)
-								/////// console.log(BGMs)
-								/////// console.log(BGMs[randomInt(0, BGMs.length - 1)][0])
+								////console.log(BGMs)
+								////console.log(BGMs[randomInt(0, BGMs.length - 1)][0])
 								this.bgmBox.playBGM(BGMs[randomInt(0, BGMs.length - 1)][0])
 
 								// 視界切り替え
@@ -398,7 +398,7 @@ class Game {
 				await this.timeoutSync(() => {}, 400)
 			}
 			
-			////////console.log("敵行動開始")
+			////console.log("敵行動開始")
 			this.actionProgress = true
 			
 			let chain = Promise.resolve()
@@ -415,13 +415,13 @@ class Game {
 			
 			if (this.player.hp > 0) {
 				this.actionProgress = false
-				////////console.log("敵行動終了")
+				////console.log("敵行動終了")
 			}
 			
 			this.checkCollisions()
 			if (this.generateEnemyCycle[0] === 0) {
 				this.placeEntities(this.enemies, randomInt(1, 3), "enemy")
-				///////console.log(JSON.stringify(this.enemies.map(enemy => enemy.tile)))
+				////console.log(JSON.stringify(this.enemies.map(enemy => enemy.tile)))
 			}
 		} catch (e) {
 			console.error(e)
@@ -626,10 +626,10 @@ class Game {
 					enemy.action--
 					this.actionCount++
 
-					//////console.group("射程範囲内スキル")
-					//////console.log(enemy.validRangeSkills(this.player))
-					//////console.log(enemy.validSkillCount(this.player))
-					//////console.groupEnd("射程範囲内スキル")
+					////console.group("射程範囲内スキル")
+					////console.log(enemy.validRangeSkills(this.player))
+					////console.log(enemy.validSkillCount(this.player))
+					////console.groupEnd("射程範囲内スキル")
 
 					// 通常攻撃
 					if (index === -1) {
@@ -637,15 +637,15 @@ class Game {
 					}
 					// 個別スキル
 					else {
-						//////console.log("スキル開始")
+						////console.log("スキル開始")
 						await enemy.skill(this, index)
-						//////console.log("スキル終了")
+						////console.log("スキル終了")
 					}
 				}
 
 				chain = chain.then(() => 
 					new Promise(async resolve => {
-						//////console.log("アクション開始")
+						////console.log("アクション開始")
 						if (index == -1) {
 							// 通常攻撃
 							if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
@@ -665,7 +665,7 @@ class Game {
 							this.timeoutSync(() => {}, this.actionTime)
 						}
 						resolve("ok")
-						//////console.log("アクション終了")
+						////console.log("アクション終了")
 					})
 				)
 			})
@@ -779,8 +779,8 @@ class Game {
 			const type = weightedTypes.splice(randomInt(0, weightedTypes.length - 1), 1)[0]
 			this.placeEntities(this.items, 1, type)
 		}
-		/////console.log(JSON.stringify(this.enemies))
-		/////console.log(this.items.map(e => e.tile))
+		////console.log(JSON.stringify(this.enemies))
+		////console.log(this.items.map(e => e.tile))
 
 	}
 	// 敵やアイテムなどのエンティティをマップ上にランダム配置する処理です。
@@ -1054,8 +1054,8 @@ class Game {
 		}
 
 		// 各配列のインスタンスを再生成
-		/////console.log(this.enemies)
-		/////console.log(this.items)
+		////console.log(this.enemies)
+		////console.log(this.items)
 
 		this.enemies = this.enemies.map(entity => {
 			const e = new (eval(entity.constructor.name))()
@@ -1086,8 +1086,8 @@ class Game {
 			return e
 		})
 
-		/////console.log(this.enemies)
-		/////console.log(this.items)
+		////console.log(this.enemies)
+		////console.log(this.items)
 
 		setTimeout(() => {
 			this.inputManager = new InputManager(this)

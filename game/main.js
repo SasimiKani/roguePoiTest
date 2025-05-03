@@ -34,7 +34,7 @@ function enemyList(floor, difficulty, freq) {
 
 	if (list.length === 0) list.push( EnemyLarvae )
 	
-	//////console.log(JSON.stringify(list.map(l => l.prototype.constructor.name)))
+	////console.log(JSON.stringify(list.map(l => l.prototype.constructor.name)))
 
 	return list
 }
@@ -52,10 +52,10 @@ function startDungeonGame(difficulty, myIcon="😊") {
 			setTimeout(() => {
 				document.querySelector("button#change-icon").style.display = "none"
 				selector.bgmBox.stopBGM()
-				console.groupCollapsed()
+				////console.groupCollapsed()
 				const data = localStorage.getItem(difficulty)
 				const game = Serializer.deserialize(data)
-				console.groupEnd()
+				////console.groupEnd()
 				game.load()
 			}, 300)
 			return
