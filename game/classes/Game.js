@@ -858,8 +858,8 @@ class Game {
 				//// 射撃武器
 				arr.push(new ShootingItem(x, y, "射撃-弓矢", '🏹', /* 数 */ 5, /* ダメージ */ 10, /* 距離 */ 8, "↑"))
 			} else if (type === "magic") {
-				let magic = weightedMagics.splice(randomInt(1, weightedMagics.length - 1), 1)[0]
-				arr.push(new MagicSpell(x, y, magic.name, magic.tile, magic.tile, {damage: magic.damage, player: this.player, area: magic.area, fallbackHeal: magic.fallbackHeal, effect: magic.effect}))
+				let Magic = weightedMagics.splice(randomInt(1, weightedMagics.length - 1), 1)[0]
+				arr.push(new Magic(this, x, y))
 			} else if (type === "entity") {
 				arr.push(new BaseEntity(x, y))
 			} else if (type === "enemy") {
@@ -1066,6 +1066,14 @@ class Game {
 			return e
 		})
 		this.items = this.items.map(entity => {
+			const e = new (eval(entity.constructor.name))()
+			Object.entries(entity).forEach(([k, v]) => {
+				if (typeof v === "function") return
+				e[k] = v
+			})
+			return e
+		})
+		this.player.inventory = this.player.inventory.map(entity => {
 			const e = new (eval(entity.constructor.name))()
 			Object.entries(entity).forEach(([k, v]) => {
 				if (typeof v === "function") return

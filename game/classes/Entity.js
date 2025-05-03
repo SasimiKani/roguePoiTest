@@ -432,7 +432,7 @@ class BoxItem extends InventoryItem {
 
 // MagicSpell クラス
 class MagicSpell extends InventoryItem {
-	constructor(x, y, name, tile, emoji, options) {
+	constructor(x, y, name, tile, options) {
 		super(x, y, name, tile, async (game) => {
 			game.actionProgress = true
 			game.seBox.playMagic()
@@ -442,13 +442,13 @@ class MagicSpell extends InventoryItem {
 				if (!options.effect) {
 					//EffectsManager.showMagicEffect(game.gameContainer, game.player, game.player.x, game.player.y, this.area, this.emoji || "✨")
 					///// console.log("showMagicEffectCircle Start")
-					await EffectsManager.showMagicEffectCircle(game.gameContainer, game.player, game.player.x, game.player.y, this.area, this.emoji || "✨")
+					await EffectsManager.showMagicEffectCircle(game.gameContainer, game.player, game.player.x, game.player.y, this.area, this.tile || "✨")
 					
 					for (let i = game.enemies.length - 1; i >= 0; i--) {
 						let enemy = game.enemies[i]
 						if (Math.abs(enemy.x - game.player.x) <= this.area &&
 								Math.abs(enemy.y - game.player.y) <= this.area) {
-							enemy.hp -= this.damage
+							enemy.hp -= options.damage + Math.round(game.player.attack * 0.5)
 							EffectsManager.showEffect(game.gameContainer, game.player, enemy.x, enemy.y, `-${this.damage}`, "damage")
 							affected = SVGComponentTransferFunctionElement
 
@@ -496,12 +496,141 @@ class MagicSpell extends InventoryItem {
 				}
 			})
 		})
-		this.emoji = emoji
-		this.damage = options.damage + Math.round(options.player.attack * 0.5)
 		this.area = options.area
 		this.fallbackHeal = options.fallbackHeal
 	}
 }
+
+// {name: "火の玉", tile: '🔥', damage: 20, area: 1, fallbackHeal: null})
+// {name: "たつまき", tile: '🌪️', damage: 15, area: 2, fallbackHeal: null})
+// {name: "大波", tile: '🌊', damage: 25, area: 4, fallbackHeal: null})
+// {name: "カミナリ", tile: '⚡️', damage: 30, area: 1, fallbackHeal: null})
+// {name: "エクスプロージョン", tile: '💥', damage: 50, area: 3, fallbackHeal: null})
+// {name: "メテオ", tile: '🌠', damage: 30, area: 5, fallbackHeal: null})
+// {name: "リカバーオール", tile: '✨️', damage: null, area: null, fallbackHeal: 100})
+// {name: "ワープ", tile: '🌀', damage: null, area: null, fallbackHeal: null, effect: async (game) => 
+
+class MagicFireball extends MagicSpell {
+	constructor(x, y) {
+		super(x, y, "火の玉", "🔥", {
+			damage: 20,
+			area: 1,
+			fallbackHeal: null
+		})
+	}
+}
+class MagicTornament extends MagicSpell {
+	constructor(x, y) {
+		super(x, y, "たつまき", "🌪️", {
+			damage: 15,
+			area: 2,
+			fallbackHeal: null
+		})
+	}
+}
+class MagicBigWave extends MagicSpell {
+	constructor(x, y) {
+		super(x, y, "大波", "🌊", {
+			damage: 25,
+			area: 4,
+			fallbackHeal: null
+		})
+	}
+}
+class MagicLightning extends MagicSpell {
+	constructor(x, y) {
+		super(x, y, "カミナリ", "⚡️", {
+			damage: 30,
+			area: 1,
+			fallbackHeal: null
+		})
+	}
+}
+class MagicExplosion extends MagicSpell {
+	constructor(x, y) {
+		super(x, y, "エクスプロージョン", "💥", {
+			damage: 50,
+			area: 3,
+			fallbackHeal: null
+		})
+	}
+}
+class MagicMeteor extends MagicSpell {
+	constructor(x, y) {
+		super(x, y, "メテオ", "🌠", {
+			damage: 30,
+			area: 5,
+			fallbackHeal: null
+		})
+	}
+}
+class MagicRecoverAll extends MagicSpell {
+	constructor(x, y) {
+		super(x, y, "リカバーオール", "✨️", {
+			damage: null,
+			area: null,
+			fallbackHeal: 100
+		})
+	}
+}
+class MagicWarp extends MagicSpell {
+	constructor(x, y) {
+		super(x, y, "ワープ", "🌀", {
+			damage: null,
+			area: null,
+			fallbackHeal: null,
+			effect: async (game) => {
+				// 現在部屋を除外してワープ先ルームを選ぶ
+				const otherRooms = game.map.rooms.filter(room =>
+					!(
+						game.player.x >= room.x &&
+						game.player.x <	room.x + room.w &&
+						game.player.y >= room.y &&
+						game.player.y <	room.y + room.h
+					)
+				);
+				if (otherRooms.length === 0) return; // 念のため
+			
+				const toRoom = otherRooms[randomInt(0, otherRooms.length - 1)];
+			
+				// 候補セルを収集
+				const candidates = [];
+				for (let ix = toRoom.x; ix < toRoom.x + toRoom.w; ix++) {
+					for (let iy = toRoom.y; iy < toRoom.y + toRoom.h; iy++) {
+						// 床タイルかつ敵がいない
+						if (
+							game.map.grid[iy][ix] === ' ' &&
+							!game.enemies.some(e => e.x === ix && e.y === iy)
+						) {
+							candidates.push({ x: ix, y: iy });
+						}
+					}
+				}
+			
+				// 候補が空ならフォールバック
+				if (candidates.length === 0) {
+					console.warn("ワープ先に使えるセルがありませんでした。ワープキャンセル");
+					return;
+				}
+			
+				// ランダムに選んで座標更新
+				const { x: toX, y: toY } = candidates[randomInt(0, candidates.length - 1)];
+				game.player.x = toX;
+				game.player.y = toY;
+			
+				// ■ 視界更新 ■
+				game.map.visible[toY][toX] = true;
+				game.map.revealRoom(toX, toY);
+				game.map.revealAround(toX, toY);
+			
+				// ターン進行・再描画
+				game.advanceTurn();
+				game.renderer.render();
+			}
+		})
+	}
+}
+
 // WeaponItem クラス
 class WeaponItem extends InventoryItem {
 	constructor(x, y, name, tile, bonus) {

@@ -108,63 +108,16 @@ const EntitySettingValues = {
 /** 魔法の設定 */
 const weightedMagics = [
 //// 攻撃魔法
-    ...Array(30).fill({name: "火の玉", tile: '🔥', damage: 20, area: 1, fallbackHeal: null}),
-    ...Array(20).fill({name: "たつまき", tile: '🌪️', damage: 15, area: 2, fallbackHeal: null}),
-    ...Array(10).fill({name: "大波", tile: '🌊', damage: 25, area: 4, fallbackHeal: null}),
-    ...Array(5).fill({name: "カミナリ", tile: '⚡️', damage: 30, area: 1, fallbackHeal: null}),
-    ...Array(1).fill({name: "エクスプロージョン", tile: '💥', damage: 50, area: 3, fallbackHeal: null}),
-    ...Array(1).fill({name: "メテオ", tile: '🌠', damage: 30, area: 5, fallbackHeal: null}),
+    ...Array(30).fill(MagicFireball),
+    ...Array(20).fill(MagicTornament),
+    ...Array(10).fill(MagicBigWave),
+    ...Array(5).fill(MagicLightning),
+    ...Array(1).fill(MagicExplosion),
+    ...Array(1).fill(MagicMeteor),
 //// 回復魔法
-    ...Array(10).fill({name: "リカバーオール", tile: '✨️', damage: null, area: null, fallbackHeal: 100}),
+    ...Array(10).fill(MagicRecoverAll),
     //// 補助魔法
-    ...Array(10).fill({name: "ワープ", tile: '🌀', damage: null, area: null, fallbackHeal: null, effect: async (game) => {
-        // 現在部屋を除外してワープ先ルームを選ぶ
-        const otherRooms = game.map.rooms.filter(room =>
-            !(
-                game.player.x >= room.x &&
-                game.player.x <	room.x + room.w &&
-                game.player.y >= room.y &&
-                game.player.y <	room.y + room.h
-            )
-        );
-        if (otherRooms.length === 0) return; // 念のため
-    
-        const toRoom = otherRooms[randomInt(0, otherRooms.length - 1)];
-    
-        // 候補セルを収集
-        const candidates = [];
-        for (let ix = toRoom.x; ix < toRoom.x + toRoom.w; ix++) {
-            for (let iy = toRoom.y; iy < toRoom.y + toRoom.h; iy++) {
-                // 床タイルかつ敵がいない
-                if (
-                    game.map.grid[iy][ix] === ' ' &&
-                    !game.enemies.some(e => e.x === ix && e.y === iy)
-                ) {
-                    candidates.push({ x: ix, y: iy });
-                }
-            }
-        }
-    
-        // 候補が空ならフォールバック
-        if (candidates.length === 0) {
-            console.warn("ワープ先に使えるセルがありませんでした。ワープキャンセル");
-            return;
-        }
-    
-        // ランダムに選んで座標更新
-        const { x: toX, y: toY } = candidates[randomInt(0, candidates.length - 1)];
-        game.player.x = toX;
-        game.player.y = toY;
-    
-        // ■ 視界更新 ■
-        game.map.visible[toY][toX] = true;
-        game.map.revealRoom(toX, toY);
-        game.map.revealAround(toX, toY);
-    
-        // ターン進行・再描画
-        game.advanceTurn();
-        game.renderer.render();
-    }}),
+    ...Array(10).fill(MagicWarp),
 ]
 
 /** 敵の設定 */
