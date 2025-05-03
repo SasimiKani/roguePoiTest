@@ -315,7 +315,7 @@ class BoxItem extends InventoryItem {
 	constructor(x, y, capacity) {
 		// 箱を使うときは、箱の中身を確認するオーバーレイを開く
 		super(x, y, "箱", '📦', (game) => {
-			console.log(this)
+			/////console.log(this)
 			this.game = game
 			this.openBox()
 		})
@@ -469,7 +469,7 @@ class MagicSpell extends InventoryItem {
 								// # MESSAGE
 								game.score += 50
 					
-								console.log(hitEnemy)
+								/////console.log(hitEnemy)
 								await game.gainExp(hitEnemy.exp)
 							}
 						}

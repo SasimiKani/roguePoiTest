@@ -27,8 +27,8 @@
                 Object.keys(value).forEach(key => {
                     const v = value[key];
                     if (typeof v === 'function') {
-                        console.log(value)
-                        console.log(v.toString())
+                        /////console.log(value)
+                        /////console.log(v.toString())
                         out[key] = { __fn__: v.toString() };
                     } else {
                         out[key] = derez(v, path + '[' + JSON.stringify(key) + ']');
@@ -64,8 +64,8 @@
         seen = seen || new WeakMap();
         // 関数マーカーを先に処理
         if (obj && typeof obj === 'object' && obj.__fn__) {
-            console.log(obj)
-            console.log(eval('(' + obj.__fn__ + ')'))
+            //console.log(obj)
+            //console.log(eval('(' + obj.__fn__ + ')'))
             return eval('(' + obj.__fn__ + ')');
         }
         if (obj && typeof obj === 'object') {
@@ -73,6 +73,7 @@
             let inst = obj;
             if (obj.__type__) {
                 const Ctor = eval(obj.__type__);
+                /////console.log(Ctor)
                 if (Ctor) {
                     inst = Object.create(Ctor.prototype);
                     Object.keys(obj).forEach(key => {

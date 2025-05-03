@@ -1053,6 +1053,30 @@ class Game {
 			break
 		}
 
+		// 各配列のインスタンスを再生成
+		/////console.log(this.enemies)
+		/////console.log(this.items)
+
+		this.enemies = this.enemies.map(entity => {
+			const e = new (eval(entity.constructor.name))()
+			Object.entries(entity).forEach(([k, v]) => {
+				if (typeof v === "function") return
+				e[k] = v
+			})
+			return e
+		})
+		this.items = this.items.map(entity => {
+			const e = new (eval(entity.constructor.name))()
+			Object.entries(entity).forEach(([k, v]) => {
+				if (typeof v === "function") return
+				e[k] = v
+			})
+			return e
+		})
+
+		/////console.log(this.enemies)
+		/////console.log(this.items)
+
 		setTimeout(() => {
 			this.inputManager = new InputManager(this)
 		}, 300)
