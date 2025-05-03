@@ -45,7 +45,7 @@ function inventoryGroundP(game, e) {
     if (e.key === 'p') {
         if (game.groundItem.tile === '🔼') return; // 足元が階段なら何もしない
         game.seBox.playPickup()
-        game.message.add(`${item.name}を拾った`)
+        game.message.add(`${game.groundItem.name}を拾った`)
         // 足元アイテムを拾う
         pickupItem(game, game.groundItem)
         game.updateData({ tx: game.player.x, ty: game.player.y })
