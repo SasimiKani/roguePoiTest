@@ -57,6 +57,9 @@ function startDungeonGame(difficulty, myIcon="😊") {
 				const game = Serializer.deserialize(data)
 				////console.groupEnd()
 				game.load()
+
+				// ロードしたら中断データを削除
+				localStorage.removeItem(difficulty)
 			}, 300)
 			return
 		}
