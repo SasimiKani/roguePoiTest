@@ -80,7 +80,7 @@ const EntitySettingValues = {
         entity: {min: 1, max: 2},
         maxItems: {min: 2, max: 4},
         itemWeights: {
-            food:     30,
+            food:     27,
             sushi:    20,
             magic:    10,
             niku:     10,
@@ -94,13 +94,13 @@ const EntitySettingValues = {
         entity: {min: 1, max: 2},
         maxItems: {min: 2, max: 4},
         itemWeights: {
-            food:     30,
+            food:     20,
             sushi:    20,
             magic:    10,
             niku:     10,
             weapon:   7,
-            shooting: 10,
-            box:      5
+            shooting: 7,
+            box:      3
         }
     }
 }

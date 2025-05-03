@@ -154,7 +154,7 @@ class EnemyHarisenbon extends Enemy {
 
 class EnemyShark extends Enemy {
 	constructor(x, y, hp) {
-		super("シャーク", x, y, hp + 20, 25, 6, '🦈')
+		super("シャーク", x, y, hp + 20, 35, 6, '🦈')
 		this.action = this.maxAction = 2 // ニ回行動
 	}
 }
