@@ -52,8 +52,10 @@ function startDungeonGame(difficulty, myIcon="😊") {
 			setTimeout(() => {
 				document.querySelector("button#change-icon").style.display = "none"
 				selector.bgmBox.stopBGM()
+				console.groupCollapsed()
 				const data = localStorage.getItem(difficulty)
 				const game = Serializer.deserialize(data)
+				console.groupEnd()
 				game.load()
 			}, 300)
 			return

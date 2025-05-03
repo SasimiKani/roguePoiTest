@@ -780,7 +780,7 @@ class Game {
 			this.placeEntities(this.items, 1, type)
 		}
 		/////console.log(JSON.stringify(this.enemies))
-		/////console.log(JSON.stringify(this.items, null, "\t"))
+		/////console.log(this.items.map(e => e.tile))
 
 	}
 	// 敵やアイテムなどのエンティティをマップ上にランダム配置する処理です。
@@ -1068,7 +1068,9 @@ class Game {
 		this.items = this.items.map(entity => {
 			const e = new (eval(entity.constructor.name))()
 			Object.entries(entity).forEach(([k, v]) => {
+				if (v == null) return
 				if (typeof v === "function") return
+				if (v.constructor.name.match("HTML")) return
 				e[k] = v
 			})
 			return e
@@ -1076,7 +1078,9 @@ class Game {
 		this.player.inventory = this.player.inventory.map(entity => {
 			const e = new (eval(entity.constructor.name))()
 			Object.entries(entity).forEach(([k, v]) => {
+				if (v == null) return
 				if (typeof v === "function") return
+				if (v.constructor.name.match("HTML") != null) return
 				e[k] = v
 			})
 			return e

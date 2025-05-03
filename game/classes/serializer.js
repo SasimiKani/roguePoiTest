@@ -84,7 +84,10 @@
                 }
             }
             seen.set(obj, inst);
+            console.log(inst)
             Object.keys(inst).forEach(key => {
+                console.log(key)
+                if (key === "boundOnKeyDown") return
                 inst[key] = deepRevive(inst[key], seen);
             });
             return inst;
