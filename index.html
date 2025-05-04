@@ -7,6 +7,7 @@
 	<link rel="icon" href="./rsrc/img/favicon.png">
 	<link rel="stylesheet" href="./css/rogue3o.css">
 	<script src="./lib/com/unpkg/flatted@3.3.3/min.js"></script>
+	<script src="./lib/net/cdn.jsdelivr/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
 </head>
 <body>
 	<div class="container">
@@ -41,6 +42,9 @@
 			<div id="minimap" class="minimap-container"></div>
 		</div>
 	</div>
+
+	<!-- 一度だけ使うコンバーター -->
+	<script src="./converter.js"></script>
 	
 	<!-- 各スクリプトは ./game/ 以下の外部ファイルとして読み込み -->
 	<script src="./game/helper.js"></script>

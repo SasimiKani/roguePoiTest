@@ -45,7 +45,7 @@ function startDungeonGame(difficulty, myIcon="😊") {
 	MAP_TILE.WALL = difficultySettings[difficulty].wallEmoji
 	MAP_TILE.SUB_WALL = difficultySettings[difficulty].wallSubEmoji
 
-	if (!!localStorage[difficulty]) {
+	if (!!localStorage[`savedata-${difficulty}`]) {
 		// 中断データがある場合
 		const res = confirm("中断データから再開しますか？")
 		if (res) {
@@ -53,13 +53,14 @@ function startDungeonGame(difficulty, myIcon="😊") {
 				document.querySelector("button#change-icon").style.display = "none"
 				selector.bgmBox.stopBGM()
 				////console.groupCollapsed()
-				const data = localStorage.getItem(difficulty)
-				const game = Serializer.deserialize(data)
+				const data = localStorage.getItem(`savedata-${difficulty}`)
+				const decomp = LZString.decompressFromEncodedURIComponent(data)
+				const game = Serializer.deserialize(decomp)
 				////console.groupEnd()
 				game.load()
 
 				// ロードしたら中断データを削除
-				localStorage.removeItem(difficulty)
+				localStorage.removeItem(`savedata-${difficulty}`)
 			}, 300)
 			return
 		}

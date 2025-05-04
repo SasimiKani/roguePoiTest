@@ -989,8 +989,9 @@ class Game {
 	save() {
 		const difficulty = CONFIG.DIFFICULTY
 		const data = Serializer.serialize(this)
-		localStorage.removeItem(difficulty)
-		localStorage.setItem(difficulty, data)
+		const comp = LZString.compressToEncodedURIComponent(data)
+		localStorage.removeItem(`savedata-${difficulty}`)
+		localStorage.setItem(`savedata-${difficulty}`, comp)
 		alert("中断データをセーブしました！")
 		this.destroy()
 	}
