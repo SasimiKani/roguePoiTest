@@ -225,6 +225,34 @@ function inventoryI(game, e) {
     }
     return e.key === 'i'
 }
+async function inventoryT(game, e) {
+    if (e.key === 't') {
+        let item = game.player.inventory[game.inventorySelection]
+        if (item) {
+            if (item instanceof WeaponItem && game.player.weapon === item) {
+                game.player.attack -= game.player.weapon.bonus
+                game.player.weapon = null
+                EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `装備解除-${item.bonus}`, "heal")
+                game.message.add(`${item.name}の装備を外した`)
+                // # MESSAGE
+            }
+            game.inventoryOpen = false
+            game.renderer.render()
+
+            let throwItem = new ShootingItem(0, 0, item.name, item.tile, 1, item.bonus * 3 || 2, 7, item.tile, true, item)
+            throwItem.name = item.name
+            await throwItem.use(game)
+            
+            game.player.inventory.splice(game.inventorySelection, 1)
+            if (game.inventorySelection >= game.player.inventory.length) {
+                game.inventorySelection = game.player.inventory.length - 1
+            }
+            game.updateData({ tx: game.player.x, ty: game.player.y })
+        }
+        game.renderer.render()
+    }
+    return e.key === 't'
+}
 function inventoryEscape(game, e) {
     if (e.key === 'Escape' || e.key === 'e') {
         game.seBox.playMenu(4)

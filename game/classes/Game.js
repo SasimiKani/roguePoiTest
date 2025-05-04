@@ -278,6 +278,7 @@ class Game {
 				if (inventoryD(this, event)) return
 				if (inventoryX(this, event)) return
 				if (inventoryI(this, event)) return
+				if (await inventoryT(this, event)) return
 				if (inventoryEscape(this, event)) return
 			}
 		} catch (e) {

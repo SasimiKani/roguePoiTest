@@ -145,6 +145,7 @@ class Renderer {
 			}
 			
 			// それ以外の基本コマンド
+			invCommands.push("T: 投げる")
 			invCommands.push("ESC/E: 閉じる")
 			invCommands.push("Y: 整理")
 		

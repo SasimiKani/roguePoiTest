@@ -680,7 +680,7 @@ class ShootingItem extends InventoryItem {
 	 * @param {number} range - 射程（タイル数）
 	 * @param {string} projectileEmoji - 射撃エフェクト用絵文字
 	 */
-	constructor(x, y, name, tile, stack, damage, range, projectileEmoji) {
+	constructor(x, y, name, tile, stack, damage, range, projectileEmoji, isThrow=false, originItem=null) {
 		// use() の動作を独自に定義するため、InventoryItem の use 関数を上書きする
 		super(x, y, name, tile, async (game) => {
 			return new Promise((resolve) => {
@@ -697,6 +697,8 @@ class ShootingItem extends InventoryItem {
 		this.damage = damage
 		this.range = range || 5
 		this.projectileEmoji = projectileEmoji || '●'
+		this.isThrow = isThrow
+		this.originItem = originItem
 	}
 	
 	updateName() {
@@ -718,7 +720,7 @@ class ShootingItem extends InventoryItem {
 		game.isAwaitingShootingDirection = false
 		EffectsManager.hideShootingPrompt(game.gameContainer)
 		// 射撃実行
-		game.message.add(`${this.name}を撃った`)
+		game.message.add(`${this.name}を${this.isThrow ? "投げた" : "撃った"}`)
 		await this.shoot(game, direction)
 	}
 	
@@ -827,6 +829,53 @@ class ShootingItem extends InventoryItem {
 	
 				await game.gainExp(hitEnemy.exp)
 			}
+		} else {
+			await game.timeoutSync(async () => {
+				// 当たらなかったら
+				// 1) 壁を越えないよう、実際に到達する「最遠到達点」を求める
+				let endX = game.player.x;
+				let endY = game.player.y;
+				for (let i = 1; i <= this.range; i++) {
+					const tx = game.player.x + direction.dx * i;
+					const ty = game.player.y + direction.dy * i;
+					// マップ外／壁だったらその手前で止める
+					if (game.map.grid[ty][tx] === MAP_TILE.WALL) {
+						break;
+					}
+					endX = tx;
+					endY = ty;
+				}
+
+				// 座標が重なっていたら周りの空いてるタイルに落とす
+				const { x: dropX, y: dropY } = findDropPosition( endX, endY, game)
+				
+				// 2) ドロップするアイテムを作成（ここでは同じ ShootingItem を1個だけ落とす例）
+				let dropped = null
+				if (this.isThrow) {
+					// 投げアイテム
+					dropped = this.originItem
+					dropped.x = dropX
+					dropped.y = dropY
+				} else {
+					// 射撃武器
+					dropped = new ShootingItem(
+						dropX,
+						dropY,
+						this.originalName,
+						this.tile,
+						1,              // stack: 1 個だけ
+						this.damage,    // ダメージはそのまま
+						this.range,     // 射程もそのまま（拾って再利用できる）
+						this.projectileEmoji,
+						this.isThrow
+					)
+				}
+
+				// 3) ゲーム側の地面アイテムリストに追加
+				game.items.push(dropped);
+				
+				game.message.add(`${dropped.name}を(${dropX},${dropY})に落とした`);
+			}, 300)
 		}
 	}
 }
