@@ -784,6 +784,9 @@ class BGMManager extends AudioManager {
 	}
 
 	playBGM(file) {
+		// 停止
+		this.player.pause()
+		
 		// 音声ファイル
 		this.player.src = this.playList[file].url
 
@@ -860,6 +863,9 @@ class SEManager extends AudioManager {
 			clearTimeout(this.timeout)
 		}
 
+		// 停止
+		this.player.pause()
+		
 		// 音声ファイル
 		this.player.src = this.playList[file].url
 
