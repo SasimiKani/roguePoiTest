@@ -859,7 +859,7 @@ class Game {
 				arr.push(new ShootingItem(x, y, "射撃-弓矢", '🏹', /* 数 */ 5, /* ダメージ */ 10, /* 距離 */ 8, "↑"))
 			} else if (type === "magic") {
 				let Magic = weightedMagics.splice(randomInt(1, weightedMagics.length - 1), 1)[0]
-				arr.push(new Magic(this, x, y))
+				arr.push(new Magic(x, y))
 			} else if (type === "entity") {
 				arr.push(new BaseEntity(x, y))
 			} else if (type === "enemy") {

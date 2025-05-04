@@ -448,8 +448,9 @@ class MagicSpell extends InventoryItem {
 						let enemy = game.enemies[i]
 						if (Math.abs(enemy.x - game.player.x) <= this.area &&
 								Math.abs(enemy.y - game.player.y) <= this.area) {
-							enemy.hp -= options.damage + Math.round(game.player.attack * 0.5)
-							EffectsManager.showEffect(game.gameContainer, game.player, enemy.x, enemy.y, `-${this.damage}`, "damage")
+							const damage = options.damage + Math.round(game.player.attack * 0.5)
+							enemy.hp -= damage
+							EffectsManager.showEffect(game.gameContainer, game.player, enemy.x, enemy.y, `-${damage}`, "damage")
 							affected = SVGComponentTransferFunctionElement
 
 							let hitEnemy = game.enemies[i]
