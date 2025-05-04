@@ -10,7 +10,8 @@ class DungeonMap {
 	}
 	reset() {
 		this.grid = Array.from({ length: this.height }, () => Array(this.width).fill(MAP_TILE.WALL))
-		this.visible = Array.from({ length: this.height }, () => Array(this.width).fill(false))
+		//this.visible = Array.from({ length: this.height }, () => Array(this.width).fill(false))
+		this.visible = Array.from({ length: this.height }, () => Array(this.width).fill(true)) // デバッグ用
 		this.rooms = []
 	}
 	createRoom() {
@@ -34,21 +35,80 @@ class DungeonMap {
 		})
 	}
 	connectRooms(r1, r2) {
-		// 中心座標ではなく、部屋の内部1マス内側から通路開始
-		let x1 = r1.x + 1 + Math.floor((r1.w - 2) / 2)
-		let y1 = r1.y + 1 + Math.floor((r1.h - 2) / 2)
-		let x2 = r2.x + 1 + Math.floor((r2.w - 2) / 2)
-		let y2 = r2.y + 1 + Math.floor((r2.h - 2) / 2)
+		const cx1 = r1.x + 1 + Math.floor((r1.w - 2) / 2)
+		const cy1 = r1.y + 1 + Math.floor((r1.h - 2) / 2)
+		const cx2 = r2.x + 1 + Math.floor((r2.w - 2) / 2)
+		const cy2 = r2.y + 1 + Math.floor((r2.h - 2) / 2)
 
-		while (x1 !== x2) {
-			if (this.grid[y1][x1] === MAP_TILE.WALL) this.grid[y1][x1] = ' '
-			x1 += (x2 > x1) ? 1 : -1
+		// どの辺でつなぐか判定
+		const dx = cx2 - cx1, dy = cy2 - cy1
+		let dir1, dir2
+		if (Math.abs(dx) > Math.abs(dy)) {
+			dir1 = dx > 0 ? 'right' : 'left'
+			dir2 = dx > 0 ? 'left'	: 'right'
+		} else {
+			dir1 = dy > 0 ? 'bottom': 'top'
+			dir2 = dy > 0 ? 'top'	 : 'bottom'
 		}
-		while (y1 !== y2) {
-			if (this.grid[y1][x1] === MAP_TILE.WALL) this.grid[y1][x1] = ' '
-			y1 += (y2 > y1) ? 1 : -1
+
+		// 既に通路があるならスキップ
+		if (r1.connections[dir1] || r2.connections[dir2]) return false
+
+		// フラグを立てて掘る
+		r1.connections[dir1] = true
+		r2.connections[dir2] = true
+
+		let x = cx1, y = cy1
+		while (x !== cx2) {
+			if (this.grid[y][x] === MAP_TILE.WALL) this.grid[y][x] = ' '
+			x += (cx2 > x) ? 1 : -1
+		}
+		while (y !== cy2) {
+			if (this.grid[y][x] === MAP_TILE.WALL) this.grid[y][x] = ' '
+			y += (cy2 > y) ? 1 : -1
+		}
+
+		return true
+	}
+
+	connectAllRooms(rooms) {
+		// 接続フラグ初期化
+		rooms.forEach(r => {
+			r.connections = { top: false, bottom: false, left: false, right: false }
+		})
+
+		for (let i = 1; i < rooms.length; i++) {
+			const A = rooms[i]
+			// 0…i-1 の部屋を距離順にソート
+			const candidates = rooms
+				.slice(0, i)
+				.map(B => {
+					const dx = (A.x + A.w/2) - (B.x + B.w/2)
+					const dy = (A.y + A.h/2) - (B.y + B.h/2)
+					return { room: B, dist: dx*dx + dy*dy }
+				})
+				.sort((a, b) => a.dist - b.dist)
+
+			// 距離が近い順に接続を試みる
+			let connected = false
+			for (const { room: B } of candidates) {
+				if (this.connectRooms(A, B)) {
+					connected = true
+					break
+				}
+			}
+
+			// 念のため全スキップされたら、一番近い部屋と強制接続
+			if (!connected && candidates.length > 0) {
+				const B = candidates[0].room
+				// フラグをクリアしてから再接続（強制的に掘らせる）
+				A.connections = { top: false, bottom: false, left: false, right: false }
+				B.connections = { top: false, bottom: false, left: false, right: false }
+				this.connectRooms(A, B)
+			}
 		}
 	}
+
 	generate() {
 		this.reset()
 		const countGen = () => {
@@ -69,7 +129,7 @@ class DungeonMap {
 		}
 		const roomCount = countGen()
 		for (let i = 0; i < roomCount; i++) { this.createRoom(); }
-		for (let i = 0; i < this.rooms.length - 1; i++) { this.connectRooms(this.rooms[i], this.rooms[i + 1]); }
+		this.connectAllRooms(this.rooms)
 	}
 	revealRoom(px, py, rooms=this.rooms) {
 		for (let room of rooms.filter(room => !this.isReveal(room))) {
