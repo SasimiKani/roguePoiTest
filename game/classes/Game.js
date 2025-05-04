@@ -806,6 +806,16 @@ class Game {
 						Math.round(Math.pow((this.floor + 1) / 2, this.maxMagnification))
 					)
 				}
+
+				// 座標が重なっていたらやり直し
+				const duplicate = this.enemies.concat(this.items)
+					.map(entity => ({x: entity.x, y: entity.y}))
+					.filter(pos => pos.x === x && pos.y === y)
+				
+				if (duplicate.length > 0) {
+					continue
+				}
+
 			} while (this.map.grid[y][x] !== ' ' || (x === this.player.x && y === this.player.y))
 			if (type === "sushi") {
 				arr.push(new HealItem(x, y, "すし", '🍣', 5, 5))

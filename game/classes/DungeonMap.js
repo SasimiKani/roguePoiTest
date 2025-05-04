@@ -23,13 +23,23 @@ class DungeonMap {
 				this.grid[i][j] = ' '
 			}
 		}
-		this.rooms.push({ x, y, w, h })
+		this.rooms.push({
+			x, y, w, h,
+			connections: {
+				top: false,
+				bottom: false,
+				left: false,
+				right: false
+			}
+		})
 	}
 	connectRooms(r1, r2) {
-		let x1 = r1.x + Math.floor(r1.w / 2)
-		let y1 = r1.y + Math.floor(r1.h / 2)
-		let x2 = r2.x + Math.floor(r2.w / 2)
-		let y2 = r2.y + Math.floor(r2.h / 2)
+		// 中心座標ではなく、部屋の内部1マス内側から通路開始
+		let x1 = r1.x + 1 + Math.floor((r1.w - 2) / 2)
+		let y1 = r1.y + 1 + Math.floor((r1.h - 2) / 2)
+		let x2 = r2.x + 1 + Math.floor((r2.w - 2) / 2)
+		let y2 = r2.y + 1 + Math.floor((r2.h - 2) / 2)
+
 		while (x1 !== x2) {
 			if (this.grid[y1][x1] === MAP_TILE.WALL) this.grid[y1][x1] = ' '
 			x1 += (x2 > x1) ? 1 : -1
