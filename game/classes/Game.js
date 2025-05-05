@@ -1097,10 +1097,17 @@ class Game {
 			})
 			return e
 		})
+
 		this.items.concat(this.player.inventory).forEach(entity => {
 			if (entity.constructor.name === "BoxItem") {
 				entity.contents = entity.contents.map(content => {
 					const e = new (eval(content.constructor.name))()
+					Object.entries(content).forEach(([k, v]) => {
+						if (v == null) return
+						if (typeof v === "function") return
+						if (v.constructor.name.match("HTML") != null) return
+						e[k] = v
+					})
 					return e
 				})
 			}
