@@ -593,13 +593,13 @@ class MagicWarp extends MagicSpell {
 						game.player.y >= room.y &&
 						game.player.y <	room.y + room.h
 					)
-				);
+				)
 				if (otherRooms.length === 0) return; // 念のため
 			
-				const toRoom = otherRooms[randomInt(0, otherRooms.length - 1)];
+				const toRoom = otherRooms[randomInt(0, otherRooms.length - 1)]
 			
 				// 候補セルを収集
-				const candidates = [];
+				const candidates = []
 				for (let ix = toRoom.x; ix < toRoom.x + toRoom.w; ix++) {
 					for (let iy = toRoom.y; iy < toRoom.y + toRoom.h; iy++) {
 						// 床タイルかつ敵がいない
@@ -607,30 +607,30 @@ class MagicWarp extends MagicSpell {
 							game.map.grid[iy][ix] === ' ' &&
 							!game.enemies.some(e => e.x === ix && e.y === iy)
 						) {
-							candidates.push({ x: ix, y: iy });
+							candidates.push({ x: ix, y: iy })
 						}
 					}
 				}
 			
 				// 候補が空ならフォールバック
 				if (candidates.length === 0) {
-					console.warn("ワープ先に使えるセルがありませんでした。ワープキャンセル");
-					return;
+					console.warn("ワープ先に使えるセルがありませんでした。ワープキャンセル")
+					return
 				}
 			
 				// ランダムに選んで座標更新
-				const { x: toX, y: toY } = candidates[randomInt(0, candidates.length - 1)];
-				game.player.x = toX;
-				game.player.y = toY;
+				const { x: toX, y: toY } = candidates[randomInt(0, candidates.length - 1)]
+				game.player.x = toX
+				game.player.y = toY
 			
 				// ■ 視界更新 ■
-				game.map.visible[toY][toX] = true;
-				game.map.revealRoom(toX, toY);
-				game.map.revealAround(toX, toY);
+				game.map.visible[toY][toX] = true
+				game.map.revealRoom(toX, toY)
+				game.map.revealAround(toX, toY)
 			
 				// ターン進行・再描画
-				game.advanceTurn();
-				game.renderer.render();
+				game.advanceTurn()
+				game.renderer.render()
 			}
 		})
 	}
@@ -874,17 +874,17 @@ class ShootingItem extends InventoryItem {
 			await game.timeoutSync(async () => {
 				// 当たらなかったら
 				// 1) 壁を越えないよう、実際に到達する「最遠到達点」を求める
-				let endX = game.player.x;
-				let endY = game.player.y;
+				let endX = game.player.x
+				let endY = game.player.y
 				for (let i = 1; i <= this.range; i++) {
-					const tx = game.player.x + direction.dx * i;
-					const ty = game.player.y + direction.dy * i;
+					const tx = game.player.x + direction.dx * i
+					const ty = game.player.y + direction.dy * i
 					// マップ外／壁だったらその手前で止める
 					if (game.map.grid[ty][tx] === MAP_TILE.WALL) {
-						break;
+						break
 					}
-					endX = tx;
-					endY = ty;
+					endX = tx
+					endY = ty
 				}
 
 				// 座標が重なっていたら周りの空いてるタイルに落とす
@@ -913,9 +913,9 @@ class ShootingItem extends InventoryItem {
 				}
 
 				// 3) ゲーム側の地面アイテムリストに追加
-				game.items.push(dropped);
+				game.items.push(dropped)
 				
-				game.message.add(`${dropped.name}を(${dropX},${dropY})に落とした`);
+				game.message.add(`${dropped.name}を(${dropX},${dropY})に落とした`)
 			}, 300)
 		}
 	}

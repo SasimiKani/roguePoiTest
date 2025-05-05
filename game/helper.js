@@ -124,37 +124,37 @@ function switchGrid(container, on=false) {
 // 再帰的に半径を拡大して空きマスを探す関数
 // ----------------------------------------------
 function findDropPosition(startX, startY, game, radius = 0) {
-	const positions = [];
+	const positions = []
 
 	// リングの上下辺 (dx: -radius～+radius, dy=±radius)
 	for (let dx = -radius; dx <= radius; dx++) {
-		positions.push({ x: startX + dx, y: startY +	radius });
-		positions.push({ x: startX + dx, y: startY -	radius });
+		positions.push({ x: startX + dx, y: startY +	radius })
+		positions.push({ x: startX + dx, y: startY -	radius })
 	}
 	// リングの左右辺 (dy: -radius+1～+radius-1, dx=±radius)
 	for (let dy = -radius + 1; dy <= radius - 1; dy++) {
-		positions.push({ x: startX +	radius, y: startY + dy });
-		positions.push({ x: startX -	radius, y: startY + dy });
+		positions.push({ x: startX +	radius, y: startY + dy })
+		positions.push({ x: startX -	radius, y: startY + dy })
 	}
 
 	for (const pos of positions) {
-		const { x, y } = pos;
+		const { x, y } = pos
 		// 範囲外チェック
 		if (
 			y < 0 ||
 			x < 0 ||
 			y >= game.map.grid.length ||
 			x >= game.map.grid[0].length
-		) continue;
+		) continue
 		// 壁チェック
-		if (game.map.grid[y][x] === MAP_TILE.WALL) continue;
+		if (game.map.grid[y][x] === MAP_TILE.WALL) continue
 		// 既存アイテム重複チェック
-		const occupied = game.items.some(it => it.x === x && it.y === y);
+		const occupied = game.items.some(it => it.x === x && it.y === y)
 		if (!occupied) {
-			return { x, y };
+			return { x, y }
 		}
 	}
 
 	// 見つからなければ半径を 1 増やして再帰
-	return findDropPosition(startX, startY, game, radius + 1);
+	return findDropPosition(startX, startY, game, radius + 1)
 }

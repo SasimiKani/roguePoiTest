@@ -7,15 +7,15 @@ class EffectsManager {
 		let chain = Promise.resolve()
 		for (var i=0; i<many; i++) {
 			const promise = () => new Promise(r => {
-				const span = document.createElement("span");
-				const x = randomInt(rect.left, rect.left + containerSize);
-				const y = randomInt(rect.top, rect.top + containerSize);
+				const span = document.createElement("span")
+				const x = randomInt(rect.left, rect.left + containerSize)
+				const y = randomInt(rect.top, rect.top + containerSize)
 				span.textContent = emoji
 				span.style.left = `${x}px`
 				span.style.top = `${y}px`
 				span.classList.add("field-effects")
 				
-				document.body.appendChild(span);
+				document.body.appendChild(span)
 				setTimeout(() => {r()}, 3000 / many)
 			})
 			
@@ -298,51 +298,51 @@ class EffectsManager {
 	 */
 	static showEnemyShootingEffect(container, player, enemy, range, projectileEmoji, options = {}) {
 		return new Promise(resolve => {
-			const fontSize = CONFIG.FONT_SIZE;
+			const fontSize = CONFIG.FONT_SIZE
 			const factor = options.factor || fontSize; // タイル1単位あたりのピクセル数
 			const duration = options.duration || 0.3; // アニメーション時間（秒）
 	
 			// container の位置情報
-			const rect = container.getBoundingClientRect();
+			const rect = container.getBoundingClientRect()
 	
 			// プレイヤーの中心座標（画面中央）
-			const playerX = rect.left + window.scrollX + rect.width / 2 - (fontSize / 2) - 3;
-			const playerY = rect.top + window.scrollY + rect.height / 2 - fontSize + 3;
+			const playerX = rect.left + window.scrollX + rect.width / 2 - (fontSize / 2) - 3
+			const playerY = rect.top + window.scrollY + rect.height / 2 - fontSize + 3
 	
 			// 敵の座標を画面座標に変換
 			const startX = rect.left + window.scrollX + rect.width / 2 + ((enemy.x - player.x) * factor) - (fontSize / 2)
 			const startY = rect.top + window.scrollY + rect.height / 2 + ((enemy.y - player.y) * factor) - fontSize
 	
 			// 飛ばす距離（プレイヤーまで）
-			const targetOffsetX = playerX - startX;
-			const targetOffsetY = playerY - startY;
+			const targetOffsetX = playerX - startX
+			const targetOffsetY = playerY - startY
 	
 			// 飛ぶ角度（上を0°とする）
-			const th = Math.atan2(targetOffsetY, targetOffsetX) * 180 / Math.PI + 90;
+			const th = Math.atan2(targetOffsetY, targetOffsetX) * 180 / Math.PI + 90
 	
 			// プロジェクタイル要素を作成
-			const projectile = document.createElement("div");
-			projectile.className = "shooting-projectile";
-			projectile.textContent = projectileEmoji || "●";
-			projectile.style.fontSize = `${fontSize}px`;
-			projectile.style.position = "absolute";
-			projectile.style.left = `${startX}px`;
-			projectile.style.top = `${startY}px`;
-			projectile.style.transition = `transform ${duration}s ease-in`;
-			projectile.style.zIndex = "3000";
-			projectile.style.transform = "translate(0, 0)" + ` rotate(${th}deg)`;
-			document.body.appendChild(projectile);
+			const projectile = document.createElement("div")
+			projectile.className = "shooting-projectile"
+			projectile.textContent = projectileEmoji || "●"
+			projectile.style.fontSize = `${fontSize}px`
+			projectile.style.position = "absolute"
+			projectile.style.left = `${startX}px`
+			projectile.style.top = `${startY}px`
+			projectile.style.transition = `transform ${duration}s ease-in`
+			projectile.style.zIndex = "3000"
+			projectile.style.transform = "translate(0, 0)" + ` rotate(${th}deg)`
+			document.body.appendChild(projectile)
 	
 			// 少し待ってから移動開始（再描画のためのタイムアウト）
 			setTimeout(() => {
-				projectile.style.transform = `translate(${targetOffsetX}px, ${targetOffsetY}px) rotate(${th}deg)`;
-			}, 10);
+				projectile.style.transform = `translate(${targetOffsetX}px, ${targetOffsetY}px) rotate(${th}deg)`
+			}, 10)
 	
 			// アニメーション終了後に要素を削除
 			setTimeout(() => {
-				projectile.remove();
+				projectile.remove()
 				resolve()
-			}, duration * 1000 + 20);
+			}, duration * 1000 + 20)
 		})
 	}
 
@@ -370,12 +370,12 @@ class EffectsManager {
 		// エフェクトまだついていないなら
 		if (!enemy?.sleepEffect) {
 			// 絵文字要素を作成
-			enemy.sleepEffect = document.createElement('div');
-			enemy.sleepEffect.classList.add('sleep-effect');
-			enemy.sleepEffect.textContent = '💤';
+			enemy.sleepEffect = document.createElement('div')
+			enemy.sleepEffect.classList.add('sleep-effect')
+			enemy.sleepEffect.textContent = '💤'
 
 			// コンテナに追加
-			document.getElementById("game").appendChild(enemy.sleepEffect);
+			document.getElementById("game").appendChild(enemy.sleepEffect)
 		}
 
 		// 表示位置を計算
@@ -386,8 +386,8 @@ class EffectsManager {
 		const dx = centerX + (enemy.x - game.player.x) * fontSize /* 敵の位置 */
 		const dy = centerY + (enemy.y - game.player.y) * fontSize /* 敵の位置 */
 
-		enemy.sleepEffect.style.left = `${dx}px`;
-		enemy.sleepEffect.style.top = `${dy}px`;
+		enemy.sleepEffect.style.left = `${dx}px`
+		enemy.sleepEffect.style.top = `${dy}px`
 	}
 
 	/**
@@ -523,79 +523,79 @@ class EffectsManager {
 	 * 「諦める」を選んだ場合は game.destroy() を呼び出し、「続ける」を選んだ場合はオーバーレイを閉じる
 	 */
 	static showGiveUpConfirmationKeyboard(game) {
-		window.overlayActive = true;
+		window.overlayActive = true
 	
 		// 全画面を覆うオーバーレイ
-		const overlay = document.createElement("div");
-		overlay.className = "giveup-confirm-overlay";
+		const overlay = document.createElement("div")
+		overlay.className = "giveup-confirm-overlay"
 	
 		// ダイアログボックス（中央に配置、縦並びレイアウト）
-		const dialog = document.createElement("div");
-		dialog.className = "giveup-confirm-dialog";
+		const dialog = document.createElement("div")
+		dialog.className = "giveup-confirm-dialog"
 	
 		// メッセージ
-		const message = document.createElement("p");
-		message.textContent = "ゲームを続けますか？";
-		dialog.appendChild(message);
+		const message = document.createElement("p")
+		message.textContent = "ゲームを続けますか？"
+		dialog.appendChild(message)
 	
 		// 選択肢用コンテナ
-		const optionsContainer = document.createElement("div");
-		optionsContainer.className = "giveup-options";
+		const optionsContainer = document.createElement("div")
+		optionsContainer.className = "giveup-options"
 	
 		// 「諦める」オプション（Escキーまたはクリックでゲーム終了）
-		const giveUpOption = document.createElement("div");
-		giveUpOption.className = "giveup-option giveup";
-		giveUpOption.textContent = /*"Esc: */"諦める";
+		const giveUpOption = document.createElement("div")
+		giveUpOption.className = "giveup-option giveup"
+		giveUpOption.textContent = /*"Esc: */"諦める"
 		giveUpOption.addEventListener("click", () => {
-			cleanup();
-			game.destroy();
-		});
+			cleanup()
+			game.destroy()
+		})
 	
 		// 「続ける」オプション（Enterキーまたはクリックでオーバーレイを閉じる）
-		const continueOption = document.createElement("div");
-		continueOption.className = "giveup-option continue";
-		continueOption.textContent = /*"Enter: */"続ける";
+		const continueOption = document.createElement("div")
+		continueOption.className = "giveup-option continue"
+		continueOption.textContent = /*"Enter: */"続ける"
 		continueOption.addEventListener("click", () => {
-			cleanup();
-		});
+			cleanup()
+		})
 	
 	
 		// 「中断」オプション（Enterキーまたはクリックでオーバーレイを閉じる）
-		const saveOption = document.createElement("div");
-		saveOption.className = "giveup-option save";
-		saveOption.textContent = /*"Enter: */"中断";
+		const saveOption = document.createElement("div")
+		saveOption.className = "giveup-option save"
+		saveOption.textContent = /*"Enter: */"中断"
 		saveOption.addEventListener("click", () => {
-			cleanup();
+			cleanup()
 			game.save()
-		});
+		})
 	
-		optionsContainer.appendChild(giveUpOption);
-		optionsContainer.appendChild(continueOption);
-		optionsContainer.appendChild(saveOption);
-		dialog.appendChild(optionsContainer);
-		overlay.appendChild(dialog);
-		document.body.appendChild(overlay);
+		optionsContainer.appendChild(giveUpOption)
+		optionsContainer.appendChild(continueOption)
+		optionsContainer.appendChild(saveOption)
+		dialog.appendChild(optionsContainer)
+		overlay.appendChild(dialog)
+		document.body.appendChild(overlay)
 	
 		// キーボード操作で選択可能にする
 		function onKeyDown(e) {
 			if (e.key === "Escape") {
-				e.preventDefault();
-				cleanup();
-				game.destroy();
+				e.preventDefault()
+				cleanup()
+				game.destroy()
 			} else if (e.key === "Enter") {
-				e.preventDefault();
-				cleanup();
+				e.preventDefault()
+				cleanup()
 			}
 		}
 		
 		// オーバーレイ解除処理
 		function cleanup() {
-			window.overlayActive = false;
-			//document.removeEventListener("keydown", onKeyDown);
-			overlay.remove();
+			window.overlayActive = false
+			//document.removeEventListener("keydown", onKeyDown)
+			overlay.remove()
 		}
 	
-		//document.addEventListener("keydown", onKeyDown);
+		//document.addEventListener("keydown", onKeyDown)
 	}
 }
 // InputManager クラス
@@ -609,57 +609,57 @@ class InputManager {
 	}
 	init() {
 		// 定数定義（必要に応じて調整）
-		const ARROW_KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+		const ARROW_KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']
 
 		// シフトキーのトグル状態を管理するためのヘルパー
 		function hasShiftToggled(game, newShiftState) {
 			// 直前のシフト状態と比較して変化があればtrueを返す
-			return newShiftState !== game.prevShiftState;
+			return newShiftState !== game.prevShiftState
 		}
 
 		// 矢印キーの押下数を返す関数
 		function getArrowKeyCount(keysDown) {
 			return Object.entries(keysDown)
 				.filter(([key, pressed]) => ARROW_KEYS.includes(key) && pressed)
-				.length;
+				.length
 		}
 		
 		document.addEventListener('keydown', (e) => {
 			// 既存のkeysDown更新
-			this.game.keysDown[e.key] = true;
-			const newShiftState = this.game.keysDown['Shift'];
+			this.game.keysDown[e.key] = true
+			const newShiftState = this.game.keysDown['Shift']
 
 			// シフトキーのトグルチェック（初回はundefinedと比較になるので、初期化しておく）
 			if (!document.querySelector(".shooting-prompt")) {
 				if (hasShiftToggled(this.game, newShiftState)) {
-					switchGrid(this.game.gameContainer, newShiftState);
+					switchGrid(this.game.gameContainer, newShiftState)
 					this.game.prevShiftState = newShiftState; // 最新の状態を保持
 				}
 			}
 			
-			let isSingleArrow = ARROW_KEYS.includes(e.key);
-			let arrowCount = getArrowKeyCount(this.game.keysDown);
-			let isDiagonalMove = newShiftState && arrowCount === 2;
-			let isRest = this.game.keysDown['.'];
+			let isSingleArrow = ARROW_KEYS.includes(e.key)
+			let arrowCount = getArrowKeyCount(this.game.keysDown)
+			let isDiagonalMove = newShiftState && arrowCount === 2
+			let isRest = this.game.keysDown['.']
 
-			const now = Date.now();
-			if (now - this.lastInputTime < this.inputInterval || !this.game.acceptingInput) return;
+			const now = Date.now()
+			if (now - this.lastInputTime < this.inputInterval || !this.game.acceptingInput) return
 
 			// 入力処理を実行すべきケース
 			if ((isSingleArrow && !newShiftState) || isDiagonalMove || isRest) {
-				this.lastInputTime = now;
+				this.lastInputTime = now
 			}
 			
 			this.game.processInput(e)	// 入力処理呼び出し
 		})
 		document.addEventListener('keyup', (e) => {
 			this.game.keysDown[e.key] = false
-			const newShiftState = this.game.keysDown['Shift'];
+			const newShiftState = this.game.keysDown['Shift']
 			
 			// シフトキーのトグルチェック（初回はundefinedと比較になるので、初期化しておく）
 			if (!document.querySelector(".shooting-prompt")) {
 				if (hasShiftToggled(this.game, newShiftState)) {
-					switchGrid(this.game.gameContainer, newShiftState);
+					switchGrid(this.game.gameContainer, newShiftState)
 					this.game.prevShiftState = newShiftState; // 最新の状態を保持
 				}
 			}
