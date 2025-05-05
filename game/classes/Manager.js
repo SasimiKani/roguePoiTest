@@ -347,6 +347,42 @@ class EffectsManager {
 	}
 
 	/**
+	 * 寝ている敵のエフェクト
+	 * 
+	 * @param {HTMLElement} container 
+	 * @param {Enemy} enemy 
+	 */
+	static showEnemySleepEffect(game, enemy) {
+		let {x, y} = game.player
+		if (!(Math.abs(enemy.x - x) <= 7 && Math.abs(enemy.y - y) <= 7 && enemy.isSleep)) {
+			return
+		}
+
+		if (!game.map.visible[enemy.y][enemy.x]) {
+			return
+		}
+
+		// 絵文字要素を作成
+		const el = document.createElement('div');
+		el.classList.add('sleep-effect');
+		el.textContent = '💤';
+
+		// 表示位置を計算
+		const rect = game.gameContainer.getBoundingClientRect()
+		const fontSize = CONFIG.FONT_SIZE + 5
+		const centerX = rect.left + window.scrollX + rect.width / 2 - (fontSize / 2) /*font-size*/
+		const centerY = rect.top + window.scrollY + rect.height / 2 - fontSize /*font-size*/
+		const dx = centerX + (enemy.x - game.player.x) * fontSize /* 敵の位置 */
+		const dy = centerY + (enemy.y - game.player.y) * fontSize /* 敵の位置 */
+
+		el.style.left = `${dx}px`;
+		el.style.top = `${dy}px`;
+
+		// コンテナに追加し、アニメーション終了後に削除
+		game.gameContainer.appendChild(el);
+	}
+
+	/**
 	 * フロアオーバーレイを表示する
 	 * @param {HTMLElement} container ゲーム画面のコンテナ要素
 	 * @param {number} floor 現在のフロア
@@ -877,7 +913,7 @@ class SEManager extends AudioManager {
 		// 止める
 		this.timeout = setTimeout(() => {
 			this.player.pause()
-			this.timeout =  null
+			this.timeout =	null
 		}, duration)
 	}
 

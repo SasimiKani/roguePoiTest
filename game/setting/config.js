@@ -42,6 +42,7 @@ const EntitySettingValues = {
             magic: 20,
             niku: 20,
             weapon: 20,
+            shield: 20,
             shooting: 20,
             box: 10
         }
@@ -56,6 +57,7 @@ const EntitySettingValues = {
             magic: 20,
             niku: 20,
             weapon: 20,
+            shield: 20,
             shooting: 15,
             box: 8
         }
@@ -71,6 +73,7 @@ const EntitySettingValues = {
             magic:    10,
             niku:     10,
             weapon:   10,
+            shield:   10,
             shooting: 10,
             box:      7 
         }
@@ -85,6 +88,7 @@ const EntitySettingValues = {
             magic:    10,
             niku:     10,
             weapon:   7,
+            shield:   7,
             shooting: 10,
             box:      5
         }
@@ -99,6 +103,7 @@ const EntitySettingValues = {
             magic:    10,
             niku:     10,
             weapon:   7,
+            shield:   7,
             shooting: 7,
             box:      3
         }

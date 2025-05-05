@@ -199,6 +199,26 @@ body {
 	border-radius: 4px;
 	z-index: 3000;
 }
+
+/* 敵のエフェクト */
+.sleep-effect {
+  position: fixed;
+  pointer-events: none;
+  font-size: 24px;             /* お好みで調整 */
+  transform: translate(0, 0);
+  animation: sleepFloat 1s ease-out forwards infinite;
+}
+@keyframes sleepFloat {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, -30px) scale(1.2);
+    opacity: 0;
+  }
+}
+
 /* 難易度 */
 #difficulty-container { border-bottom: 1px solid white; }
 /* ステータスバー */

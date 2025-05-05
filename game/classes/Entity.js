@@ -34,6 +34,7 @@ class Enemy extends BaseEntity {
 		this.exp = exp
 		this.action = 1
 		this.maxAction = 1
+		this.isSleep = !randomInt(0, 4) // 1/5くらいの確率で寝てる
 
 		/**
 		 * [{name, range, func, duration}, ...]
@@ -54,6 +55,7 @@ class Enemy extends BaseEntity {
 	}
 	takeDamage(damage) {
 		this.hp -= damage
+		if (this.isSleep) this.isSleep = false
 	}
 
 	// 通常攻撃
@@ -448,7 +450,7 @@ class MagicSpell extends InventoryItem {
 						if (Math.abs(enemy.x - game.player.x) <= this.area &&
 								Math.abs(enemy.y - game.player.y) <= this.area) {
 							const damage = options.damage + Math.round(game.player.attack * 0.5)
-							enemy.hp -= damage
+							enemy.takeDamage(damage)
 							EffectsManager.showEffect(game.gameContainer, game.player, enemy.x, enemy.y, `-${damage}`, "damage")
 							affected = SVGComponentTransferFunctionElement
 
@@ -668,6 +670,43 @@ class WeaponItem extends InventoryItem {
 		EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `装備解除-${weapon.bonus}`, "damage-me")
 	}
 }
+// ShieldItem クラス
+class ShieldItem extends InventoryItem {
+	constructor(x, y, name, tile, bonus) {
+		super(x, y, name, tile, async (game) => 
+			new Promise(resolve => {
+				if (game.player.shield === this) {
+					this.unEquip(game)
+				} else if (game.player.shield) {
+					this.unEquip(game, game.player.shield)
+					this.equip(game)
+				} else {
+					this.equip(game)
+				}
+				setTimeout(() => {
+					resolve("ok")
+				}, 400)
+			})
+		)
+		this.bonus = bonus
+	}
+	
+	equip(game, shield = this) {
+		game.seBox.playEquip()
+		game.message.add(`${this.name}を装備した`)
+		game.player.shield = shield
+		//game.player.attack += shield.bonus
+		EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `盾装備+${shield.bonus}`, "heal")
+	}
+	
+	unEquip(game, shield = this) {
+		game.seBox.playDisarm()
+		game.message.add(`${this.name}の装備を外した`)
+		//game.player.attack -= game.player.shield.bonus
+		game.player.shield = null
+		EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `装備解除-${shield.bonus}`, "damage-me")
+	}
+}
 // 遠距離射撃武器クラス
 class ShootingItem extends InventoryItem {
 	/**
@@ -807,7 +846,7 @@ class ShootingItem extends InventoryItem {
 		// もし射程内に直線上の敵が存在すればダメージを与える
 		if (hitEnemy) {
 			let damage = Math.round(this.damage + game.player.attack * 0.2)
-			hitEnemy.hp -= damage
+			hitEnemy.takeDamage(damage)
 			EffectsManager.showEffect(game.gameContainer, game.player, hitEnemy.x, hitEnemy.y, `-${damage}`, "damage")
 			game.message.add(`${hitEnemy.name}に${damage}ダメージ`)
 			

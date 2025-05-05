@@ -71,8 +71,16 @@ class Renderer {
 		const maxFloor = difficultySettings[CONFIG.DIFFICULTY].maxFloor
 		const brightness = 80 - ((this.game.floor - 1) / (maxFloor - 1)) * 60
 		document.body.style.backgroundColor = `hsl(0, 0%, ${brightness}%)`
+
+		// マップのレンダリング
 		this.renderMainView()
 		this.renderMinimap()
+
+		// 眠る敵のエフェクト表示
+		this.game.enemies.forEach(enemy => {
+			EffectsManager.showEnemySleepEffect(this.game, enemy)
+		})
+
 		document.getElementById('difficulty').innerText = CONFIG.DIFFICULTY
 		document.getElementById('hp').innerText = this.game.player.hp
 		document.getElementById('maxhp').innerText = this.game.player.maxHp

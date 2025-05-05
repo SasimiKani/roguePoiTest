@@ -514,7 +514,7 @@ class Game {
 		let occupied = new Set()
 		this.enemies.forEach(e => occupied.add(`${e.x},${e.y}`))
 		
-		this.enemies.forEach((enemy) => {
+		this.enemies.filter(enemy => !enemy.isSleep).forEach((enemy) => {
 			if (enemy.hp <= 0 || enemy.action === 0) return
 			
 			let dx = Math.abs(enemy.x - this.player.x)
@@ -602,7 +602,7 @@ class Game {
 		return new Promise(resolve => {
 			let chain = Promise.resolve()
 	
-			this.enemies.forEach(async (enemy) => {
+			this.enemies.filter(enemy => !enemy.isSleep).forEach(async (enemy) => {
 				// 逃げる敵は攻撃しない
 				if (enemy.searchAlgo == SearchAlgorithm.routeFlee) {
 					return
@@ -773,6 +773,7 @@ class Game {
 			...Array(sv.itemWeights.magic).fill("magic"),
 			...Array(sv.itemWeights.niku).fill("niku"),
 			...Array(sv.itemWeights.weapon).fill("weapon"),
+		//	...Array(sv.itemWeights.shield).fill("shield"),
 			...Array(sv.itemWeights.shooting).fill("shooting"),
 			...Array(sv.itemWeights.box).fill("box")
 		]
@@ -780,9 +781,8 @@ class Game {
 			const type = weightedTypes.splice(randomInt(0, weightedTypes.length - 1), 1)[0]
 			this.placeEntities(this.items, 1, type)
 		}
-		////console.log(JSON.stringify(this.enemies))
+		////console.log(this.enemies)
 		////console.log(this.items.map(e => e.tile))
-
 	}
 	// 敵やアイテムなどのエンティティをマップ上にランダム配置する処理です。
 	placeEntities(arr, count, type) {
@@ -865,6 +865,9 @@ class Game {
 					arr.push(new WeaponItem(x, y, `武器-強い剣 (+${bonus})`, '⚔️', bonus))
 					break
 				}
+			} else if (type === "shield") {
+				let bonus = randomInt(1, 3)
+				arr.push(new ShieldItem(x, y, `盾 (+${bonus})`, '🛡️', bonus))
 			} else if (type === "shooting") {
 				//// 射撃武器
 				arr.push(new ShootingItem(x, y, "射撃-弓矢", '🏹', /* 数 */ 5, /* ダメージ */ 10, /* 距離 */ 8, "↑"))
