@@ -1,1 +1,8 @@
 sampleMovie
+
+lib/net/cdn.jsdelivr/npm/acorn-walk@8.3.4/+esm
+lib/net/cdn.jsdelivr/npm/acorn@8.14.1/+esm
+lib/net/cdn.jsdelivr/npm/acorn@8.14.1/dist/acorn.min.js
+
+game/classes/classes.json
+game/classes/outputClassesJson.js
