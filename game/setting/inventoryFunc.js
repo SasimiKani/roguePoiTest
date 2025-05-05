@@ -345,7 +345,6 @@ function inventoryBoxX(box, e) {
             const item = box.removeItem(box.selectionIndex)
             item.x = box.game.player.x
             item.y = box.game.player.y
-            box.game.items.push(item)
             if (box.selectionIndex >= box.contents.length) {
                 box.selectionIndex = Math.max(0, box.contents.length - 1)
             }
