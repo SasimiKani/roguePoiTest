@@ -38,7 +38,7 @@ class Game {
 		this.width = CONFIG.WIDTH
 		this.height = CONFIG.HEIGHT
 		this.map = new DungeonMap(this.width, this.height)
-		this.gameContainer = document.getElementById("game")
+		this.gameContainer = document.getElementById("main-view")
 		this.minimapContainer = document.getElementById("minimap")
 
 		// ------------------------------
@@ -1012,7 +1012,7 @@ class Game {
 
 	/* 10. ロード */
 	load() {
-		this.gameContainer = document.getElementById("game")
+		this.gameContainer = document.getElementById("main-view")
 		this.minimapContainer = document.getElementById("minimap")
 
 		document.getElementById("restCycle").innerText = CONFIG.REST_CYCLE

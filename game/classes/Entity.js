@@ -55,7 +55,10 @@ class Enemy extends BaseEntity {
 	}
 	takeDamage(damage) {
 		this.hp -= damage
-		if (this.isSleep) this.isSleep = false
+		if (this.isSleep) {
+			this.isSleep = false
+			this.sleepEffect.remove()
+		}
 	}
 
 	// 通常攻撃

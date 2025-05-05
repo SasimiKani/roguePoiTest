@@ -246,7 +246,7 @@ p { font-size: 14px; line-height: 1.4; margin-bottom: 8px; }
 .inventory-modal {
 	font-size: 0.7em;
 	position: absolute;
-	top: 10%;
+	top: 15%;
 	left: 5%;
 	width: 90%;
 	background: rgba(0, 0, 0, 0.9);
@@ -430,7 +430,7 @@ body.deep-dungeon { background-color: #000; }
 .box-overlay {
 	font-size: 0.7em;
 	position: absolute;
-	top: 10%;
+	top: 15%;
 	left: 5%;
 	width: 90%;
 	max-height: 60vh;

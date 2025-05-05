@@ -1,7 +1,7 @@
 // DifficultySelector クラス（修正版）
 class DifficultySelector {
 	constructor(myIcon="😊") {
-		this.gameContainer = document.getElementById("game")
+		this.gameContainer = document.getElementById("main-view")
 		this.message = new MessageManager(this, 2)
 		
 		this.gridWidth = 15

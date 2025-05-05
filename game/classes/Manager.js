@@ -362,10 +362,16 @@ class EffectsManager {
 			return
 		}
 
-		// 絵文字要素を作成
-		const el = document.createElement('div');
-		el.classList.add('sleep-effect');
-		el.textContent = '💤';
+		// エフェクトまだついていないなら
+		if (!enemy?.sleepEffect) {
+			// 絵文字要素を作成
+			enemy.sleepEffect = document.createElement('div');
+			enemy.sleepEffect.classList.add('sleep-effect');
+			enemy.sleepEffect.textContent = '💤';
+
+			// コンテナに追加
+			document.getElementById("game").appendChild(enemy.sleepEffect);
+		}
 
 		// 表示位置を計算
 		const rect = game.gameContainer.getBoundingClientRect()
@@ -375,11 +381,8 @@ class EffectsManager {
 		const dx = centerX + (enemy.x - game.player.x) * fontSize /* 敵の位置 */
 		const dy = centerY + (enemy.y - game.player.y) * fontSize /* 敵の位置 */
 
-		el.style.left = `${dx}px`;
-		el.style.top = `${dy}px`;
-
-		// コンテナに追加し、アニメーション終了後に削除
-		game.gameContainer.appendChild(el);
+		enemy.sleepEffect.style.left = `${dx}px`;
+		enemy.sleepEffect.style.top = `${dy}px`;
 	}
 
 	/**
