@@ -10,8 +10,8 @@ class DungeonMap {
 	}
 	reset() {
 		this.grid = Array.from({ length: this.height }, () => Array(this.width).fill(MAP_TILE.WALL))
-		//this.visible = Array.from({ length: this.height }, () => Array(this.width).fill(false))
-		this.visible = Array.from({ length: this.height }, () => Array(this.width).fill(true)) // デバッグ用
+		this.visible = Array.from({ length: this.height }, () => Array(this.width).fill(false))
+		//this.visible = Array.from({ length: this.height }, () => Array(this.width).fill(true)) // デバッグ用
 		this.rooms = []
 	}
 	createRoom() {
