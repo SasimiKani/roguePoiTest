@@ -102,55 +102,55 @@ class Renderer {
 		
 			// コマンド表示用の配列（インベントリ側）
 			let invCommands = []
+			// コマンド表示用の配列（足元側）
+			let grdCommands = []
 			
 			// 選択中のアイテム
 			let selectedItem = this.game.player.inventory[this.game.inventorySelection]
 			
 			if (this.game.boxSelected) {
 				if (selectedItem === this.game.boxSelected) {
-					// 選択中の箱が選択されている場合は「I: 入れる」を表示
-					invCommands.push("I: キャンセル")
+					// 選択中の箱が選択されている場合は「I     : 入れる」を表示
+					invCommands.push("I     : キャンセル")
 				} else {
-					// 箱が選択されている場合は「I: 入れる」を表示
-					invCommands.push("I: 入れる")
+					// 箱が選択されている場合は「I     : 入れる」を表示
+					invCommands.push("I     : 入れる")
 				}
 			}
 			
 			// クラスごとのコマンド
 			if (selectedItem instanceof BoxItem && !this.game.boxSelected) {
 				// 箱の場合は「」を表示
-				invCommands.push("I: 箱に入れる")
-				invCommands.push("U: 見る")
+				invCommands.push("I     : 箱に入れる")
+				invCommands.push("U     : 見る")
 			}
 			else if (selectedItem instanceof MagicSpell) {
 				// 魔法の場合は「」を表示
-				invCommands.push("U: 唱える")
+				invCommands.push("U     : 唱える")
 			}
 			else if (selectedItem instanceof WeaponItem) {
 				// 武器の場合の場合は「」を表示
 				if (this.game.player.weapon === selectedItem) {
-					invCommands.push("U: 外す")
+					invCommands.push("U     : 外す")
 				} else {
-					invCommands.push("U: 装備")
+					invCommands.push("U     : 装備")
 				}
 			}
 			else {
-				invCommands.push("U: 使う")
+				invCommands.push("U     : 使う")
 			}
 			
 			if (this.game.groundItem) {
-				invCommands.push("X: 交換")
+				invCommands.push("X     : 交換")
 			} else {
-				invCommands.push("D: 置く")
+				invCommands.push("D     : 置く")
 			}
 			
 			// それ以外の基本コマンド
-			invCommands.push("T: 投げる")
-			invCommands.push("ESC/E: 閉じる")
-			invCommands.push("Y: 整理")
-		
-			invHtml += `<p>（${invCommands.join(", ")}）</p>`
-		
+			invCommands.push("T     : 投げる")
+			invCommands.push("E/ESC : 閉じる")
+			invCommands.push("Y     : 整理")
+
 			// 足元アイテムの表示
 			if (this.game.groundItem) {
 				invHtml += `<hr>`
@@ -161,30 +161,41 @@ class Renderer {
 				invHtml += `<li class="${(index === this.game.inventorySelection) ? 'selected' : ''}">${selected}${this.game.groundItem.tile} ${this.game.groundItem.tile === '🔼' ? "階段" : this.game.groundItem.name}</li>`
 				invHtml += `</ul>`
 				// コマンド表示用の配列（足元）
-				let grdCommands = []
 				if (this.game.groundItem.tile === '🔼') {
-					grdCommands.push("U: 降りる")
+					grdCommands.push("U : 降りる")
 				} else {
 					if (this.game.player.inventory.length < CONFIG.INVENTORY_MAX) {
-						grdCommands.push("P: 拾う")
+						grdCommands.push("P : 拾う")
 					}
 					
 					// クラスごとのコマンド
 					if (this.game.groundItem instanceof MagicSpell) {
 						// 魔法の場合は「」を表示
-						grdCommands.push("U: 唱える")
+						grdCommands.push("U : 唱える")
 					}
 					else if (this.game.groundItem instanceof WeaponItem) {
-						grdCommands.push("U: 装備")
+						grdCommands.push("U : 装備")
 					}
 					else {
-						grdCommands.push("U: 使う")
+						grdCommands.push("U : 使う")
 					}
 				}
-				invHtml += `<p>（${grdCommands.join(", ")}）</p>`
+			}
+			
+			if (!!this.game.player.inventory[this.game.inventorySelection]) {
+				invHtml += `<p class="inventory-modal commands">${invCommands.join("\n")}</p>`
+			} else {
+				invHtml += `<p class="inventory-modal commands">${grdCommands.join("\n")}</p>`
 			}
 			invHtml += `</div>`
 			this.game.gameContainer.innerHTML += invHtml
+		}
+
+		if (this.game.boxOverlayActive) {
+			const openBox = this.game.player.inventory.filter(item => item?.isOpen)[0]
+			openBox.game.gameContainer.appendChild(openBox.overlay)
+			// オーバーレイ内のリストを描画
+			openBox.renderList()
 		}
 	}
 	// プレイヤーのHPや満腹度などのステータスバーを更新します。

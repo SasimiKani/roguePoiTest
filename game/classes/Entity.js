@@ -344,7 +344,9 @@ class BoxItem extends InventoryItem {
 	
 		// 操作方法の説明
 		this.instructions = document.createElement("p")
-		this.instructions.textContent = "↑/↓: 選択	D: 出す	U: 使う	X: 置く	Esc: 閉じる"
+		this.instructions.classList.add("commands")
+		this.instructions.classList.add("inventory-modal")
+		this.instructions.innerHTML = "↑/↓: 選択\nD: 出す\nU: 使う\nX: 置く\nEsc: 閉じる"
 		this.overlay.appendChild(this.instructions)
 	}
 	
@@ -374,12 +376,8 @@ class BoxItem extends InventoryItem {
 	// ・使う：箱内のアイテムを使用する。
 	// ・置く：箱内のアイテムを取り出して地面に配置する。
 	openBox() {
+		this.isOpen = true
 		this.selectionIndex = 0; // 現在選択中の箱内アイテムのインデックス
-		
-		document.body.appendChild(this.overlay)
-	
-		// オーバーレイ内のリストを描画
-		this.renderList()
 		
 		// bind して Game インスタンスの game を保持
 		this.boundOnKeyDown = this.onKeyDown.bind(this)
@@ -411,6 +409,7 @@ class BoxItem extends InventoryItem {
 		this.updateName()
 		this.game.boxSelected = null
 		// オーバーレイ終了後、ゲームの再描画
+		this.isOpen = false
 		this.game.renderer.render()
 	}
 
