@@ -281,7 +281,7 @@ class HealItem extends InventoryItem {
 			game.player.hp += this.healAmount
 			if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp
 			EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${this.healAmount}`, "heal")
-			game.message.add(`${name}を食べて${this.healAmount}ポイント回復`)
+			game.message.add(`${this.name}を食べて${this.healAmount}ポイント回復`)
 
 			game.player.hunger += this.stuffAmount // 食事ボーナス
 			if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
@@ -302,7 +302,7 @@ class FoodItem extends InventoryItem {
 			game.player.hunger += this.stuffAmount
 			if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
 			EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${this.stuffAmount}`, "food")
-			game.message.add(`${name}を食べて少しお腹がふくれた`)
+			game.message.add(`${this.name}を食べて少しお腹がふくれた`)
 			
 			await game.timeoutSync(()=>{}, 400)
 		})
