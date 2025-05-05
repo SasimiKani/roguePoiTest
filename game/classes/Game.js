@@ -94,7 +94,7 @@ class Game {
 		// this.player.inventory.push(new BoxItem(0, 0))
 		// this.player.inventory.push(new WeaponItem(0, 0, "伝説の剣", '⚔️', 1000))
 		// this.player.inventory.push(new ShootingItem(0, 0, "射撃-弓矢", '🏹', 5, 10, 8, "↑"))
-		// this.player.inventory.push(new MagicSpell(0, 0, "炎", "🔥", "🔥", {damage: 20, player: this.player, area: 1, fallbackHeal: null}))
+		// this.player.inventory.push(new MagicFireball(0, 0))
 		
 		EffectsManager.showFloorOverlay(this.gameContainer, this.floor)
 		
@@ -1096,6 +1096,14 @@ class Game {
 				e[k] = v
 			})
 			return e
+		})
+		this.items.concat(this.player.inventory).forEach(entity => {
+			if (entity.constructor.name === "BoxItem") {
+				entity.contents = entity.contents.map(content => {
+					const e = new (eval(content.constructor.name))()
+					return e
+				})
+			}
 		})
 
 		////console.log(this.enemies)
