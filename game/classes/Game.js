@@ -715,6 +715,12 @@ class Game {
 	/* 5. ダンジョン生成・レベル管理 */
 	// 新しいダンジョン（または階層）の生成を行い、プレイヤー位置、エンティティ配置、階段設定などを更新します。
 	generateDungeon(keepHP = false) {
+		// 睡眠エフェクトを削除
+		this.enemies.forEach(enemy => {
+			enemy.sleepEffect?.remove()
+			delete(enemy.sleepEffect)
+		})
+
 		const prevHP = this.player.hp
 		const prevScore = this.score
 		this.map.generate()
@@ -987,6 +993,11 @@ class Game {
 		// フィールドエフェクトを削除
 		Array.from(document.querySelectorAll(".field-effects")).forEach(e => {
 			e.remove()
+		})
+		// 睡眠エフェクトを削除
+		this.enemies.forEach(enemy => {
+			enemy.sleepEffect?.remove()
+			delete(enemy.sleepEffect)
 		})
 
 		// BGMを停止

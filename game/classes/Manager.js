@@ -355,13 +355,18 @@ class EffectsManager {
 	static showEnemySleepEffect(game, enemy) {
 		let {x, y} = game.player
 		if (!(Math.abs(enemy.x - x) <= 7 && Math.abs(enemy.y - y) <= 7 && enemy.isSleep)) {
+			enemy.sleepEffect?.remove()
+			delete(enemy.sleepEffect)
 			return
 		}
 
 		if (!game.map.visible[enemy.y][enemy.x]) {
+			enemy.sleepEffect?.remove()
+			delete(enemy.sleepEffect)
 			return
 		}
 
+		console.log(enemy?.sleepEffect)
 		// エフェクトまだついていないなら
 		if (!enemy?.sleepEffect) {
 			// 絵文字要素を作成
@@ -681,8 +686,8 @@ class MessageManager {
 		this.message.style.height = `calc(${3 * this.maxLine}ex + 1.0ex)`
 		const box = window.getComputedStyle(this.message)
 		
-		let top = rect.top									// ゲーム画面の上辺
-				+ CONFIG.FONT_SIZE * (CONFIG.VIEW_RADIUS + 1) * 2	// - ゲーム画面の縦幅
+		let top = rect.top + rect.height / 2								// ゲーム画面の上辺
+				+ CONFIG.FONT_SIZE * (CONFIG.VIEW_RADIUS + 1)	// - ゲーム画面の縦幅
 				- box.height.replace("px", "") / 2			// - メッセージボックスの高さの半分
 		let left = rect.left								// ゲーム画面の左端
 				+ rect.width / 2							// + ゲーム画面の幅の半分
