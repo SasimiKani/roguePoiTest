@@ -686,9 +686,10 @@ class Game {
 		else
 			EffectsManager.showAttackMotionNoWeapon(this.gameContainer, hor, ver)
 		
-		enemy.takeDamage(this.player.attack)
-		EffectsManager.showEffect(this.gameContainer, this.player, enemy.x, enemy.y, `-${this.player.attack}`, "damage")
-		this.message.add(`${enemy.name}に${this.player.attack}ダメージ`)
+		let damage = calcDamage(this.player.attack, enemy.def)
+		enemy.takeDamage(damage)
+		EffectsManager.showEffect(this.gameContainer, this.player, enemy.x, enemy.y, `-${damage}`, "damage")
+		this.message.add(`${enemy.name}に${damage}ダメージ`)
 		this.seBox.playDamage()
 		// # MESSAGE
 		this.actionCount++
@@ -912,8 +913,9 @@ class Game {
 			chain = chain.then(async () =>
 				new Promise(resolve => {
 					this.timeoutSync(async () => {
-						let upAtk, upHp
+						let upAtk, upDef, upHp
 						this.player.attack += (upAtk = randomInt(1, 2))
+						this.player.defense += (upDef = randomInt(1, 2))
 						this.player.maxHp += (upHp = randomInt(2, 3))
 						this.player.healAmount++
 						this.player.hp = this.player.maxHp
@@ -926,12 +928,17 @@ class Game {
 						await this.timeoutSync(() => {
 							EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `HP +${upHp}`, "heal")
 							this.message.add(`HP +${upHp}`)
-						}, 600)
+						}, 500)
 						// # MESSAGE
 						await this.timeoutSync(() => {
 							EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `攻撃力 +${upAtk}`, "heal")
 							this.message.add(`攻撃力 +${upAtk}`)
-						}, 600)
+						}, 500)
+						// # MESSAGE
+						await this.timeoutSync(() => {
+							EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `防御力 +${upDef}`, "heal")
+							this.message.add(`攻撃力 +${upDef}`)
+						}, 500)
 						// # MESSAGE
 						resolve("ok")
 					}, 300)

@@ -85,6 +85,7 @@ class Renderer {
 		document.getElementById('hp').innerText = this.game.player.hp
 		document.getElementById('maxhp').innerText = this.game.player.maxHp
 		document.getElementById('atk').innerText = this.game.player.attack
+		document.getElementById('def').innerText = this.game.player.defense
 		document.getElementById('lv').innerText = this.game.player.level
 		document.getElementById('exp').innerText = this.game.player.exp
 		document.getElementById('floor').innerText = this.game.floor

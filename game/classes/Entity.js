@@ -13,6 +13,7 @@ class Player extends BaseEntity {
 		this.hp = initialHP
 		this.maxHp = initialHP
 		this.attack = 2
+		this.defense = 1
 		this.healAmount = 3
 		this.level = 1
 		this.exp = 0
@@ -26,11 +27,12 @@ class Player extends BaseEntity {
 // Base Enemy クラス
 class Enemy extends BaseEntity {
 
-	constructor(name, x, y, hp, exp, atk = 1, tile = '👾') {
+	constructor(name, x, y, hp, exp, atk = 1, def = 0, tile = '👾') {
 		super(x, y, tile)
 		this.name = name
 		this.hp = hp
 		this.atk = atk
+		this.def = def
 		this.exp = exp
 		this.action = 1
 		this.maxAction = 1
@@ -63,10 +65,11 @@ class Enemy extends BaseEntity {
 
 	// 通常攻撃
 	async attack(game) {
-		game.player.hp -= this.atk
+		let damage = calcDamage(this.atk, game.player.defense)
+		game.player.hp -= damage
 		if (game.player.hp < 0) game.player.hp = 0
-		EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `-${this.atk}`, "damage-me")
-		game.message.add(`${this.name}の攻撃　${this.atk}ダメージ`)
+		EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `-${damage}`, "damage-me")
+		game.message.add(`${this.name}の攻撃　${damage}ダメージ`)
 		game.seBox.playDamageMe()
 
 		await game.timeoutSync(()=>{}, 400)
@@ -111,162 +114,167 @@ class Enemy extends BaseEntity {
 }
 
 // 敵クラス群
-
 class EnemyLarvae extends Enemy {
 	constructor(x, y, hp) {
-		super("イモムシ", x, y, hp, 5, 1, '🐛')
+		// フロア1相当：atk=3, def=1
+		super("イモムシ", x, y, hp, 5, 3, 1, '🐛')
 	}
 }
 
 class EnemyAnt extends Enemy {
 	constructor(x, y, hp) {
-		super("アリ", x, y, hp + 2, 6, 2, '🐜')
-	}
-}
-
-class EnemyCrayfish extends Enemy {
-	constructor(x, y, hp) {
-		super("ザリガニ", x, y, hp + 3, 8, 3, '🦞')
-	}
-}
-
-class EnemyCrab extends Enemy {
-	constructor(x, y, hp) {
-		super("カニ", x, y, hp + 30, 100, 1, '🦀')
-		this.searchAlgo = (game, startX, startY, targetX, targetY) => SearchAlgorithm.routeFlee(game, startX, startY, targetX, targetY)
-		this.action = this.maxAction = 2 // ニ回行動
+		// フロア2相当：atk=6, def=2
+		super("アリ", x, y, hp + 2, 6, 6, 2, '🐜')
 	}
 }
 
 class EnemyFish extends Enemy {
 	constructor(x, y, hp) {
-		super("フィッシュ", x, y, hp, 6, 1, '🐟️')
+		// フロア3相当：atk=7, def=2
+		super("フィッシュ", x, y, hp, 6, 4, 1, '🐟️')
+	}
+}
+
+class EnemyCrab extends Enemy {
+	constructor(x, y, hp) {
+		// フロア8相当（ミニボス級・逃走タイプ）：atk=5, def=14
+		super("カニ", x, y, hp + 30, 100, 5, 14, '🦀')
+		this.searchAlgo = (game, startX, startY, targetX, targetY) =>
+			SearchAlgorithm.routeFlee(game, startX, startY, targetX, targetY)
+		this.action = this.maxAction = 2; // 二回行動
+	}
+}
+
+class EnemyCrayfish extends Enemy {
+	constructor(x, y, hp) {
+		// フロア4相当：atk=9, def=4
+		super("ザリガニ", x, y, hp + 3, 8, 9, 4, '🦞')
 	}
 }
 
 class EnemyTropicalfish extends Enemy {
 	constructor(x, y, hp) {
-		super("トロピカフィッシュ", x, y, hp + 7, 10, 1, '🐠')
-		this.searchAlgo = (game, startX, startY, targetX, targetY) => SearchAlgorithm.randomRoute(game, startX, startY, targetX, targetY)
+		// フロア5相当：atk=10, def=4
+		super("トロピカフィッシュ", x, y, hp + 7, 10, 7, 3, '🐠')
+		this.searchAlgo = (game, sx, sy, tx, ty) =>
+			SearchAlgorithm.randomRoute(game, sx, sy, tx, ty)
 	}
 }
 
 class EnemyHarisenbon extends Enemy {
 	constructor(x, y, hp) {
-		super("ハリセンボン", x, y, hp + 15, 18, 3, '🐡')
+		// フロア8相当：atk=16, def=9
+		super("ハリセンボン", x, y, hp + 15, 18, 10, 5, '🐡')
 	}
 }
 
 class EnemyShark extends Enemy {
 	constructor(x, y, hp) {
-		super("シャーク", x, y, hp + 20, 35, 6, '🦈')
-		this.action = this.maxAction = 2 // ニ回行動
+		// フロア11相当：atk=22, def=16
+		super("シャーク", x, y, hp + 20, 35, 22, 16, '🦈')
+		this.action = this.maxAction = 2
 	}
 }
 
 class EnemySlime extends Enemy {
 	constructor(x, y, hp) {
-		super("スライム", x, y, hp + 5, 7, 1, '🟩')
-		this.skills = [
-			Skill.actionPurupuru(this)
-		]
+		// フロア2相当：atk=6, def=2
+		super("スライム", x, y, hp + 5, 7, 6, 2, '🟩')
 	}
-	//takeDamage(damage) {
-	//	super.takeDamage(damage)
-	//	if (this.hp > 0) { this.hp += this.regenerationRate; }
-	//}
 }
 
 class EnemyBat extends Enemy {
 	constructor(x, y, hp) {
-		super("コウモリ", x, y, hp, 10, 2, '🦇')
-		this.searchAlgo = (game, startX, startY, targetX, targetY) => SearchAlgorithm.randomRoute(game, startX, startY, targetX, targetY)
+		// フロア4相当：atk=9, def=4
+		super("コウモリ", x, y, hp, 10, 9, 4, '🦇')
 	}
 }
 
 class EnemyGoblin extends Enemy {
 	constructor(x, y, hp) {
-		super("ゴブリン", x, y, hp + 8, 16, 4, '👹')
+		// フロア6相当：atk=13, def=7
+		super("ゴブリン", x, y, hp + 8, 16, 13, 7, '👹')
 	}
 }
 
 class EnemySkeleton extends Enemy {
 	constructor(x, y, hp) {
-		super("スケルトン", x, y, hp + 10, 19, 4, '💀')
+		// フロア6相当：atk=13, def=7
+		super("スケルトン", x, y, hp + 10, 19, 13, 7, '💀')
 	}
 }
 
 class EnemySpider extends Enemy {
 	constructor(x, y, hp) {
-		super("クモ", x, y, hp + 8, 18, 3, '🕷️')
+		// フロア7相当：atk=14, def=6
+		super("クモ", x, y, hp + 8, 18, 14, 6, '🕷️')
 	}
 }
 
 class EnemyWizard extends Enemy {
 	constructor(x, y, hp) {
-		super("ウィザード", x, y, hp + 12, 25, 2, '🧙')
+		// フロア10相当：atk=20, def=14
+		super("ウィザード", x, y, hp + 12, 25, 20, 14, '🧙')
 		this.magicAtk = 8
-		this.skills = [
-			Skill.offensiveMagic(this)
-		]
+		this.skills = [ Skill.offensiveMagic(this) ]
 	}
 }
 
 class EnemyDragon extends Enemy {
 	constructor(x, y, hp) {
-		super("ドラゴン", x, y, hp + 30, 50, 10, '🐉')
-		this.magicDamage = 2
-		this.action = this.maxAction = 2 // ニ回行動
+		// フロア15相当：atk=29, def=26
+		super("ドラゴン", x, y, hp + 30, 50, 29, 26, '🐉')
 		this.breathAtk = 7
-		this.skills = [
-			Skill.offensiveBreath(this)
-		]
+		this.action = this.maxAction = 2
+		this.skills = [ Skill.offensiveBreath(this) ]
 	}
 }
+
 class EnemyRat extends Enemy {
 	constructor(x, y, hp) {
-		// 小型で素早いが、攻撃力は低め
-		super("ラット", x, y, hp, 3, 2, '🐀')
+		// フロア3相当：atk=7, def=2
+		super("ラット", x, y, hp, 3, 7, 2, '🐀')
 	}
 }
 
 class EnemyZombie extends Enemy {
 	constructor(x, y, hp) {
-		// ゆっくり動くが、hpに余裕を持たせた敵
-		super("ゾンビ", x, y, hp + 4, 5, 1, '🧟')
+		// フロア9相当：atk=17, def=10
+		super("ゾンビ", x, y, hp + 4, 5, 17, 10, '🧟')
 	}
 }
 
 class EnemyVampire extends Enemy {
 	constructor(x, y, hp) {
-		// 中～高レベル向け。hpと攻撃力が上昇し、ダメージ吸収（吸血）効果を追加
-		super("バンパイア", x, y, hp + 8, 12, 3, '🧛')
+		// フロア12相当：atk=23, def=17
+		super("バンパイア", x, y, hp + 8, 12, 23, 17, '🧛')
 	}
-	// ダメージを受けた際、一定割合のhpを回復する（吸血効果）
 	takeDamage(damage) {
 		super.takeDamage(damage)
-		if (this.hp > 0) { this.hp += Math.floor(damage * 0.3); }
+		if (this.hp > 0) {
+			this.hp += Math.floor(damage * 0.3)
+		}
 	}
 }
 
 class EnemyOgre extends Enemy {
 	constructor(x, y, hp) {
-		// 高いhpと攻撃力を持つが、行動数や移動速度は低め
-		super("オーガ", x, y, hp + 20, 22, 1, '🧌')
+		// フロア14相当：atk=26, def=20
+		super("オーガ", x, y, hp + 20, 22, 26, 20, '🧌')
 	}
 }
 
 class EnemyGhost extends Enemy {
 	constructor(x, y, hp) {
-		// 高速で動くが、耐久性は低い。後に壁通過や透明化の特殊効果を実装することも可能
-		super("ゴースト", x, y, hp, 15, 4, '👻')
+		// フロア13相当：atk=24, def=18
+		super("ゴースト", x, y, hp, 15, 24, 18, '👻')
 	}
 }
 
 class EnemyElemental extends Enemy {
 	constructor(x, y, hp) {
-		// 高難易度用。魔法耐性や特殊な魔法攻撃を加えることで、戦略を要する敵に
-		super("エレメンタル", x, y, hp + 15, 30, 3, '🔥')
+		// フロア16相当：atk=30, def=28
+		super("エレメンタル", x, y, hp + 15, 30, 30, 28, '🔥')
 		this.magicResistance = 5
 	}
 }
@@ -848,7 +856,7 @@ class ShootingItem extends InventoryItem {
 		
 		// もし射程内に直線上の敵が存在すればダメージを与える
 		if (hitEnemy) {
-			let damage = Math.round(this.damage + game.player.attack * 0.2)
+			let damage = calcDamage(Math.round(this.damage + game.player.attack * 0.2), hitEnemy.def)
 			hitEnemy.takeDamage(damage)
 			EffectsManager.showEffect(game.gameContainer, game.player, hitEnemy.x, hitEnemy.y, `-${damage}`, "damage")
 			game.message.add(`${hitEnemy.name}に${damage}ダメージ`)
@@ -904,9 +912,9 @@ class ShootingItem extends InventoryItem {
 						dropY,
 						this.originalName,
 						this.tile,
-						1,              // stack: 1 個だけ
-						this.damage,    // ダメージはそのまま
-						this.range,     // 射程もそのまま（拾って再利用できる）
+						1,							// stack: 1 個だけ
+						this.damage,		// ダメージはそのまま
+						this.range,		 // 射程もそのまま（拾って再利用できる）
 						this.projectileEmoji,
 						this.isThrow
 					)

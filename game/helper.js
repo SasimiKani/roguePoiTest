@@ -158,3 +158,9 @@ function findDropPosition(startX, startY, game, radius = 0) {
 	// 見つからなければ半径を 1 増やして再帰
 	return findDropPosition(startX, startY, game, radius + 1)
 }
+
+// 与ダメージ計算関数
+function calcDamage(attack, defense) {
+	const dmg = Math.floor((attack * attack) / (attack + defense))
+	return Math.max(1, dmg)
+}
