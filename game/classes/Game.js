@@ -794,7 +794,7 @@ class Game {
 	// 敵やアイテムなどのエンティティをマップ上にランダム配置する処理です。
 	placeEntities(arr, count, type) {
 		for (let i = 0; i < count; i++) {
-			let x, y, hp
+			let x, y, hp, exp
 			do {
 				const room = this.map.rooms[randomInt(0, this.map.rooms.length - 1)]
 				x = randomInt(room.x + 1, room.x + room.w - 2)
@@ -810,6 +810,10 @@ class Game {
 					}
 					
 					hp = randomInt(
+						Math.round(Math.pow((this.floor + 1) / 2, this.minMagnification)),
+						Math.round(Math.pow((this.floor + 1) / 2, this.maxMagnification))
+					)
+					exp = randomInt(
 						Math.round(Math.pow((this.floor + 1) / 2, this.minMagnification)),
 						Math.round(Math.pow((this.floor + 1) / 2, this.maxMagnification))
 					)
@@ -886,7 +890,7 @@ class Game {
 			} else if (type === "enemy") {
 				const enemys = enemyList(this.floor, CONFIG.DIFFICULTY)
 				const EnemyClass = enemys[randomInt(0, enemys.length - 1)]
-				arr.push(new EnemyClass(x, y, hp))
+				arr.push(new EnemyClass(x, y, hp, exp))
 			} else if (type === "food") {
 				if (Math.random() > 0.7) {
 					arr.push(new FoodItem(x, y, "パン", '🥖', 20))

@@ -36,9 +36,9 @@ const MAP_TILE = {
 /** エンティティの設定 */
 const EntitySettingValues = {
     easy: {
-        enemy: {min: 2, max: 4},
+        enemy: {min: 1, max: 3},
         entity: {min: 1, max: 2},
-        maxItems: {min: 3, max: 5},
+        maxItems: {min: 2, max: 3},
         itemWeights: {
             food: 40,
             sushi: 40,
@@ -47,13 +47,13 @@ const EntitySettingValues = {
             weapon: 20,
             shield: 20,
             shooting: 20,
-            box: 10
+            box: 0
         }
     },
     normal: {
-        enemy: {min: 2, max: 4},
+        enemy: {min: 1, max: 3},
         entity: {min: 1, max: 2},
-        maxItems: {min: 3, max: 4},
+        maxItems: {min: 2, max: 3},
         itemWeights: {
             food: 40,
             sushi: 40,
@@ -62,14 +62,14 @@ const EntitySettingValues = {
             weapon: 20,
             shield: 20,
             shooting: 15,
-            box: 8
+            box: 0
         }
     },
     normalPlus: {
         enemy:    {min: 2, max: 4},
         entity:   {min: 1, max: 2},
         // ↓ 出現アイテム数を 1～3 に絞る
-        maxItems: {min: 2, max: 4},
+        maxItems: {min: 2, max: 3},
         itemWeights: {
             food:     35,
             sushi:    20,
@@ -78,13 +78,13 @@ const EntitySettingValues = {
             weapon:   10,
             shield:   10,
             shooting: 10,
-            box:      7 
+            box:      3
         }
     },
     hard: {
-        enemy: {min: 2, max: 4},
+        enemy: {min: 1, max: 3},
         entity: {min: 1, max: 2},
-        maxItems: {min: 2, max: 4},
+        maxItems: {min: 2, max: 3},
         itemWeights: {
             food:     27,
             sushi:    20,
@@ -93,13 +93,13 @@ const EntitySettingValues = {
             weapon:   7,
             shield:   7,
             shooting: 10,
-            box:      5
+            box:      3
         }
     },
     hardPlus: {
-        enemy: {min: 2, max: 4},
+        enemy: {min: 1, max: 3},
         entity: {min: 1, max: 2},
-        maxItems: {min: 2, max: 4},
+        maxItems: {min: 2, max: 3},
         itemWeights: {
             food:     20,
             sushi:    20,

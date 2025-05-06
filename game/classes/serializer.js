@@ -43,7 +43,7 @@
     // --- retrocycle: Crockford’s eval版で $ref を元に戻す ---
     function retrocycle(obj) {
         const $ = obj
-        const px = /^\$(?:\[(?:\d+|"(?:[^"\\]|\\.)*")\])*$/
+        const px = /^\$(?:\[(?:\d+|"(?:[^"\\]|\\.)*")\])*$/;
         (function rez(value) {
             if (value && typeof value === 'object') {
                 Object.keys(value).forEach(name => {
