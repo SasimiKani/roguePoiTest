@@ -366,7 +366,7 @@ class EffectsManager {
 			return
 		}
 
-		console.log(enemy?.sleepEffect)
+		////console.log(enemy?.sleepEffect)
 		// エフェクトまだついていないなら
 		if (!enemy?.sleepEffect) {
 			// 絵文字要素を作成

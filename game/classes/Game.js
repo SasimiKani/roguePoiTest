@@ -778,6 +778,7 @@ class Game {
 			...Array(sv.itemWeights.sushi).fill("sushi"),
 			...Array(sv.itemWeights.magic).fill("magic"),
 			...Array(sv.itemWeights.niku).fill("niku"),
+			...Array(sv.itemWeights.icecream).fill("icecream"),
 			...Array(sv.itemWeights.weapon).fill("weapon"),
 		//	...Array(sv.itemWeights.shield).fill("shield"),
 			...Array(sv.itemWeights.shooting).fill("shooting"),
@@ -828,6 +829,8 @@ class Game {
 				arr.push(new HealItem(x, y, "すし", '🍣', 5, 5))
 			} else if (type === "niku") {
 				arr.push(new HealItem(x, y, "お肉", '🍖', 10, 5))
+			} else if (type === "icecream") {
+				arr.push(new HealItem(x, y, "アイス", '🍦', 50, 1))
 			} else if (type === "weapon") {
 				var selection = randomInt(1, 2)
 				let bonus = randomInt(1, 3)

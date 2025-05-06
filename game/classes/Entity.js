@@ -34,7 +34,7 @@ class Enemy extends BaseEntity {
 		this.exp = exp
 		this.action = 1
 		this.maxAction = 1
-		this.isSleep = !randomInt(0, 4) // 1/5くらいの確率で寝てる
+		this.isSleep = !randomInt(0, 7) // 1/8くらいの確率で寝てる
 
 		/**
 		 * [{name, range, func, duration}, ...]
@@ -288,10 +288,12 @@ class HealItem extends InventoryItem {
 			EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${this.healAmount}`, "heal")
 			game.message.add(`${this.name}を食べて${this.healAmount}ポイント回復`)
 
-			game.player.hunger += this.stuffAmount // 食事ボーナス
-			if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
-			EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${this.stuffAmount}`, "food")
-			game.message.add(`少しお腹がふくれた`)
+			if (this.stuffAmount > 0) {
+				game.player.hunger += this.stuffAmount // 食事ボーナス
+				if (game.player.hunger > game.player.maxHunger) game.player.hunger = game.player.maxHunger
+				EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `+${this.stuffAmount}`, "food")
+				game.message.add(`少しお腹がふくれた`)
+			}
 
 			await game.timeoutSync(()=>{}, 400)
 		})
@@ -579,7 +581,7 @@ class MagicMeteor extends MagicSpell {
 }
 class MagicRecoverAll extends MagicSpell {
 	constructor(x, y) {
-		super(x, y, "リカバーオール", "✨️", {
+		super(x, y, "リカバーオール", "🩹", {
 			damage: null,
 			area: null,
 			fallbackHeal: 100
