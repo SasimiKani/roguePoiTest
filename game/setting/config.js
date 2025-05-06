@@ -1,3 +1,6 @@
+// デバッグモード
+const DEBUG = false
+
 /** 難易度設定 */
 const difficultySettings = {
 	easy:	 { name: "森レベル", wallEmoji: "🌳", wallSubEmoji: "🌲", maxFloor: 10, revealLv: 5 },
