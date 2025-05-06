@@ -328,7 +328,8 @@ class BoxItem extends InventoryItem {
 		// 容量は5～10程度。未指定ならランダムに決定
 		this.capacity = capacity || randomInt(5, 10)
 		this.contents = []
-		this.name = `箱（${this.contents.length}/${this.capacity}）`
+		this.baseName = "箱"
+		this.name = `${this.baseName}（${this.contents.length}/${this.capacity}）`
 
 		// オーバーレイ要素の生成
 		this.overlay = document.createElement("div")
@@ -351,12 +352,17 @@ class BoxItem extends InventoryItem {
 		this.instructions = document.createElement("p")
 		this.instructions.classList.add("commands")
 		this.instructions.classList.add("inventory-modal")
-		this.instructions.innerHTML = "↑/↓: 選択\nD: 出す\nU: 使う\nX: 置く\nEsc: 閉じる"
+		this.instructions.innerHTML = "↑/↓: 選択\nD: 出す\nU: 使う\nX: 置く\nR: 名前をつける\nEsc: 閉じる"
 		this.overlay.appendChild(this.instructions)
 	}
 	
 	updateName() {
-		this.name = `箱（${this.contents.length}/${this.capacity}）`
+		this.name = `${this.baseName}（${this.contents.length}/${this.capacity}）`
+	}
+
+	rename() {
+		this.baseName = prompt("箱に名前をつける") || this.baseName
+		this.updateName()
 	}
 
 	// 箱にアイテムを入れる（箱同士の入れ子は不可）
@@ -403,6 +409,8 @@ class BoxItem extends InventoryItem {
 		if (inventoryBoxU(this, e)) return
 		// 置く：箱内の選択アイテムを取り出して地面に設置
 		if (inventoryBoxX(this, e)) return
+		// 名前：箱に名前をつける
+		if (inventoryBoxR(this, e)) return
 		// Esc でオーバーレイを閉じる
 		if (inventoryBoxEscape(this, e)) return
 	}
@@ -419,7 +427,7 @@ class BoxItem extends InventoryItem {
 	}
 
 	renderList() {
-		this.title.textContent = `箱の中身 (${this.contents.length}/${this.capacity})`
+		this.title.textContent = `${this.baseName}の中身 (${this.contents.length}/${this.capacity})`
 		this.list.innerHTML = ""
 		this.contents.forEach((item, index) => {
 			const li = document.createElement("li")

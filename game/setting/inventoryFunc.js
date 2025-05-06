@@ -357,6 +357,14 @@ function inventoryBoxX(box, e) {
     }
     return e.key.toLowerCase() === "x"
 }
+// 名前をつける
+function inventoryBoxR(box, e) {
+    if (e.key === "r") {
+        box.rename()
+        box.game.renderer.render()
+    }
+    return e.key.toLowerCase() === "r"
+}
 // Esc でオーバーレイを閉じる
 function inventoryBoxEscape(box, e) {
     if (e.key === "Escape") {
