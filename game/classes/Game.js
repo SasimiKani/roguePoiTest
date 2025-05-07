@@ -150,7 +150,7 @@ class Game {
 	
 	// ターン進行中の同期処理を行い、指定した遅延で処理を実行します。
 	async timeoutSync(callback, delay) {
-		////console.log("timeoutSync " + delay)
+		if (DEBUG) console.log("timeoutSync " + delay)
 		this.inputManager.lastInputTime = Date.now() * 2
 		return new Promise(resolve => {
 			setTimeout(() => {
@@ -338,12 +338,12 @@ class Game {
 								const blobs = Object.entries(this.bgmBox.playList)
 									.map(file => [file[0], Object.values(file[1])[0]])
 									.filter(bgm => bgm[0] !== "./rsrc/mus/difficulty.mp3") // セレクト画面は除く
-								////console.log(blobs)
+								if (DEBUG) console.log(blobs)
 
 								const currentBGM = this.bgmBox.player.src
 								const BGMs = blobs.filter(BGM => BGM[1] !== currentBGM)
-								////console.log(BGMs)
-								////console.log(BGMs[randomInt(0, BGMs.length - 1)][0])
+								if (DEBUG) console.log(BGMs)
+								if (DEBUG) console.log(BGMs[randomInt(0, BGMs.length - 1)][0])
 								this.bgmBox.playBGM(BGMs[randomInt(0, BGMs.length - 1)][0])
 
 								// 視界切り替え
@@ -399,7 +399,7 @@ class Game {
 				await this.timeoutSync(() => {}, 400)
 			}
 			
-			////console.log("敵行動開始")
+			if (DEBUG) console.log("敵行動開始")
 			this.actionProgress = true
 			
 			let chain = Promise.resolve()
@@ -416,13 +416,13 @@ class Game {
 			
 			if (this.player.hp > 0) {
 				this.actionProgress = false
-				////console.log("敵行動終了")
+				if (DEBUG) console.log("敵行動終了")
 			}
 			
 			this.checkCollisions()
 			if (this.generateEnemyCycle[0] === 0) {
 				this.placeEntities(this.enemies, randomInt(1, 3), "enemy")
-				////console.log(JSON.stringify(this.enemies.map(enemy => enemy.tile)))
+				if (DEBUG) console.log(JSON.stringify(this.enemies.map(enemy => enemy.tile)))
 			}
 		} catch (e) {
 			console.error(e)
@@ -627,10 +627,10 @@ class Game {
 					enemy.action--
 					this.actionCount++
 
-					////console.group("射程範囲内スキル")
-					////console.log(enemy.validRangeSkills(this.player))
-					////console.log(enemy.validSkillCount(this.player))
-					////console.groupEnd("射程範囲内スキル")
+					if (DEBUG) console.group("射程範囲内スキル")
+					if (DEBUG) console.log(enemy.validRangeSkills(this.player))
+					if (DEBUG) console.log(enemy.validSkillCount(this.player))
+					if (DEBUG) console.groupEnd("射程範囲内スキル")
 
 					// 通常攻撃
 					if (index === -1) {
@@ -638,15 +638,15 @@ class Game {
 					}
 					// 個別スキル
 					else {
-						////console.log("スキル開始")
+						if (DEBUG) console.log("スキル開始")
 						await enemy.skill(this, index)
-						////console.log("スキル終了")
+						if (DEBUG) console.log("スキル終了")
 					}
 				}
 
 				chain = chain.then(() => 
 					new Promise(async resolve => {
-						////console.log("アクション開始")
+						if (DEBUG) console.log("アクション開始")
 						if (index == -1) {
 							// 通常攻撃
 							if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
@@ -666,7 +666,7 @@ class Game {
 							this.timeoutSync(() => {}, this.actionTime)
 						}
 						resolve("ok")
-						////console.log("アクション終了")
+						if (DEBUG) console.log("アクション終了")
 					})
 				)
 			})
@@ -686,9 +686,10 @@ class Game {
 		else
 			EffectsManager.showAttackMotionNoWeapon(this.gameContainer, hor, ver)
 		
-		enemy.takeDamage(this.player.attack)
-		EffectsManager.showEffect(this.gameContainer, this.player, enemy.x, enemy.y, `-${this.player.attack}`, "damage")
-		this.message.add(`${enemy.name}に${this.player.attack}ダメージ`)
+		let damage = calcDamage(this.player.attack, enemy.def)
+		enemy.takeDamage(damage)
+		EffectsManager.showEffect(this.gameContainer, this.player, enemy.x, enemy.y, `-${damage}`, "damage")
+		this.message.add(`${enemy.name}に${damage}ダメージ`)
 		this.seBox.playDamage()
 		// # MESSAGE
 		this.actionCount++
@@ -788,13 +789,13 @@ class Game {
 			const type = weightedTypes.splice(randomInt(0, weightedTypes.length - 1), 1)[0]
 			this.placeEntities(this.items, 1, type)
 		}
-		////console.log(this.enemies)
-		////console.log(this.items.map(e => e.tile))
+		if (DEBUG) console.log(this.enemies)
+		if (DEBUG) console.log(this.items.map(e => e.tile))
 	}
 	// 敵やアイテムなどのエンティティをマップ上にランダム配置する処理です。
 	placeEntities(arr, count, type) {
 		for (let i = 0; i < count; i++) {
-			let x, y, hp
+			let x, y, hp, exp
 			do {
 				const room = this.map.rooms[randomInt(0, this.map.rooms.length - 1)]
 				x = randomInt(room.x + 1, room.x + room.w - 2)
@@ -810,6 +811,10 @@ class Game {
 					}
 					
 					hp = randomInt(
+						Math.round(Math.pow((this.floor + 1) / 2, this.minMagnification)),
+						Math.round(Math.pow((this.floor + 1) / 2, this.maxMagnification))
+					)
+					exp = randomInt(
 						Math.round(Math.pow((this.floor + 1) / 2, this.minMagnification)),
 						Math.round(Math.pow((this.floor + 1) / 2, this.maxMagnification))
 					)
@@ -888,7 +893,7 @@ class Game {
 			} else if (type === "enemy") {
 				const enemys = enemyList(this.floor, CONFIG.DIFFICULTY)
 				const EnemyClass = enemys[randomInt(0, enemys.length - 1)]
-				arr.push(new EnemyClass(x, y, hp))
+				arr.push(new EnemyClass(x, y, hp, exp))
 			} else if (type === "food") {
 				if (Math.random() > 0.7) {
 					arr.push(new FoodItem(x, y, "パン", '🥖', 20))
@@ -915,8 +920,9 @@ class Game {
 			chain = chain.then(async () =>
 				new Promise(resolve => {
 					this.timeoutSync(async () => {
-						let upAtk, upHp
+						let upAtk, upDef, upHp
 						this.player.attack += (upAtk = randomInt(1, 2))
+						this.player.defense += (upDef = randomInt(1, 2))
 						this.player.maxHp += (upHp = randomInt(2, 3))
 						this.player.healAmount++
 						this.player.hp = this.player.maxHp
@@ -929,12 +935,17 @@ class Game {
 						await this.timeoutSync(() => {
 							EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `HP +${upHp}`, "heal")
 							this.message.add(`HP +${upHp}`)
-						}, 600)
+						}, 500)
 						// # MESSAGE
 						await this.timeoutSync(() => {
 							EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `攻撃力 +${upAtk}`, "heal")
 							this.message.add(`攻撃力 +${upAtk}`)
-						}, 600)
+						}, 500)
+						// # MESSAGE
+						await this.timeoutSync(() => {
+							EffectsManager.showEffect(this.gameContainer, this.player, this.player.x, this.player.y, `防御力 +${upDef}`, "heal")
+							this.message.add(`攻撃力 +${upDef}`)
+						}, 500)
 						// # MESSAGE
 						resolve("ok")
 					}, 300)
@@ -1083,8 +1094,8 @@ class Game {
 		}
 
 		// 各配列のインスタンスを再生成
-		////console.log(this.enemies)
-		////console.log(this.items)
+		if (DEBUG) console.log(this.enemies)
+		if (DEBUG) console.log(this.items)
 
 		this.enemies = this.enemies.map(entity => {
 			const e = new (eval(entity.constructor.name))()
@@ -1130,8 +1141,8 @@ class Game {
 			}
 		})
 
-		////console.log(this.enemies)
-		////console.log(this.items)
+		if (DEBUG) console.log(this.enemies)
+		if (DEBUG) console.log(this.items)
 
 		setTimeout(() => {
 			this.inputManager = new InputManager(this)
