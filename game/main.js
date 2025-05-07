@@ -27,12 +27,12 @@ function enemyList(floor, difficulty, freq) {
 	enemyDefinitions.forEach(def => {
 		if (def.floorRange[0] <= floor && (def.floorRange[1] === null || floor <= def.floorRange[1])) {
 			for (var i=0; i<def.freq; i++) { // 頻度の高い敵ほど出やすくなる
-				list.push(def.enemy)
+				list.push(def)
 			}
 		}
 	})
 
-	if (list.length === 0) list.push( EnemyLarvae )
+	if (list.length === 0) list.push( new EnemyDefinition(EnemyLarvae,   [1, null], null) )
 	
 	if (DEBUG) console.log(JSON.stringify(list.map(l => l.prototype.constructor.name)))
 
