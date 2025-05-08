@@ -72,41 +72,64 @@ class DungeonMap {
 	}
 
 	connectAllRooms(rooms) {
-		// 接続フラグ初期化
+		// ── 初期化 ──
 		rooms.forEach(r => {
-			r.connections = { top: false, bottom: false, left: false, right: false }
-		})
+			r.connections = { top: false, bottom: false, left: false, right: false };
+		});
 
+		// ── パス１：各部屋に１本ずつ──最も近い“前の部屋”と接続 ──
 		for (let i = 1; i < rooms.length; i++) {
-			const A = rooms[i]
-			// 0…i-1 の部屋を距離順にソート
-			const candidates = rooms
-				.slice(0, i)
-				.map(B => {
-					const dx = (A.x + A.w/2) - (B.x + B.w/2)
-					const dy = (A.y + A.h/2) - (B.y + B.h/2)
-					return { room: B, dist: dx*dx + dy*dy }
-				})
-				.sort((a, b) => a.dist - b.dist)
+			const A = rooms[i];
+			let nearest = null, bestDist = Infinity;
+			for (let j = 0; j < i; j++) {
+				const B = rooms[j];
+				const dx = (A.x + A.w/2) - (B.x + B.w/2);
+				const dy = (A.y + A.h/2) - (B.y + B.h/2);
+				const d	= dx*dx + dy*dy;
+				if (d < bestDist) {
+					bestDist = d;
+					nearest	= B;
+				}
+			}
+			if (nearest) {
+				this.connectRooms(A, nearest);
+			}
+		}
 
-			// 距離が近い順に接続を試みる
-			let connected = false
-			for (const { room: B } of candidates) {
+		// ── パス２：各部屋にもう１本──“全ての他の部屋”から距離順で接続を試みる ──
+		rooms.forEach(A => {
+			// すでにつながっている本数を数える
+			let count = Object.values(A.connections).filter(f => f).length;
+			if (count >= 2) return;
+
+			// 自分以外の部屋を距離順ソート
+			const candidates = rooms
+				.filter(B => B !== A)
+				.map(B => {
+					const dx = (A.x + A.w/2) - (B.x + B.w/2);
+					const dy = (A.y + A.h/2) - (B.y + B.h/2);
+					return { room: B, dist: dx*dx + dy*dy };
+				})
+				.sort((a, b) => a.dist - b.dist);
+
+			// 距離が近い順に接続を試み、成功したらカウントアップ
+			for (const {room: B} of candidates) {
+				if (count >= 2) break;
 				if (this.connectRooms(A, B)) {
-					connected = true
-					break
+					count++;
 				}
 			}
 
-			// 念のため全スキップされたら、一番近い部屋と強制接続
-			if (!connected && candidates.length > 0) {
-				const B = candidates[0].room
-				// フラグをクリアしてから再接続（強制的に掘らせる）
-				A.connections = { top: false, bottom: false, left: false, right: false }
-				B.connections = { top: false, bottom: false, left: false, right: false }
-				this.connectRooms(A, B)
+			// 念のためまだ足りなければ、強制的に最も近い部屋と掘り直す
+			if (count < 2 && candidates.length > 0) {
+				const B = candidates[0].room;
+				// 一度フラグをリセットして再接続
+				A.connections = { top:false, bottom:false, left:false, right:false };
+				B.connections = { top:false, bottom:false, left:false, right:false };
+				this.connectRooms(A, B);
+				// これで最低１本は確実に増えるので、計２本保証
 			}
-		}
+		});
 	}
 
 	generate() {
@@ -114,17 +137,17 @@ class DungeonMap {
 		const countGen = () => {
 			switch (CONFIG.DIFFICULTY) {
 				case "easy":
-					return randomInt(3, 5)
+					return randomInt(5, 7)
 				case "normal":
-					return randomInt(3, 6)
+					return randomInt(6, 8)
 				case "normalPlus":
-					return randomInt(4, 7)
+					return randomInt(7, 9)
 				case "hard":
-					return randomInt(5, 8)
+					return randomInt(8, 10)
 				case "hardPlus":
-					return randomInt(4, 9)
+					return randomInt(10, 12)
 				default:
-					return randomInt(3, 8)
+					return randomInt(3, 5)
 			}
 		}
 		const roomCount = countGen()

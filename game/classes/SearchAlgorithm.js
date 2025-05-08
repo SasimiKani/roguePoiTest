@@ -152,4 +152,8 @@ class SearchAlgorithm {
 		const next = movable[Math.floor(Math.random() * movable.length)]
 		return [{ x: next.x, y: next.y }]
 	}
+
+	static noMove(game, startX, startY, targetX, targetY) {
+		return [{ x: startX, y: startY }]
+	}
 }

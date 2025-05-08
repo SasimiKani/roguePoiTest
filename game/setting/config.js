@@ -3,11 +3,11 @@ const DEBUG = false
 
 /** 難易度設定 */
 const difficultySettings = {
-	easy:	 { name: "森レベル", wallEmoji: "🌳", wallSubEmoji: "🌲", maxFloor: 10, revealLv: 5 },
-	normal: { name: "山レベル", wallEmoji: "⛰️", wallSubEmoji: "🌳", maxFloor: 20, revealLv: 3 },
-	normalPlus:	 { name: "雪原レベル", wallEmoji: "⬜️", wallSubEmoji: "❄️", maxFloor: 40, revealLv: 7 },
-	hard:	 { name: "火山レベル", wallEmoji: "🌋", wallSubEmoji: "🪨", maxFloor: 99, revealLv: 2 },
-	hardPlus:	 { name: "海底レベル", wallEmoji: "🪸", wallSubEmoji: "🐚", maxFloor: 255, revealLv: 4 }
+	easy:	     { name: "森レベル", wallEmoji: "🌳", wallSubEmoji: "🌲", maxFloor: 10, revealLv: 5, width: 40, height: 32 },
+	normal:      { name: "山レベル", wallEmoji: "⛰️", wallSubEmoji: "🌳", maxFloor: 20, revealLv: 3, width: 45, height: 38 },
+	normalPlus:	 { name: "雪原レベル", wallEmoji: "⬜️", wallSubEmoji: "❄️", maxFloor: 40, revealLv: 7, width: 50, height: 38 },
+	hard:	     { name: "火山レベル", wallEmoji: "🌋", wallSubEmoji: "🪨", maxFloor: 99, revealLv: 2, width: 60, height: 42 },
+	hardPlus:	 { name: "海底レベル", wallEmoji: "🪸", wallSubEmoji: "🐚", maxFloor: 255, revealLv: 4, width: 70, height: 50 }
 }
 
 /** 共通値設定 */
@@ -163,7 +163,7 @@ const normalPlusEnemyDefinitions = [
     new EnemyDefinition(EnemyCrayfish, [10, 25], 10),
     new EnemyDefinition(EnemySlime,    [15, 30],  8),
     new EnemyDefinition(EnemyBat,      [20, 40],  6),
-    new EnemyDefinition(EnemyGoblin,   [25, 40],  4),
+    new EnemyDefinition(EnemySnowman,  [25, 40],  10),
     new EnemyDefinition(EnemySkeleton, [28, 40],  3),
     new EnemyDefinition(EnemySpider,   [30, 40],  2),
     new EnemyDefinition(EnemyWizard,   [30, 40],  2),
@@ -189,7 +189,6 @@ const hardPlusEnemyDefinitions = [
     new EnemyDefinition(EnemyHarisenbon,  [15, null], 20),
     new EnemyDefinition(EnemyShark,       [30, null], 10),
     new EnemyDefinition(EnemySlime,       [8, 50], 10),
-    new EnemyDefinition(EnemyBat,         [12, null], 5),
     new EnemyDefinition(EnemyGoblin,      [16, null], 7),
     new EnemyDefinition(EnemySkeleton,    [19, null], 7),
     new EnemyDefinition(EnemySpider,      [24, null], 5),

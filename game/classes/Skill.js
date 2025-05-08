@@ -33,6 +33,29 @@ class Skill {
     })
 
     /**
+     * 雪玉
+     */
+    static offensiveSnowBall = (enemy) => ({
+        name: "雪玉",
+        range: 3,
+        func: async (game) => {
+            const container = game.gameContainer
+            const player = game.player
+            const range = 3
+            const projectileEmoji = "⚪️"
+            EffectsManager.showEnemyShootingEffect(container, player, enemy, range, projectileEmoji).then(() => {
+                game.player.hp -= enemy.atk
+                if (game.player.hp < 0) game.player.hp = 0
+    
+                EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `-${enemy.atk}`, "damage-me")
+                game.message.add(`${enemy.atk}ダメージ`)
+                game.seBox.playDamageMe()
+            })
+        },
+        duration: 600
+    })
+
+    /**
      * ドラゴンブレス
      * 必須フィールド；this.breathAtk
      */

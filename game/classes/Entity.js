@@ -190,6 +190,16 @@ class EnemyBat extends Enemy {
 	}
 }
 
+class EnemySnowman extends Enemy {
+	constructor(x, y, hp) {
+		super("雪だるさん", x, y, hp + 8, exp + 16, 13, 7, '⛄️')
+		this.searchAlgo = (game, startX, startY, targetX, targetY) => SearchAlgorithm.noMove(game, startX, startY, targetX, targetY)
+		this.skills = [
+			Skill.offensiveSnowBall(this)
+		]
+	}
+}
+
 class EnemyGoblin extends Enemy {
 	constructor(x, y, hp, exp=0) {
 		// フロア6相当：atk=13, def=7

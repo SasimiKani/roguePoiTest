@@ -35,8 +35,8 @@ class Game {
 		// ------------------------------
 		// マップ・画面関連設定
 		// ------------------------------
-		this.width = CONFIG.WIDTH
-		this.height = CONFIG.HEIGHT
+		this.width = difficultySettings[CONFIG.DIFFICULTY].width || CONFIG.WIDTH
+		this.height = difficultySettings[CONFIG.DIFFICULTY].height || CONFIG.HEIGHT
 		this.map = new DungeonMap(this.width, this.height)
 		this.gameContainer = document.getElementById("main-view")
 		this.minimapContainer = document.getElementById("minimap")
