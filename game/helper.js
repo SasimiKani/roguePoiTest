@@ -164,3 +164,86 @@ function calcDamage(attack, defense) {
 	const dmg = Math.floor((attack * attack) / (attack + defense))
 	return Math.max(1, dmg)
 }
+
+// 被ダメージ側HP・Defense、与ダメージ計算、攻撃回数から、被ダメージ側HPを削りきれる与ダメージ側Attackを計算
+function calcAttack(hp, def, count) {
+	for (var atk=Math.round(hp/count); ; atk++) {
+		let calcHP = hp
+
+		for (var i=0; i<count; i++) {
+			let damage = calcDamage(atk, def)
+			calcHP -= damage
+		}
+
+		if (calcHP <= 0) {
+			return atk
+		}
+	}
+}
+
+// 与ダメージ側Attack、与ダメージ計算、攻撃回数から、被ダメージ側HPを削りきれる被ダメージ側deffenseを計算
+// この計算ではHPとDeffenseが同じになる
+function calcDeffense(atk, count) {
+	for (var hp=atk*count; ;) {
+		for (var def=atk*count; ; def--, hp--) {
+			let calcHP = hp
+
+			for (var i=0; i<count; i++) {
+				let damage = calcDamage(atk, def)
+				calcHP -= damage
+			}
+
+			if (calcHP <= 0) {
+				return {hp, def}
+			}
+		}
+	}
+}
+
+// プレイヤーのステータスから、敵のステータスを計算
+function calcEnemyStatus(pHP, pAtk, pDef) {
+	const eAtk = calcAttack(pHP, pDef, 8)
+	const {hp, def} = calcDeffense(pAtk, 2)
+	
+	return {eHP: hp, eAtk: eAtk, eDef: def}
+}
+// レベルから計算
+function calcEnemyStatusLV(pLV) {
+	const [pHP, pAtk, pDef] = [
+		8 + ((pLV - 1) * 2.5),
+		2 + ((pLV - 1) * 1.5),
+		1 + ((pLV - 1) * 1.5),
+	]
+
+	return calcEnemyStatus(pHP, pAtk, pDef)
+}
+// フロアから推定レベルを計算
+function estimFloorLV(floor) {
+	return Math.round((floor - 1) / 1.5 + 1)
+}
+// フロアから計算
+function calcEnemyStatusFloor(floor) {
+	const estimLV = estimFloorLV(floor)
+	return calcEnemyStatusLV(estimLV)
+}
+
+/**
+Lv i のプレイヤーのHPをcount回の攻撃で削りきれる敵のAttack
+
+for (var i=1; i<=100; i++) {
+  	let hp = Math.round(8 + (i-1) * 2.5)
+	let def = Math.round(2 + (i-1) * 1.5)
+	let count = 8
+	console.log(`LV ${i} HP ${hp} DEF ${def} CNT ${count} ATK ${calcAttack(hp, def, count)}`)
+}
+
+Lv i のプレイヤーがcount回の攻撃で削りきれる敵のHPとdeffense
+
+for (var i=1; i<=100; i++) {
+	let atk = Math.round(2 + (i-1) * 1.5)
+	let count = 2
+	let {hp, def} = calcDeffense(atk, count)
+	console.log(`LV ${i} ATK ${atk} CNT ${count} HP ${hp} DEF ${def} `)
+}
+
+ */

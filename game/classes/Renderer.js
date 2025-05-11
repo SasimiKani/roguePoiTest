@@ -16,13 +16,24 @@ class Renderer {
 		for (let y = startY; y <= this.game.player.y + radius; y++) {
 			for (let x = startX; x <= this.game.player.x + radius; x++) {
 				let tile = MAP_TILE.WALL
+				let innerClass = ""
 				if (x >= 0 && x < this.game.width && y >= 0 && y < this.game.height) {
-					if (!this.game.map.visible[y][x]) { html += `<span class="wall ${CONFIG.DIFFICULTY}">${this.isSubWallPos(MAP_TILE.WALL, x, y) ? MAP_TILE.SUB_WALL : MAP_TILE.WALL}</span>`; continue; }
+					if (!this.game.map.visible[y][x]) {
+						html += `<span class="outer ${CONFIG.DIFFICULTY}">`
+						html += `<span class="inner">`
+						html += `${this.isSubWallPos(MAP_TILE.WALL, x, y) ? MAP_TILE.SUB_WALL : MAP_TILE.WALL}`
+						html += `</span>`
+						html += `</span>`
+						continue;
+					}
 					else if (this.game.player.x === x && this.game.player.y === y) tile = this.game.player.tile
 					else {
 						let drawn = false
 						for (let enemy of this.game.enemies) {
-							if (enemy.x === x && enemy.y === y) { tile = enemy.tile; drawn = true; break; }
+							if (enemy.x === x && enemy.y === y) {
+								innerClass = `LV${enemy.lv}`
+								tile = enemy.tile; drawn = true; break;
+							}
 						}
 						if (!drawn) {
 							for (let item of this.game.items) {
@@ -36,9 +47,13 @@ class Renderer {
 						}
 					}
 				}
-				html += `<span class="${CONFIG.DIFFICULTY}">${this.isSubWallPos(tile, x, y) ? MAP_TILE.SUB_WALL : tile}</span>`
+				html += `<span class="outer ${CONFIG.DIFFICULTY}">`
+				html += `<span class="inner ${innerClass}">`
+				html += `${this.isSubWallPos(tile, x, y) ? MAP_TILE.SUB_WALL : tile}`
+				html += `</span>`
+				html += `</span>`
 			}
-			html += '<br>'
+			html += '<br class="main-br">'
 		}
 		this.game.gameContainer.innerHTML = html
 	}

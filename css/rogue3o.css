@@ -75,6 +75,13 @@ body {
 	align-items: center;
 }
 /* メイン画面 */
+.main-br {
+    display: block;
+    line-height: 0;
+    font-size: 0;
+	margin: -3.4px;
+    padding: 0;
+}
 .game-container, .grid { 
 	font-size: 28px; 
 	line-height: 1.2; 
@@ -82,11 +89,13 @@ body {
 	position: relative; 
 	margin-right: 20px; 
 }
-.game-container span {
+.game-container span.outer {
+	position: relative;
 	background-color: hsl(0, 0%, 50%);
 	display: inline-block; 
 	padding: 1px;
 	width: 35.6px; 
+	height: 35.6px; 
 	text-align: center; 
 	/*transition: all 0.1s; */
 }
@@ -94,6 +103,23 @@ body {
 .game-container span.normal { background-color: hsl(150, 5%, 50%); }
 .game-container span.hard { background-color: hsl(0, 25%, 50%); }
 .game-container span.hardPlus { background-color: hsl(209, 40%, 40%); }
+.game-container span.inner {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 35.6px!important;
+	height: 35.6px!important;
+}
+.game-container span.inner.LV2 {
+	background-color: #f005;
+	border: 1px solid red;
+	border-radius: 50%;
+}
+.game-container span.inner.LV3 {
+	background-color: #8085;
+	border: 1px solid purple;
+	border-radius: 50%;
+}
 /* グリッド表示 */
 .grid {
 	position: absolute;

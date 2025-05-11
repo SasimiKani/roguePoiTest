@@ -887,15 +887,15 @@ class Game {
 				const enemys = enemyList(this.floor, CONFIG.DIFFICULTY)
 				const {enemy, floorRange} = enemys[randomInt(0, enemys.length - 1)]
 				
-				hp = randomInt(
-					Math.round(Math.pow((this.floor + 1) / 2, this.minMagnification)),
-					Math.round(Math.pow((this.floor + 1) / 2, this.maxMagnification))
-				)
-				exp = randomInt(
-					Math.round(Math.pow((this.floor + 1 - floorRange[0]) / 2, this.minMagnification)),
-					Math.round(Math.pow((this.floor + 1 - floorRange[0]) / 2, this.maxMagnification))
-				)
-				arr.push(new enemy(x, y, hp, exp))
+				//hp = randomInt(
+				//	Math.round(Math.pow((this.floor + 1) / 2, this.minMagnification)),
+				//	Math.round(Math.pow((this.floor + 1) / 2, this.maxMagnification))
+				//)
+				//exp = randomInt(
+				//	Math.round(Math.pow((this.floor + 1 - floorRange[0]) / 2, this.minMagnification)),
+				//	Math.round(Math.pow((this.floor + 1 - floorRange[0]) / 2, this.maxMagnification))
+				//)
+				arr.push(new enemy(x, y))
 			} else if (type === "food") {
 				if (Math.random() > 0.7) {
 					arr.push(new FoodItem(x, y, "パン", '🥖', 20))

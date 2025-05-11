@@ -78,4 +78,31 @@ class Skill {
         },
         duration: 600
     })
+
+    /**
+     * 墨吐き
+     */
+    static debuffInk = (enemy) => ({
+        name: "スミ吐き",
+        range: 1,
+        func: async (game) => {
+            const container = game.gameContainer
+            const player = game.player
+            const range = 1
+            const projectileEmoji = "⚫️"
+            EffectsManager.showEnemyShootingEffect(container, player, enemy, range, projectileEmoji).then(() => {
+                for (let y = 0; y < game.height; y++) {
+                    for (let x = 0; x < game.width; x++) {
+                        if (!(player.x - 1 <= x && x <= player.x + 1 && player.y - 1 <= y && y <= player.y + 1)) {
+                            game.map.visible[y][x] = false
+                        }
+                    }
+                }
+    
+                game.message.add(`視界が悪くなった！`)
+                game.seBox.playDamageMe()
+            })
+        },
+        duration: 600
+    })
 }

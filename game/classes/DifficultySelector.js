@@ -45,9 +45,9 @@ class DifficultySelector {
 		for (let y = 0; y < this.gridHeight; y++) {
 			for (let x = 0; x < this.gridWidth; x++) {
 				if (x === this.playerX && y === this.playerY) {
-					html += `<span>${this.myIcon}</span>`
+					html += `<span class="outer">${this.myIcon}</span>`
 				} else {
-					html += `<span>${this.grid[y][x]}</span>`
+					html += `<span class="outer">${this.grid[y][x]}</span>`
 				}
 			}
 			html += "<br>"
@@ -75,6 +75,15 @@ class DifficultySelector {
 			this.render()
 			for (let opt of this.options) {
 				if (opt.x === this.playerX && opt.y === this.playerY) {
+								
+					//// テスト用
+					if (["normalPlus", "hard", "hardPlus"].includes(opt.difficulty)) {
+						this.message.clear()
+						this.message.add("⚠️調整中⚠️")
+						return
+					}
+					//// テスト用
+					
 					this.inSelection = false
 					document.removeEventListener('keydown', this.handleKeyDown)
 					startDungeonGame(opt.difficulty, this.myIcon)
