@@ -116,7 +116,8 @@ class Renderer {
 			for (let i = 0; i < this.game.player.inventory.length; i++) {
 				let selected = (i === this.game.inventorySelection) ? ">> " : ""
 				let itemName = this.game.player.inventory[i].name || "アイテム"
-				if (this.game.player.inventory[i] instanceof WeaponItem && this.game.player.weapon === this.game.player.inventory[i])
+				if ((this.game.player.inventory[i] instanceof WeaponItem  && this.game.player.weapon === this.game.player.inventory[i]) ||
+						(this.game.player.inventory[i] instanceof ShieldItem && this.game.player.shield === this.game.player.inventory[i] ))
 					itemName += " (装備中)"
 				if (this.game.player.inventory[i] === this.game.boxSelected)
 					itemName += "（この箱に入れる）"
@@ -152,7 +153,7 @@ class Renderer {
 				// 魔法の場合は「」を表示
 				invCommands.push("U     : 唱える")
 			}
-			else if (selectedItem instanceof WeaponItem) {
+			else if ((selectedItem instanceof WeaponItem || selectedItem instanceof ShieldItem)) {
 				// 武器の場合の場合は「」を表示
 				if (this.game.player.weapon === selectedItem) {
 					invCommands.push("U     : 外す")
@@ -197,7 +198,7 @@ class Renderer {
 						// 魔法の場合は「」を表示
 						grdCommands.push("U : 唱える")
 					}
-					else if (this.game.groundItem instanceof WeaponItem) {
+					else if ((this.game.groundItem instanceof WeaponItem || this.game.groundItem instanceof ShieldItem)) {
 						grdCommands.push("U : 装備")
 					}
 					else {
