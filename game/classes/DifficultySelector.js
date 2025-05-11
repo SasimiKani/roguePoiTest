@@ -84,7 +84,7 @@ class DifficultySelector {
 				if (opt.x === this.playerX && opt.y === this.playerY) {
 								
 					//// テスト用
-					if (["normalPlus", "hard", "hardPlus"].includes(opt.difficulty)) {
+					if (["normalPlus", "hard"].includes(opt.difficulty)) {
 						this.message.clear()
 						this.message.add("⚠️調整中⚠️")
 						this.seBox.playEffect()
