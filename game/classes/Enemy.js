@@ -20,6 +20,9 @@ class EnemyRat extends Enemy {
 class EnemySlime extends Enemy {
 	constructor(x, y) {
 		super("スライム", x, y, /* LV */ 1, /* EXP */ 7, /* HP */ 8, /* ATK */ 7, /* DEF */ 8, '🟩')
+		this.skills = [
+			Skill.actionPurupuru(this)
+		]
 	}
 }
 
@@ -27,6 +30,7 @@ class EnemySlime extends Enemy {
 class EnemyBat extends Enemy {
 	constructor(x, y) {
 		super("コウモリ", x, y, /* LV */ 1, /* EXP */ 10, /* HP */ 4, /* ATK */ 4, /* DEF */ 4, '🦇')
+		this.searchAlgo = (game, startX, startY, targetX, targetY) => SearchAlgorithm.randomRoute(game, startX, startY, targetX, targetY)
 	}
 }
 class EnemyGoblin extends Enemy {
