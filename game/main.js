@@ -47,8 +47,7 @@ function startDungeonGame(difficulty, myIcon="😊") {
 
 	if (!!localStorage[`savedata-${difficulty}`]) {
 		// 中断データがある場合
-		const res = confirm("中断データから再開しますか？")
-		if (res) {
+		EffectsManager.showContinueConfirmationKeyboard(() => {
 			setTimeout(() => {
 				document.querySelector("button#change-icon").style.display = "none"
 				selector.bgmBox.stopBGM()
@@ -62,8 +61,14 @@ function startDungeonGame(difficulty, myIcon="😊") {
 				// ロードしたら中断データを削除
 				localStorage.removeItem(`savedata-${difficulty}`)
 			}, 300)
-			return
-		}
+		}, () => {
+			setTimeout(() => {
+				document.querySelector("button#change-icon").style.display = "none"
+				selector.bgmBox.stopBGM()
+				new Game(myIcon)
+			}, 300)
+		})
+		return
 	}
 
 	setTimeout(() => {

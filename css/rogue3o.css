@@ -381,12 +381,12 @@ body.deep-dungeon { background-color: #000; }
   font-size: 1.2em;
 }
 /* 選択肢コンテナ */
-.giveup-options {
+.overlay-options {
   display: flex;
   justify-content: space-around;
 }
 /* 各オプションの基本スタイル */
-.giveup-option {
+.overlay-option {
   padding: 10px 20px;
   border: 2px solid #333;
   border-radius: 4px;
@@ -394,27 +394,33 @@ body.deep-dungeon { background-color: #000; }
   transition: background 0.3s, color 0.3s;
 }
 /* ホバー時の共通効果 */
-.giveup-option:hover {
+.overlay-option:hover {
   background: #333;
   color: #fff;
 }
 /* 諦めるオプション：赤系 */
-.giveup-option.giveup {
+.overlay-option.giveup {
   background: #e74c3c;
   border-color: #c0392b;
   color: #fff;
 }
-.giveup-option.giveup:hover {
+.overlay-option.giveup:hover {
   background: #c0392b;
 }
 /* 続けるオプション：緑系 */
-.giveup-option.continue {
+.overlay-option.continue {
   background: #2ecc71;
   border-color: #27ae60;
   color: #fff;
 }
-.giveup-option.continue:hover {
-  background: #27ae60;
+/* はじめからオプション：緑系 */
+.overlay-option.start {
+  background: #473ce7;
+  border-color: #3a2bc0;
+  color: #fff;
+}
+.overlay-option.start:hover {
+  background: #3a2bc0;
 }
 
 /* ダイアログボックス */

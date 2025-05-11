@@ -1,6 +1,9 @@
 // DifficultySelector クラス（修正版）
 class DifficultySelector {
 	constructor(myIcon="😊") {
+		document.body.style.backgroundColor = ""
+		document.body.classList.remove("easy-dungeon", "hard-dungeon", "deep-dungeon")
+
 		this.gameContainer = document.getElementById("main-view")
 		this.message = new MessageManager(this, 2)
 		

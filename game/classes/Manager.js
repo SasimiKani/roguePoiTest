@@ -540,11 +540,11 @@ class EffectsManager {
 	
 		// 選択肢用コンテナ
 		const optionsContainer = document.createElement("div")
-		optionsContainer.className = "giveup-options"
+		optionsContainer.className = "overlay-options"
 	
 		// 「諦める」オプション（Escキーまたはクリックでゲーム終了）
 		const giveUpOption = document.createElement("div")
-		giveUpOption.className = "giveup-option giveup"
+		giveUpOption.className = "overlay-option giveup"
 		giveUpOption.textContent = /*"Esc: */"諦める"
 		giveUpOption.addEventListener("click", () => {
 			cleanup()
@@ -553,7 +553,7 @@ class EffectsManager {
 	
 		// 「続ける」オプション（Enterキーまたはクリックでオーバーレイを閉じる）
 		const continueOption = document.createElement("div")
-		continueOption.className = "giveup-option continue"
+		continueOption.className = "overlay-option continue"
 		continueOption.textContent = /*"Enter: */"続ける"
 		continueOption.addEventListener("click", () => {
 			cleanup()
@@ -562,7 +562,7 @@ class EffectsManager {
 	
 		// 「中断」オプション（Enterキーまたはクリックでオーバーレイを閉じる）
 		const saveOption = document.createElement("div")
-		saveOption.className = "giveup-option save"
+		saveOption.className = "overlay-option save"
 		saveOption.textContent = /*"Enter: */"中断"
 		saveOption.addEventListener("click", () => {
 			cleanup()
@@ -588,6 +588,64 @@ class EffectsManager {
 			}
 		}
 		
+		// オーバーレイ解除処理
+		function cleanup() {
+			window.overlayActive = false;
+			//document.removeEventListener("keydown", onKeyDown);
+			overlay.remove();
+		}
+	
+		//document.addEventListener("keydown", onKeyDown);
+	}
+	
+	/**
+	 * 中断データ選択オーバーレイ（続きから or はじめから）
+	 * オーバーレイ中はグローバルフラグでゲーム操作を停止する（インベントリ表示時と同様）
+	 */
+	static showContinueConfirmationKeyboard(continueFunc, startFunc) {
+		window.overlayActive = true;
+	
+		// 全画面を覆うオーバーレイ
+		const overlay = document.createElement("div");
+		overlay.className = "giveup-confirm-overlay";
+	
+		// ダイアログボックス（中央に配置、縦並びレイアウト）
+		const dialog = document.createElement("div");
+		dialog.className = "giveup-confirm-dialog";
+	
+		// メッセージ
+		const message = document.createElement("p");
+		message.textContent = "中断データから再開しますか？";
+		dialog.appendChild(message);
+	
+		// 選択肢用コンテナ
+		const optionsContainer = document.createElement("div");
+		optionsContainer.className = "overlay-options";
+	
+		// 「続きから」オプション（Escキーまたはクリックでゲーム終了）
+		const continueOption = document.createElement("div");
+		continueOption.className = "overlay-option continue";
+		continueOption.textContent = "続きから";
+		continueOption.addEventListener("click", () => {
+			cleanup();
+			continueFunc()
+		});
+	
+		// 「はじめから」オプション（Enterキーまたはクリックでオーバーレイを閉じる）
+		const startOption = document.createElement("div");
+		startOption.className = "overlay-option start";
+		startOption.textContent = "はじめから";
+		startOption.addEventListener("click", () => {
+			cleanup();
+			startFunc()
+		});
+	
+		optionsContainer.appendChild(continueOption);
+		optionsContainer.appendChild(startOption);
+		dialog.appendChild(optionsContainer);
+		overlay.appendChild(dialog);
+		document.body.appendChild(overlay);
+	
 		// オーバーレイ解除処理
 		function cleanup() {
 			window.overlayActive = false
