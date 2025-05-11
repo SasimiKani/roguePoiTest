@@ -39,6 +39,10 @@ class DifficultySelector {
 		this.bgmBox.loadfile().then(bgm => {
 			this.bgmBox.playDifficulty()
 		})
+
+		// SE
+		this.seBox = new SEManager()
+		this.seBox.loadfile()
 	}
 	render() {
 		let html = ""
@@ -80,6 +84,7 @@ class DifficultySelector {
 					if (["normalPlus", "hard", "hardPlus"].includes(opt.difficulty)) {
 						this.message.clear()
 						this.message.add("⚠️調整中⚠️")
+						this.seBox.playEffect()
 						return
 					}
 					//// テスト用
