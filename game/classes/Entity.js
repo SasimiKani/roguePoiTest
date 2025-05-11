@@ -551,14 +551,14 @@ class ShieldItem extends InventoryItem {
 		game.seBox.playEquip()
 		game.message.add(`${this.name}を装備した`)
 		game.player.shield = shield
-		//game.player.attack += shield.bonus
+		game.player.defense += shield.bonus
 		EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `盾装備+${shield.bonus}`, "heal")
 	}
 	
 	unEquip(game, shield = this) {
 		game.seBox.playDisarm()
 		game.message.add(`${this.name}の装備を外した`)
-		//game.player.attack -= game.player.shield.bonus
+		game.player.defense -= game.player.shield.bonus
 		game.player.shield = null
 		EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `装備解除-${shield.bonus}`, "damage-me")
 	}

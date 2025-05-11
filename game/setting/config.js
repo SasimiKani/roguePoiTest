@@ -46,7 +46,7 @@ const EntitySettingValues = {
             niku: 20,
             icecream: 0,
             weapon: 20,
-            shield: 20,
+            shield: 10,
             shooting: 20,
             box: 0
         }
@@ -62,7 +62,7 @@ const EntitySettingValues = {
             niku: 20,
             icecream: 0,
             weapon: 20,
-            shield: 20,
+            shield: 10,
             shooting: 15,
             box: 0
         }
@@ -79,7 +79,7 @@ const EntitySettingValues = {
             niku:     10,
             icecream: 5,
             weapon:   10,
-            shield:   10,
+            shield:   5,
             shooting: 10,
             box:      3
         }
@@ -95,7 +95,7 @@ const EntitySettingValues = {
             niku:     10,
             icecream: 0,
             weapon:   7,
-            shield:   7,
+            shield:   3,
             shooting: 10,
             box:      3
         }
@@ -111,7 +111,7 @@ const EntitySettingValues = {
             niku:     10,
             icecream: 5,
             weapon:   7,
-            shield:   7,
+            shield:   3,
             shooting: 7,
             box:      3
         }

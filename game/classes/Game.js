@@ -781,7 +781,7 @@ class Game {
 			...Array(sv.itemWeights.niku).fill("niku"),
 			...Array(sv.itemWeights.icecream).fill("icecream"),
 			...Array(sv.itemWeights.weapon).fill("weapon"),
-		//	...Array(sv.itemWeights.shield).fill("shield"),
+			...Array(sv.itemWeights.shield).fill("shield"),
 			...Array(sv.itemWeights.shooting).fill("shooting"),
 			...Array(sv.itemWeights.box).fill("box")
 		]
@@ -873,8 +873,9 @@ class Game {
 					break
 				}
 			} else if (type === "shield") {
-				let bonus = randomInt(1, 3)
+				let bonus = randomInt(1, 1 + Math.round(this.floor / 10))
 				arr.push(new ShieldItem(x, y, `盾 (+${bonus})`, '🛡️', bonus))
+				console.log(JSON.stringify(arr, null, "\t"))
 			} else if (type === "shooting") {
 				//// 射撃武器
 				arr.push(new ShootingItem(x, y, "射撃-弓矢", '🏹', /* 数 */ 5, /* ダメージ */ 10, /* 距離 */ 8, "↑"))

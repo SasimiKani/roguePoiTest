@@ -67,11 +67,11 @@ function inventoryGroundU(game, e) {
         else if (game.groundItem.use) {
             game.inventoryOpen = false
             game.renderer.render()
-            // インベントリがマックスで足元の武器を装備できない
-            if (game.groundItem instanceof WeaponItem && game.player.inventory.length >= CONFIG.INVENTORY_MAX) return
+            // インベントリがマックスで足元の武器・盾を装備できない
+            if ((game.groundItem instanceof WeaponItem || game.groundItem instanceof ShieldItem) && game.player.inventory.length >= CONFIG.INVENTORY_MAX) return
             game.groundItem.use(game).then(()	=> {
-                // もし足元のアイテムが武器なら、使用後にインベントリへ追加
-                if (game.groundItem instanceof WeaponItem) {
+                // もし足元のアイテムが武器・盾なら、使用後にインベントリへ追加
+                if ((game.groundItem instanceof WeaponItem || game.groundItem instanceof ShieldItem)) {
                     if (game.player.inventory.length < CONFIG.INVENTORY_MAX) {
                         game.player.inventory.push(game.groundItem)
                     } else {
@@ -105,8 +105,8 @@ async function inventoryU(game, e) {
             game.renderer.render()
             // アイテムを使う
             await item.use(game)
-            // 武器・箱じゃなければ消費する
-            if (!(item instanceof WeaponItem) && !(item instanceof BoxItem) &&
+            // 武器・盾・箱じゃなければ消費する
+            if (!((item instanceof WeaponItem || item instanceof ShieldItem)) && !(item instanceof BoxItem) &&
                     // 射撃じゃなければ消費、射撃でも数が0なら消費する
                     (!(item instanceof ShootingItem) || item.stack === 0)) {
                 game.player.inventory.splice(game.inventorySelection, 1)
@@ -129,7 +129,7 @@ function inventoryD(game, e) {
 
         let item = game.player.inventory[game.inventorySelection]
         if (item) {
-            if (item instanceof WeaponItem && game.player.weapon === item) {
+            if ((item instanceof WeaponItem || item instanceof ShieldItem) && game.player.weapon === item) {
                 game.player.attack -= game.player.weapon.bonus
                 game.player.weapon = null
                 EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `装備解除-${item.bonus}`, "heal")
@@ -172,8 +172,8 @@ function inventoryX(game, e) {
             game.message.add(`${temp.name}と${game.player.inventory[game.inventorySelection].name}を交換した`)
             game.seBox.playPickup()
             // # MESSAGE
-            if (game.groundItem instanceof WeaponItem && game.player.weapon) {
-                // インベントリの装備している武器を交換したら外す
+            if ((game.groundItem instanceof WeaponItem || game.groundItem instanceof ShieldItem) && game.player.weapon) {
+                // インベントリの装備している武器・盾を交換したら外す
                 game.groundItem.use(game)
             }
             game.updateData({ tx: game.player.x, ty: game.player.y })
@@ -190,7 +190,7 @@ function inventoryI(game, e) {
         // 仮に、別途箱用の選択状態（this.boxSelected）があれば、その箱に入れる
         if (game.boxSelected && !(selectedItem instanceof BoxItem)) {
             if (game.boxSelected.insertItem(selectedItem)) {
-                if (selectedItem instanceof WeaponItem) {
+                if ((selectedItem instanceof WeaponItem || selectedItem instanceof ShieldItem)) {
                     // 箱に入れたので、装備を解除
                     if (game.player.weapon === selectedItem) {
                         selectedItem.use(game)
@@ -229,7 +229,7 @@ async function inventoryT(game, e) {
     if (e.key === 't') {
         let item = game.player.inventory[game.inventorySelection]
         if (item) {
-            if (item instanceof WeaponItem && game.player.weapon === item) {
+            if ((item instanceof WeaponItem || item instanceof ShieldItem) && game.player.weapon === item) {
                 game.player.attack -= game.player.weapon.bonus
                 game.player.weapon = null
                 EffectsManager.showEffect(game.gameContainer, game.player, game.player.x, game.player.y, `装備解除-${item.bonus}`, "heal")
@@ -315,8 +315,8 @@ function inventoryBoxU(box, e) {
             const item = box.contents[box.selectionIndex]
             box.cleanup(box.game)
             box.renderList()
-            // 武器類は使えない
-            if (!(item instanceof WeaponItem) && !(item instanceof ShootingItem)) {
+            // 武器・盾類は使えない
+            if (!((item instanceof WeaponItem || item instanceof ShieldItem)) && !(item instanceof ShootingItem)) {
                 if (item.use) item.use(box.game).then(() => {
                     // 使用後、アイテムが消費されるなら削除する
                     box.contents.splice(box.selectionIndex, 1)
