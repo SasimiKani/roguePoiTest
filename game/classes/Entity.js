@@ -416,7 +416,7 @@ class MagicExplosion extends MagicSpell {
 class MagicMeteor extends MagicSpell {
 	constructor(x, y) {
 		super(x, y, "メテオ", "🌠", {
-			damage: 30,
+			damage: 200,
 			area: 5,
 			fallbackHeal: null
 		})
