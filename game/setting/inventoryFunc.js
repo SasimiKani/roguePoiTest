@@ -31,6 +31,9 @@ function inventoryY(game, e) {
             if (a.constructor.name.localeCompare(b.constructor.name) === 0) {
                 return a.name.localeCompare(b.name)
             } else {
+                // 弓矢を上に
+                if (a.constructor.name === "ShootingItem") return -1
+                if (b.constructor.name === "ShootingItem") return 1
                 return b.constructor.name.localeCompare(a.constructor.name)
             }
         })
