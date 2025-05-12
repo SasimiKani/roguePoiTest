@@ -159,7 +159,7 @@ class EnemyTropicalfish extends Enemy {
 }
 class EnemyCrab extends Enemy {
 	constructor(x, y) {
-		super("カニ", x, y, /* LV */ 1, /* EXP */ 20, /* HP */ 10, /* ATK */ 8, /* DEF */ 10, '🦀')
+		super("カニ", x, y, /* LV */ 1, /* EXP */ 100, /* HP */ 10, /* ATK */ 8, /* DEF */ 30, '🦀')
 		this.searchAlgo = (game, startX, startY, targetX, targetY) =>
 			SearchAlgorithm.routeFlee(game, startX, startY, targetX, targetY)
 		this.action = this.maxAction = 2; // 二回行動
@@ -231,7 +231,7 @@ class EnemyTropicalfishLV2 extends Enemy {
 }
 class EnemyCrabLV2 extends Enemy {
 	constructor(x, y) {
-		super("強いカニ", x, y, /* LV */ 2, /* EXP */ 95, /* HP */ 60, /* ATK */ 37, /* DEF */ 60, '🦀')
+		super("強いカニ", x, y, /* LV */ 2, /* EXP */ 500, /* HP */ 60, /* ATK */ 37, /* DEF */ 120, '🦀')
 		this.searchAlgo = (game, startX, startY, targetX, targetY) =>
 			SearchAlgorithm.routeFlee(game, startX, startY, targetX, targetY)
 		this.action = this.maxAction = 2; // 二回行動
@@ -302,7 +302,7 @@ class EnemyTropicalfishLV3 extends Enemy {
 }
 class EnemyCrabLV3 extends Enemy {
 	constructor(x, y) {
-		super("かなり強いカニ", x, y, /* LV */ 3, /* EXP */ 162, /* HP */ 110, /* ATK */ 65, /* DEF */ 110, '🦀')
+		super("かなり強いカニ", x, y, /* LV */ 3, /* EXP */ 3000, /* HP */ 110, /* ATK */ 65, /* DEF */ 300, '🦀')
 		this.searchAlgo = (game, startX, startY, targetX, targetY) =>
 			SearchAlgorithm.routeFlee(game, startX, startY, targetX, targetY)
 		this.action = this.maxAction = 2; // 二回行動
