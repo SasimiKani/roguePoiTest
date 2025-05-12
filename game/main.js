@@ -59,7 +59,7 @@ function startDungeonGame(difficulty, myIcon="😊") {
 				game.load()
 
 				// ロードしたら中断データを削除
-				localStorage.removeItem(`savedata-${difficulty}`)
+				//localStorage.removeItem(`savedata-${difficulty}`)
 			}, 300)
 		}, () => {
 			setTimeout(() => {
