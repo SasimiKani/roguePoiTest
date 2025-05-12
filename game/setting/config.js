@@ -103,7 +103,7 @@ const EntitySettingValues = {
     hardPlus: {
         enemy: {min: 1, max: 3},
         entity: {min: 1, max: 2},
-        maxItems: {min: 2, max: 3},
+        maxItems: {min: 2, max: 4},
         itemWeights: {
             food:     20,
             sushi:    20,
@@ -111,9 +111,9 @@ const EntitySettingValues = {
             niku:     10,
             icecream: 5,
             weapon:   7,
-            shield:   3,
+            shield:   4,
             shooting: 7,
-            box:      3
+            box:      4
         }
     }
 }
