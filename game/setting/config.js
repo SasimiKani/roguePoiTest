@@ -7,7 +7,7 @@ const difficultySettings = {
 	normal:      { name: "山レベル", wallEmoji: "⛰️", wallSubEmoji: "🌳", maxFloor: 20, revealLv: 3, width: 45, height: 38 },
 	normalPlus:	 { name: "雪原レベル", wallEmoji: "⬜️", wallSubEmoji: "❄️", maxFloor: 40, revealLv: 7, width: 50, height: 38 },
 	hard:	     { name: "火山レベル", wallEmoji: "🌋", wallSubEmoji: "🪨", maxFloor: 99, revealLv: 2, width: 60, height: 42 },
-	hardPlus:	 { name: "海底レベル", wallEmoji: "🪸", wallSubEmoji: "🐚", maxFloor: 255, revealLv: 4, width: 70, height: 50 }
+	hardPlus:	 { name: "海底レベル", wallEmoji: "🪸", wallSubEmoji: "🐚", maxFloor: 150, revealLv: 4, width: 70, height: 50 }
 }
 
 /** 共通値設定 */
